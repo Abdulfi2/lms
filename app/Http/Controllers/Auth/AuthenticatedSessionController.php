@@ -9,6 +9,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Validation\ValidationException;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -23,13 +25,48 @@ class AuthenticatedSessionController extends Controller
     /**
      * Handle an incoming authentication request.
      */
-    public function store(LoginRequest $request): RedirectResponse
+    public function store(LoginRequest $request): JsonResponse|RedirectResponse
     {
-        $request->authenticate();
+        try {
+            $request->authenticate();
 
-        $request->session()->regenerate();
+            $user = $request->user();
 
-        return redirect()->intended(RouteServiceProvider::HOME);
+            // Cek verifikasi email
+            if (is_null($user->email_verified_at)) {
+                auth()->logout();
+                throw ValidationException::withMessages([
+                    'email' => ['Anda harus verifikasi email terlebih dahulu.'],
+                ]);
+            }
+
+            $request->session()->regenerate();
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Login berhasil',
+                    'redirect' => $this->redirectTo($user),
+                    'user' => $user
+                ]);
+            }
+
+            return redirect()->intended($this->redirectTo($user));
+
+        } catch (ValidationException $e) {
+            if ($request->wantsJson()) {
+                // ✅ HANYA KIRIM SATU PESAN ERROR, BUKAN ARRAY
+                $firstError = $e->errors();
+                $firstErrorMessage = is_array($firstError) ? reset($firstError)[0] : 'Email atau password salah';
+
+                return response()->json([
+                    'success' => false,
+                    'message' => $firstErrorMessage,
+                    'errors' => $firstError
+                ], 422);
+            }
+            throw $e;
+        }
     }
 
     /**
@@ -44,5 +81,16 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/');
+    }
+
+    private function redirectTo($user): string
+    {
+        if ($user->hasRole('admin')) {
+            return route('admin.dashboard');
+        }
+        if ($user->hasRole('instructor')) {
+            return route('instructor.dashboard');
+        }
+        return route('student.dashboard');
     }
 }
