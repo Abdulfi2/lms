@@ -118,6 +118,11 @@ class User extends Authenticatable
         return !is_null($this->email_verified_at);
     }
 
+    public function sendPasswordResetNotification($token)
+{
+    $this->notify(new \App\Notifications\CustomResetPasswordNotification($token));
+}
+
     // ========== SCOPES ==========
 
     public function scopeActive($query)

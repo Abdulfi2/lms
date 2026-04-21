@@ -3,20 +3,20 @@
         <div class="grid md:grid-cols-2 gap-12 items-center">
             <div>
                 <h1 class="text-5xl md:text-6xl font-bold mb-6 leading-tight">
-                    Belajar Lebih Mudah,<br>
-                    <span class="text-yellow-300">Terarah, dan Fleksibel</span>
+                    Belajar Zakat Lebih Terarah dengan<br>
+                    <span class="text-yellow-300">ZS Academy</span>
                 </h1>
                 <p class="text-xl mb-8 text-blue-100 leading-relaxed">
-                    Platform pembelajaran modern untuk mengakses materi, mengikuti kelas online,
-                    dan memantau progres belajar Anda dengan mudah.
+                    Program pembelajaran zakat untuk tim internal dan peserta umum, dengan materi terstruktur, kelas
+                    bertahap, dan evaluasi yang jelas.
                 </p>
                 <div class="flex flex-col sm:flex-row gap-4">
                     <a href="#"
-                        class="bg-white text-primary px-8 py-4 rounded-xl font-semibold text-lg shadow-2xl hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300">Mulai
-                        Belajar</a>
+                        class="bg-white text-primary px-8 py-4 rounded-xl font-semibold text-lg shadow-2xl hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300">Daftar
+                        Kelas Zakat</a>
                     <a href="#"
                         class="border-2 border-white text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white hover:text-primary transition-all duration-300">Lihat
-                        Kursus</a>
+                        Silabus</a>
                 </div>
             </div>
             <div class="relative">

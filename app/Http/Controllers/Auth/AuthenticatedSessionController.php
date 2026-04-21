@@ -25,6 +25,9 @@ class AuthenticatedSessionController extends Controller
     /**
      * Handle an incoming authentication request.
      */
+    /**
+     * Handle an incoming authentication request.
+     */
     public function store(LoginRequest $request): JsonResponse|RedirectResponse
     {
         try {
@@ -34,10 +37,25 @@ class AuthenticatedSessionController extends Controller
 
             // Cek verifikasi email
             if (is_null($user->email_verified_at)) {
-                auth()->logout();
-                throw ValidationException::withMessages([
-                    'email' => ['Anda harus verifikasi email terlebih dahulu.'],
+                // Simpan email ke session dengan timestamp
+                session([
+                    'verification_email' => $user->email,
+                    'verification_needed_at' => now()->timestamp
                 ]);
+
+                auth()->logout();
+
+                if ($request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Email belum diverifikasi. Silakan verifikasi email Anda terlebih dahulu.',
+                        'redirect' => route('verification.notice'),
+                        'need_verification' => true
+                    ], 422);
+                }
+
+                return redirect()->route('verification.notice')
+                    ->with('warning', 'Email Anda belum diverifikasi. Silakan cek email Anda untuk melakukan verifikasi.');
             }
 
             $request->session()->regenerate();
@@ -55,7 +73,6 @@ class AuthenticatedSessionController extends Controller
 
         } catch (ValidationException $e) {
             if ($request->wantsJson()) {
-                // ✅ HANYA KIRIM SATU PESAN ERROR, BUKAN ARRAY
                 $firstError = $e->errors();
                 $firstErrorMessage = is_array($firstError) ? reset($firstError)[0] : 'Email atau password salah';
 

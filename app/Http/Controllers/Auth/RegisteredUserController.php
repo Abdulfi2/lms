@@ -35,7 +35,7 @@ class RegisteredUserController extends Controller
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
-        
+
         try {
             // Eksekusi dalam transaction
             $user = $this->executeWithTransaction(
@@ -44,7 +44,7 @@ class RegisteredUserController extends Controller
                     $nameParts = explode(' ', $validated['name'], 2);
                     $firstName = $nameParts[0];
                     $lastName = $nameParts[1] ?? '';
-                    
+
                     // Create user
                     $user = User::create([
                         'name' => $validated['name'],
@@ -53,11 +53,11 @@ class RegisteredUserController extends Controller
                         'default_role' => 'student',
                         'is_active' => true,
                     ]);
-                    
+
                     // Assign role student
                     $studentRole = Role::findByName('student', 'web');
                     $user->assignRole($studentRole);
-                    
+
                     // Create profile
                     Profile::create([
                         'profileable_id' => $user->id,
@@ -69,7 +69,7 @@ class RegisteredUserController extends Controller
                         'is_active' => true,
                         'approval_status' => 'approved',
                     ]);
-                    
+
                     return $user;
                 },
                 operation: 'register',
@@ -79,28 +79,18 @@ class RegisteredUserController extends Controller
                     'new_data' => ['email' => $validated['email'], 'name' => $validated['name']]
                 ]
             );
-            
-            // Trigger event (diluar transaction)
+
+            session([
+                'verification_email' => $user->email,
+                'verification_needed' => true
+            ]);
+
             event(new Registered($user));
-            
+
             // Login user
-            Auth::login($user);
-            
-            // Redirect berdasarkan role
-            $redirectUrl = route('student.dashboard');
-            
-            // Log success tambahan jika perlu
-            $this->logActivity(
-                'login_after_register',
-                'users',
-                $user->id,
-                null,
-                ['user_id' => $user->id],
-                'User logged in after registration'
-            );
-            
-            return redirect()->intended($redirectUrl);
-            
+            return redirect()->route('verification.notice')
+                ->with('success', 'Pendaftaran berhasil! Silakan verifikasi email Anda.');
+
         } catch (ValidationException $e) {
             throw $e;
         } catch (\Throwable $e) {

@@ -119,6 +119,14 @@
                                     </svg>
                                     <span>Akses Seumur Hidup</span>
                                 </div>
+                                <div class="flex items-center">
+                                    <svg class="w-5 h-5 mr-3 text-white/80" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd"
+                                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                    <span>Belajar Fleksibel</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -142,9 +150,6 @@
                     this.showPassword = !this.showPassword;
                 },
                 async submitForm() {
-                    // ✅ Cegah multiple submit
-                    if (this.loading) return;
-
                     this.loading = true;
                     this.errors = {};
 
@@ -166,28 +171,27 @@
                         const data = await response.json();
 
                         if (response.ok) {
-                            // ✅ SUCCESS - HANYA SATU TOAST
-                            window.toast.success('Login berhasil! Mengalihkan...');
+                            // Login sukses
+                            window.toast.success(data.message);
                             setTimeout(() => {
                                 window.location.href = data.redirect || '/dashboard';
                             }, 1000);
                         } else {
-                            // ✅ ERROR - HANYA SATU TOAST
-                            if (data.message) {
-                                window.toast.error(data.message);
-                            } else if (data.errors) {
-                                const firstError = Object.values(data.errors)[0];
-                                const errorMessage = Array.isArray(firstError) ? firstError[0] : firstError;
-                                window.toast.error(errorMessage);
+                            // Cek apakah perlu verifikasi email
+                            if (data.need_verification) {
+                                window.toast.warning(data.message);
+                                setTimeout(() => {
+                                    window.location.href = data.redirect; // redirect ke verification.notice
+                                }, 1500);
                             } else {
-                                window.toast.error('Login gagal. Silakan coba lagi.');
+                                // Error biasa (password salah, dll)
+                                if (data.message) {
+                                    window.toast.error(data.message);
+                                }
+                                if (data.errors) {
+                                    this.errors = data.errors;
+                                }
                             }
-
-                            // Tampilkan errors di form
-                            if (data.errors) {
-                                this.errors = data.errors;
-                            }
-
                             this.loading = false;
                         }
                     } catch (error) {

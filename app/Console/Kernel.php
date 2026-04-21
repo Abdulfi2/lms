@@ -12,7 +12,11 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        $schedule->call(function () {
+        $service = app(PasswordResetService::class);
+        $deleted = $service->deleteExpiredTokens();
+        \Log::info("Deleted {$deleted} expired password reset tokens");
+    })->hourly();
     }
 
     /**

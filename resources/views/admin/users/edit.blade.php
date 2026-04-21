@@ -16,9 +16,9 @@
         'phone' => $user->profile->phone ?? '',
         'gender' => $user->profile->gender ?? '',
         'birth_date' => $user->profile->birth_date ?? '',
-        'role' => $user->role ?? '',
+        'role' => $user->role_name ?? '',
         'is_active' => $user->is_active ?? true,
-        'email_verified' => $user->email_verified ?? false,
+        'email_verified' => isset($user->email_verified_at) ? true : false,
     ];
 @endphp
 
