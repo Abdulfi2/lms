@@ -17,6 +17,9 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
+Route::get('/', function () {
+    return view('client.pages.home');
+})->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     // Redirect berdasarkan role
@@ -34,7 +37,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Admin Routes
     Route::middleware(['role:admin'])->prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
-        Route::resource('/users', UserController::class);
+
+        Route::resource('users', UserController::class);
+        Route::post('users/bulk-delete', [UserController::class, 'bulkDestroy'])->name('users.bulk-delete');
+        Route::patch('users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
         // Route::resource('/courses', AdminCourseController::class);
         // Route::get('/analytics', [AdminDashboardController::class, 'analytics'])->name('analytics');
         // Route::get('/payments', [AdminDashboardController::class, 'payments'])->name('payments');
