@@ -5,8 +5,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     public function up(): void
     {
         Schema::create('courses', function (Blueprint $table) {
@@ -37,6 +36,7 @@ return new class extends Migration
             $table->integer('wishlist_count')->default(0);
             $table->enum('status', ['draft', 'pending', 'published', 'archived'])->default('draft');
             $table->boolean('is_featured')->default(false);
+            $table->boolean('is_active')->default(true);
             $table->boolean('has_certificate')->default(false);
             $table->string('certificate_template')->nullable();
             $table->integer('max_students')->nullable();
@@ -51,7 +51,7 @@ return new class extends Migration
             $table->timestamp('published_at')->nullable();
             $table->softDeletes();
             $table->timestamps();
-            
+
             $table->foreign('instructor_id')->references('id')->on('users')->onDelete('cascade');
             $table->index('slug');
             $table->index('status');

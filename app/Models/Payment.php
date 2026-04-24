@@ -8,4 +8,13 @@ use Illuminate\Database\Eloquent\Model;
 class Payment extends Model
 {
     use HasFactory;
+
+    protected $table = 'payments';
+
+    protected $guraded = [];
+
+    public function enrollment()
+    {
+        return $this->belongsTo(Enrollment::class);
+    }
 }

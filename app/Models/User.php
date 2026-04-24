@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\PersonalAccessToken;
 use Spatie\Permission\Traits\HasRoles;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -119,9 +120,53 @@ class User extends Authenticatable
     }
 
     public function sendPasswordResetNotification($token)
-{
-    $this->notify(new \App\Notifications\CustomResetPasswordNotification($token));
-}
+    {
+        $this->notify(new \App\Notifications\CustomResetPasswordNotification($token));
+    }
+
+    /**
+     * Get all tokens for the user
+     */
+    public function tokens()
+    {
+        return $this->hasMany(PersonalAccessToken::class, 'tokenable_id');
+    }
+
+    /**
+     * Create a new token for API access
+     */
+    public function createApiToken(string $name, array $abilities = ['*'], ?int $expiresInDays = null): string
+    {
+        $expiresAt = $expiresInDays ? now()->addDays($expiresInDays) : null;
+
+        $token = $this->createToken($name, $abilities, $expiresAt);
+
+        // Log token creation
+        ActivityLog::create([
+            'user_id' => $this->id,
+            'action' => 'create_api_token',
+            'description' => "Created API token: {$name}",
+            'ip_address' => request()->ip(),
+        ]);
+
+        return $token->plainTextToken;
+    }
+
+    /**
+     * Revoke all tokens for a user
+     */
+    public function revokeAllTokens(): void
+    {
+        $count = $this->tokens()->count();
+        $this->tokens()->delete();
+
+        ActivityLog::create([
+            'user_id' => $this->id,
+            'action' => 'revoke_all_tokens',
+            'description' => "Revoked {$count} API tokens",
+            'ip_address' => request()->ip(),
+        ]);
+    }
 
     // ========== SCOPES ==========
 
