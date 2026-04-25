@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\SectionController;
 use App\Http\Controllers\Admin\LessonController;
 use App\Http\Controllers\Admin\TagController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Instructor\DashboardController as InstructorDashboardController;
 use App\Http\Controllers\Instructor\CourseController as InstructorCourseController;
 use App\Http\Controllers\Instructor\QuizController;
@@ -21,8 +22,10 @@ use App\Http\Controllers\Student\AssignmentController;
 use App\Http\Controllers\Student\CertificateController;
 use App\Http\Controllers\Student\DashboardController as StudentDashboardController;
 use App\Http\Controllers\Student\CourseController as StudentCourseController;
+use App\Http\Controllers\Student\EnrollmentController;
 use App\Http\Controllers\Student\LessonController as StudentLessonController;
 use App\Http\Controllers\Student\QuizController as StudentQuizController;
+use App\Http\Controllers\Student\ReviewController as StudentReviewController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CourseController as PublicCourseController;
 use App\Http\Controllers\Student\QuizAttemptController;
@@ -41,6 +44,8 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('client.pages.home');
 })->name('home');
+
+Route::get('/certificate/verify/{code}', [CertificateController::class, 'verify'])->name('certificate.verify');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     // Redirect berdasarkan role
@@ -105,6 +110,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             });
         });
 
+        Route::get('/reviews', [AdminReviewController::class, 'index'])->name('reviews.index');
+        Route::patch('/reviews/{review}/approve', [AdminReviewController::class, 'approve'])->name('reviews.approve');
+        Route::delete('/reviews/{review}', [AdminReviewController::class, 'destroy'])->name('reviews.destroy');
+
         // Failed Jobs Management
         Route::get('/failed-jobs', [FailedJobsController::class, 'index'])->name('failed-jobs.index');
         Route::get('/failed-jobs/{id}', [FailedJobsController::class, 'show'])->name('failed-jobs.show');
@@ -153,16 +162,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/lessons/{lesson}/complete', [StudentLessonController::class, 'complete'])->name('lessons.complete');
 
         // Certificates
-        Route::get('/certificates', [CertificateController::class, 'index'])->name('certificates');
+        Route::get('/certificates', [CertificateController::class, 'index'])->name('certificates.index');
         Route::get('/certificates/{certificate}', [CertificateController::class, 'show'])->name('certificates.show');
 
         // Assignments
         Route::get('/assignments', [AssignmentController::class, 'index'])->name('assignments');
 
+        // Enroll
+        Route::post('/courses/{slug}/enroll', [EnrollmentController::class, 'enroll'])->name('courses.enroll');
+
         Route::get('/quizzes/{quiz}/start', [StudentQuizController::class, 'start'])->name('quizzes.start');
         Route::get('/quiz-attempts/{attempt}', [StudentQuizController::class, 'attempt'])->name('quizzes.attempt');
         Route::post('/quiz-attempts/{attempt}/submit', [StudentQuizController::class, 'submit'])->name('quizzes.submit');
         Route::get('/quiz-attempts/{attempt}/result', [StudentQuizController::class, 'result'])->name('quizzes.result');
+
+        // Review
+        Route::get('/courses/{course}/review', [StudentReviewController::class, 'create'])->name('student.reviews.create');
+        Route::post('/courses/{course}/review', [StudentReviewController::class, 'store'])->name('student.reviews.store');
     });
 
 

@@ -46,7 +46,7 @@ class Lesson extends Model
         'comment_count' => 'integer',
     ];
 
-    public function section(): BelongsTo
+    public function section()
     {
         return $this->belongsTo(Section::class);
     }

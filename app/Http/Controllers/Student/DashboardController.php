@@ -25,6 +25,9 @@ class DashboardController extends Controller
         $totalProgress = $enrollments->avg('progress') ?? 0;
         $certificates = $user->certificates()->count();
 
+        // Ambil 5 sertifikat terbaru (jika ada)
+        $latestCertificates = $user->certificates()->latest()->take(5)->get();
+
         // Recommended courses (exclude enrolled ones)
         $enrolledCourseIds = $enrollments->pluck('course_id')->toArray();
         $recommendedCourses = Course::published()
@@ -39,6 +42,7 @@ class DashboardController extends Controller
             'completedCourses',
             'totalProgress',
             'certificates',
+            'latestCertificates',
             'recommendedCourses'
         ));
     }

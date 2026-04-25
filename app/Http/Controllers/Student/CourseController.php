@@ -14,37 +14,42 @@ class CourseController extends Controller
     public function show($slug)
     {
         $course = Course::where('slug', $slug)
-            ->with(['sections.lessons', 'instructor'])
+            ->where('status', 'published') // tambahkan
+            ->with([
+                'instructor',
+                'sections' => fn($q) => $q->orderBy('order'),
+                'sections.lessons' => fn($q) => $q->orderBy('order')
+            ])
             ->firstOrFail();
 
-        // Check if user is enrolled
         $enrollment = Enrollment::where('user_id', Auth::id())
             ->where('course_id', $course->id)
+            ->whereIn('status', ['active', 'completed']) // tambahkan
             ->first();
 
         if (!$enrollment) {
-            // If not enrolled, redirect to course detail page (public)
             return redirect()->route('courses.show', $course->slug);
         }
 
-        $sections = $course->sections()->with([
-            'lessons' => function ($q) {
-                $q->orderBy('order');
-            }
-        ])->orderBy('order')->get();
+        $sections = $course->sections;
 
-        // Get first incomplete lesson as current
+        // Cari lesson pertama yang belum selesai
         $currentLesson = null;
         foreach ($sections as $section) {
             foreach ($section->lessons as $lesson) {
-                $completed = LessonCompletion::where('user_id', Auth::id())
-                    ->where('lesson_id', $lesson->id)
-                    ->exists();
-                if (!$completed) {
+                if (!LessonCompletion::where('user_id', Auth::id())->where('lesson_id', $lesson->id)->exists()) {
                     $currentLesson = $lesson;
                     break 2;
                 }
             }
+        }
+
+        // Jika semua lesson sudah selesai, arahkan ke halaman sertifikat (atah tampilkan pesan di view)
+        if (!$currentLesson && $enrollment->status != 'completed') {
+            // Tandai enrollment selesai
+            $enrollment->update(['status' => 'completed', 'completed_at' => now()]);
+            // Trigger event untuk generate certificate (jika sudah ada)
+            // event(new CourseCompleted(Auth::user(), $course));
         }
 
         return view('student.courses.show', compact('course', 'enrollment', 'sections', 'currentLesson'));

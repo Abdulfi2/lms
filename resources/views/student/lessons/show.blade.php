@@ -67,19 +67,35 @@
         <script>
             function completeLesson() {
                 fetch('{{ route('student.lessons.complete', $lesson) }}', {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Content-Type': 'application/json'
-                    }
-                }).then(res => res.json()).then(data => {
-                    if (data.success) {
-                        window.toast.success('Lesson selesai!');
-                        location.reload();
-                    } else {
-                        window.toast.error('Gagal menyimpan progress');
-                    }
-                });
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            time_spent: 0
+                        })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            window.toast.success(data.message);
+
+                            @if (isset($nextLesson) && $nextLesson)
+                                // Redirect ke lesson berikutnya
+                                window.location.href = '{{ route('student.lessons.show', [$course, $nextLesson]) }}';
+                            @else
+                                // Jika tidak ada lesson berikutnya, kembali ke halaman kursus
+                                window.location.href = '{{ route('student.courses.show', $course->slug) }}';
+                            @endif
+                        } else {
+                            window.toast.error(data.message);
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Fetch error:', err);
+                        window.toast.error('Terjadi kesalahan jaringan');
+                    });
             }
         </script>
     @endpush

@@ -8,7 +8,6 @@ use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\Enrollment;
 use App\Models\LessonCompletion;
-use App\Models\Progress;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -17,18 +16,30 @@ class LessonController extends Controller
 {
     public function show(Course $course, Lesson $lesson)
     {
-        // Check enrollment
+        // Pastikan lesson benar-benar berada dalam course ini
+        if ($lesson->section->course_id != $course->id) {
+            abort(404);
+        }
+
+        // Cek enrollment
         $enrollment = Enrollment::where('user_id', Auth::id())
             ->where('course_id', $course->id)
             ->firstOrFail();
 
-        // Get all lessons in order for navigation
-        $allLessons = $course->lessons()->orderBy('order')->get();
-        $currentIndex = $allLessons->search(fn($l) => $l->id === $lesson->id);
-        $prevLesson = $allLessons[$currentIndex - 1] ?? null;
-        $nextLesson = $allLessons[$currentIndex + 1] ?? null;
+        // Ambil semua lesson dalam course dengan urutan yang benar (berdasarkan section.order, lesson.order)
+        $allLessons = Lesson::join('sections', 'lessons.section_id', '=', 'sections.id')
+            ->where('sections.course_id', $course->id)
+            ->whereNull('lessons.deleted_at')
+            ->orderBy('sections.order')
+            ->orderBy('lessons.order')
+            ->select('lessons.*')
+            ->get();
 
-        // Check if already completed
+        $currentIndex = $allLessons->search(fn($l) => $l->id === $lesson->id);
+        $prevLesson = $currentIndex > 0 ? $allLessons[$currentIndex - 1] : null;
+        $nextLesson = ($currentIndex !== false && $currentIndex < $allLessons->count() - 1) ? $allLessons[$currentIndex + 1] : null;
+
+        // Cek apakah lesson sudah selesai
         $isCompleted = LessonCompletion::where('user_id', Auth::id())
             ->where('lesson_id', $lesson->id)
             ->exists();
@@ -39,63 +50,94 @@ class LessonController extends Controller
     public function complete(Request $request, Lesson $lesson)
     {
         try {
-            DB::beginTransaction();
-
-            // Check if already completed
-            $existing = LessonCompletion::where('user_id', Auth::id())
-                ->where('lesson_id', $lesson->id)
-                ->first();
-
-            if (!$existing) {
-                LessonCompletion::create([
-                    'user_id' => Auth::id(),
-                    'lesson_id' => $lesson->id,
-                    'is_completed' => true,
-                    'completed_at' => now(),
-                ]);
-
-                // Update progress for the course
-                $course = $lesson->section->course;
-                $totalLessons = $course->lessons()->count();
-                $completedLessons = LessonCompletion::where('user_id', Auth::id())
-                    ->whereIn('lesson_id', $course->lessons()->pluck('id'))
-                    ->count();
-
-                $progressPercent = ($completedLessons / max($totalLessons, 1)) * 100;
-
-                // Update enrollment progress
-                $enrollment = Enrollment::where('user_id', Auth::id())
-                    ->where('course_id', $course->id)
-                    ->first();
-
-                if ($enrollment) {
-                    $enrollment->progress = $progressPercent;
-                    if ($progressPercent >= 100) {
-                        $enrollment->status = 'completed';
-                        $enrollment->completed_at = now();
-                    }
-                    $enrollment->save();
-                }
-
-                // Update progress table
-                Progress::updateOrCreate(
-                    ['user_id' => Auth::id(), 'course_id' => $course->id],
-                    [
-                        'completed_lessons' => $completedLessons,
-                        'percentage' => $progressPercent,
-                        'last_activity_at' => now(),
-                        'is_completed' => $progressPercent >= 100,
-                        'completed_at' => $progressPercent >= 100 ? now() : null,
-                    ]
-                );
+            // Cek lesson dan section
+            if (!$lesson->section) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data lesson tidak valid (section tidak ditemukan)'
+                ], 400);
             }
 
-            DB::commit();
+            $course = $lesson->section->course;
+            if (!$course) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Kursus tidak ditemukan untuk lesson ini'
+                ], 400);
+            }
 
-            return response()->json(['success' => true, 'message' => 'Lesson selesai!']);
+            $user = auth()->user();
+            $enrollment = Enrollment::where('user_id', $user->id)
+                ->where('course_id', $course->id)
+                ->first();
+
+            if (!$enrollment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak terdaftar di kursus ini'
+                ], 403);
+            }
+
+            // Cek sudah selesai sebelumnya
+            $exists = LessonCompletion::where('user_id', $user->id)
+                ->where('lesson_id', $lesson->id)
+                ->exists();
+
+            if ($exists) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Lesson sudah selesai sebelumnya'
+                ]);
+            }
+
+            // Simpan completion
+            LessonCompletion::create([
+                'user_id' => $user->id,
+                'lesson_id' => $lesson->id,
+                'is_completed' => true,
+                'completed_at' => now(),
+                'time_spent' => $request->input('time_spent', 0),
+            ]);
+
+            // Update progress enrollment
+            $totalLessons = Lesson::join('sections', 'lessons.section_id', '=', 'sections.id')
+                ->where('sections.course_id', $course->id)
+                ->count();
+
+            $completedLessons = LessonCompletion::where('user_id', $user->id)
+                ->whereIn('lesson_id', Lesson::join('sections', 'lessons.section_id', '=', 'sections.id')
+                    ->where('sections.course_id', $course->id)
+                    ->select('lessons.id'))
+                ->count();
+
+            $progress = ($completedLessons / max($totalLessons, 1)) * 100;
+            $enrollment->update([
+                'progress' => $progress,
+                'completed_at' => $progress >= 100 ? now() : null,
+            ]);
+
+            // Jika progress 100%, panggil event untuk generate certificate
+            if ($progress >= 100 && !$enrollment->completed_at) {
+                // event(new CourseCompleted($user, $course)); // comment dulu jika belum ada event
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Lesson selesai!',
+                'progress' => round($progress)
+            ]);
+
         } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            \Log::error('Lesson completion error: ' . $e->getMessage(), [
+                'lesson_id' => $lesson->id,
+                'user_id' => auth()->id(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menyimpan progress: ' . $e->getMessage()
+            ], 500);
         }
     }
 }

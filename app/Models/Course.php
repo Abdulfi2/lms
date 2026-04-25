@@ -101,7 +101,8 @@ class Course extends Model
 
     public function lessons()
     {
-        return $this->hasManyThrough(Lesson::class, Section::class, 'course_id', 'section_id');
+        return $this->hasManyThrough(Lesson::class, Section::class, 'course_id', 'section_id')
+            ->select('lessons.*'); // tambahkan select spesifik
     }
 
     public function enrollments(): HasMany
@@ -112,6 +113,11 @@ class Course extends Model
     public function quizzes()
     {
         return $this->hasMany(Quiz::class);
+    }
+
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
     }
 
     // Accessors
@@ -159,6 +165,15 @@ class Course extends Model
     {
         $this->total_lessons = $this->lessons()->count();
         $this->total_sections = $this->sections()->count();
+        $this->saveQuietly();
+    }
+
+    public function updateRatingStats()
+    {
+        $reviews = $this->reviews()->approved();
+        $this->average_rating = $reviews->avg('rating') ?? 0;
+        $this->rating_count = $reviews->count();
+        $this->reviews_count = $reviews->count(); // jika berbeda dengan rating_count
         $this->saveQuietly();
     }
 

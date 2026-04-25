@@ -16,7 +16,7 @@ class CertificateController extends Controller
             ->orderBy('issued_at', 'desc')
             ->paginate(12);
 
-        return view('student.certificates', compact('certificates'));
+        return view('student.certificates.index', compact('certificates'));
     }
 
     public function show(Certificate $certificate)
@@ -26,5 +26,11 @@ class CertificateController extends Controller
         }
 
         return view('student.certificate-show', compact('certificate'));
+    }
+
+    public function verify($code)
+    {
+        $certificate = Certificate::where('verification_code', $code)->firstOrFail();
+        return view('certificates.verify', compact('certificate'));
     }
 }
