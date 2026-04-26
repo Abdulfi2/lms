@@ -5,8 +5,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     public function up(): void
     {
         Schema::create('quizzes', function (Blueprint $table) {
@@ -22,6 +21,9 @@ return new class extends Migration
             $table->boolean('show_results_immediately')->default(true);
             $table->boolean('show_correct_answers')->default(false);
             $table->boolean('show_explanation')->default(true);
+            $table->enum('quiz_type', ['pretest', 'posttest', 'practice', 'final'])->default('practice')->after('description');
+            $table->boolean('is_mandatory')->default(true)->after('quiz_type');
+            $table->integer('min_score_to_pass')->nullable()->after('is_mandatory');
             $table->boolean('is_published')->default(false);
             $table->timestamp('published_at')->nullable();
             $table->integer('total_questions')->default(0);
@@ -29,7 +31,7 @@ return new class extends Migration
             $table->float('average_score')->default(0);
             $table->softDeletes();
             $table->timestamps();
-            
+
             $table->foreign('course_id')->references('id')->on('courses')->onDelete('cascade');
             $table->foreign('lesson_id')->references('id')->on('lessons')->onDelete('set null');
             $table->index('course_id');

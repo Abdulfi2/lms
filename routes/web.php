@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\CategoryController;
 
 use App\Http\Controllers\Admin\CourseController;
+use App\Http\Controllers\Admin\EventController;
 use App\Http\Controllers\Admin\FailedJobsController;
 use App\Http\Controllers\Admin\RolePermissionController;
 use App\Http\Controllers\Admin\SectionController;
@@ -11,6 +12,7 @@ use App\Http\Controllers\Admin\LessonController;
 use App\Http\Controllers\Admin\TagController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
+use App\Http\Controllers\ForumController;
 use App\Http\Controllers\Instructor\DashboardController as InstructorDashboardController;
 use App\Http\Controllers\Instructor\CourseController as InstructorCourseController;
 use App\Http\Controllers\Instructor\QuizController;
@@ -18,6 +20,7 @@ use App\Http\Controllers\Instructor\SectionController as InstructorSectionContro
 use App\Http\Controllers\Instructor\LessonController as InstructorLessonController;
 use App\Http\Controllers\Instructor\StudentController;
 use App\Http\Controllers\MailController;
+use App\Http\Controllers\PublicEventController;
 use App\Http\Controllers\Student\AssignmentController;
 use App\Http\Controllers\Student\CertificateController;
 use App\Http\Controllers\Student\DashboardController as StudentDashboardController;
@@ -47,6 +50,15 @@ Route::get('/', function () {
 
 Route::get('/certificate/verify/{code}', [CertificateController::class, 'verify'])->name('certificate.verify');
 
+/*
+|--------------------------------------------------------------------------
+| Public Event Routes (tanpa login)
+|--------------------------------------------------------------------------
+*/
+Route::get('/events', [PublicEventController::class, 'index'])->name('events.index');
+Route::get('/events/{slug}', [PublicEventController::class, 'show'])->name('events.show');
+Route::post('/events/{slug}/register', [PublicEventController::class, 'register'])->name('events.register');
+
 Route::middleware(['auth', 'verified'])->group(function () {
     // Redirect berdasarkan role
     Route::get('/dashboard', function () {
@@ -62,6 +74,40 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/courses', [PublicCourseController::class, 'index'])->name('courses.index');
     Route::get('/courses/{slug}', [PublicCourseController::class, 'show'])->name('courses.show');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Admin Event Routes
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware(['auth', 'role:admin|event_manager'])->prefix('admin')->name('admin.')->group(function () {
+
+        // Event Management
+        Route::get('/events', [EventController::class, 'index'])->name('events.index');
+        Route::get('/events/create', [EventController::class, 'create'])->name('events.create');
+        Route::post('/events', [EventController::class, 'store'])->name('events.store');
+        Route::get('/events/{event}', [EventController::class, 'show'])->name('events.show');
+        Route::get('/events/{event}/edit', [EventController::class, 'edit'])->name('events.edit');
+        Route::put('/events/{event}', [EventController::class, 'update'])->name('events.update');
+        Route::delete('/events/{event}', [EventController::class, 'destroy'])->name('events.destroy');
+
+        // Event Status
+        Route::patch('/events/{event}/toggle-status', [EventController::class, 'toggleStatus'])->name('events.toggle-status');
+
+        // Event Registration Management
+        Route::get('/events/{event}/registrations', [EventController::class, 'registrations'])->name('events.registrations');
+        Route::patch('/events/registrations/{registration}/status', [EventController::class, 'updateRegistrationStatus'])->name('events.registrations.update-status');
+        Route::post('/events/{event}/registrations/bulk-update', [EventController::class, 'bulkUpdateRegistration'])->name('events.registrations.bulk-update');
+
+        // Export
+        Route::get('/events/{event}/export', [EventController::class, 'exportRegistrations'])->name('events.export');
+
+        // Event Utilities
+        Route::post('/events/{event}/duplicate', [EventController::class, 'duplicate'])->name('events.duplicate');
+
+        // API Stats
+        Route::get('/events-stats', [EventController::class, 'getStats'])->name('events.stats');
+    });
 
     // Admin Routes
     Route::middleware(['role:admin'])->prefix('admin')->name('admin.')->group(function () {
@@ -121,6 +167,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/failed-jobs/retry-all', [FailedJobsController::class, 'retryAll'])->name('failed-jobs.retry-all');
         Route::delete('/failed-jobs/{id}', [FailedJobsController::class, 'delete'])->name('failed-jobs.delete');
         Route::delete('/failed-jobs', [FailedJobsController::class, 'deleteAll'])->name('failed-jobs.delete-all');
+
+        // Event Management
+        Route::resource('events', EventController::class);
+        Route::get('events/{event}/registrations', [EventController::class, 'registrations'])->name('events.registrations');
+        Route::patch('registrations/{registration}/status/{status}', [EventController::class, 'updateRegistrationStatus'])->name('registrations.update-status');
     });
 
     // Instructor Routes
@@ -182,6 +233,36 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/courses/{course}/review', [StudentReviewController::class, 'create'])->name('student.reviews.create');
         Route::post('/courses/{course}/review', [StudentReviewController::class, 'store'])->name('student.reviews.store');
 
+        // Assignment routes
+        Route::get('/assignments', [AssignmentController::class, 'index'])->name('assignments.index');
+        Route::get('/assignments/{assignment}', [AssignmentController::class, 'show'])->name('assignments.show');
+        Route::get('/assignments/{assignment}/submit', [AssignmentController::class, 'create'])->name('assignments.submit');
+        Route::post('/assignments/{assignment}/submit', [AssignmentController::class, 'store'])->name('assignments.store');
+        Route::post('/assignments/{assignment}/cancel', [AssignmentController::class, 'cancel'])->name('assignments.cancel');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Student Event Routes (perlu login)
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/my-events', [PublicEventController::class, 'myEvents'])->name('events.my');
+        Route::delete('/events/{registration}/cancel', [PublicEventController::class, 'cancelRegistration'])->name('events.cancel');
+    });
+
+    // Forum routes (bisa diakses student & instructor yang terdaftar di course)
+    Route::middleware(['role:instructor|student'])->group(function () {
+        Route::prefix('courses/{course}/forum')->name('forums.')->group(function () {
+            Route::get('/', [ForumController::class, 'index'])->name('index');
+            Route::get('/create-thread', [ForumController::class, 'createThread'])->name('thread.create');
+            Route::post('/threads', [ForumController::class, 'storeThread'])->name('thread.store');
+            Route::get('/threads/{thread}', [ForumController::class, 'showThread'])->name('thread.show');
+            Route::post('/threads/{thread}/posts', [ForumController::class, 'storePost'])->name('thread.post.store');
+            Route::post('/threads/{thread}/posts/{post}/like', [ForumController::class, 'likePost'])->name('thread.post.like');
+            Route::post('/threads/{thread}/posts/{post}/solution', [ForumController::class, 'markAsSolution'])->name('thread.post.solution');
+            Route::post('/threads/{thread}/lock', [ForumController::class, 'toggleLock'])->name('thread.lock');
+            Route::post('/threads/{thread}/pin', [ForumController::class, 'togglePin'])->name('thread.pin');
+            Route::delete('/threads/{thread}/posts/{post}', [ForumController::class, 'deletePost'])->name('thread.post.delete');
+        });
     });
 
 

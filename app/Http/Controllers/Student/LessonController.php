@@ -39,15 +39,31 @@ class LessonController extends Controller
 
         $currentIndex = $allLessons->search(fn($l) => $l->id === $lesson->id);
         $prevLesson = $currentIndex > 0 ? $allLessons[$currentIndex - 1] : null;
-        $nextLesson = $currentIndex !== false && $currentIndex < $allLessons->count() - 1
+        $nextLesson = ($currentIndex !== false && $currentIndex < $allLessons->count() - 1)
             ? $allLessons[$currentIndex + 1]
             : null;
 
+        // Check completion status
         $isCompleted = LessonCompletion::where('user_id', auth()->id())
             ->where('lesson_id', $lesson->id)
             ->exists();
 
-        return view('student.lessons.show', compact('course', 'lesson', 'prevLesson', 'nextLesson', 'isCompleted'));
+        // Get lesson resources
+        $resources = $lesson->resources()->orderBy('order')->get();
+
+        // Get user progress
+        $userPoint = UserPoint::firstOrCreate(['user_id' => auth()->id()]);
+
+        return view('student.lessons.show', compact(
+            'course',
+            'lesson',
+            'prevLesson',
+            'nextLesson',
+            'isCompleted',
+            'resources',
+            'enrollment',
+            'userPoint'
+        ));
     }
 
     /**

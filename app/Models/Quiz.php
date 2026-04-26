@@ -16,13 +16,21 @@ class Quiz extends Model
         'lesson_id',
         'title',
         'description',
+        'quiz_type',
         'time_limit',
         'attempts_allowed',
         'passing_score',
-        'show_results_immediately',
         'randomize_questions',
+        'show_results_immediately',
+        'show_correct_answers',
+        'show_explanation',
         'is_published',
-        'published_at'
+        'published_at',
+        'total_questions',
+        'total_attempts',
+        'average_score',
+        'is_mandatory',
+        'min_score_to_pass'
     ];
 
     protected $casts = [
@@ -33,6 +41,8 @@ class Quiz extends Model
         'randomize_questions' => 'boolean',
         'is_published' => 'boolean',
         'published_at' => 'datetime',
+        'quiz_type' => 'string',
+        'is_mandatory' => 'boolean',
     ];
 
     public function course(): BelongsTo
