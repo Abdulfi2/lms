@@ -164,6 +164,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Certificates
         Route::get('/certificates', [CertificateController::class, 'index'])->name('certificates.index');
         Route::get('/certificates/{certificate}', [CertificateController::class, 'show'])->name('certificates.show');
+        Route::get('/certificates/{certificate}/download', [CertificateController::class, 'download'])->name('certificates.download');
+        Route::get('/certificates/{certificate}/print', [CertificateController::class, 'print'])->name('certificates.print');
 
         // Assignments
         Route::get('/assignments', [AssignmentController::class, 'index'])->name('assignments');
@@ -179,6 +181,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Review
         Route::get('/courses/{course}/review', [StudentReviewController::class, 'create'])->name('student.reviews.create');
         Route::post('/courses/{course}/review', [StudentReviewController::class, 'store'])->name('student.reviews.store');
+
     });
 
 

@@ -10,6 +10,7 @@ use Illuminate\Queue\SerializesModels;
 use App\Models\Enrollment;
 use App\Models\Certificate;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class GenerateCertificateJob implements ShouldQueue
@@ -25,6 +26,11 @@ class GenerateCertificateJob implements ShouldQueue
 
     public function handle()
     {
+
+        Log::info('GenerateCertificateJob STARTED', [
+            'enrollment_id' => $this->enrollment->id ?? null
+        ]);
+
         $user = $this->enrollment->user;
         $course = $this->enrollment->course;
 

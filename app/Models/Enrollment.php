@@ -32,28 +32,29 @@ class Enrollment extends Model
     //  Relations
     // =====================
 
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
     public function course()
     {
         return $this->belongsTo(Course::class);
     }
 
-    public function checkAndGenerateCertificate()
-    {
-        if ($this->progress >= 100 && !$this->certificate_issued_at) {
-            $this->certificate_issued_at = now();
-            $this->save();
-
-            // Dispatch job untuk generate PDF
-            GenerateCertificateJob::dispatch($this);
-        }
-    }
-
     protected static function booted()
     {
         static::updated(function ($enrollment) {
-            if ($enrollment->progress >= 100 && !$enrollment->certificate_issued_at) {
+            // Hanya generate jika progress >= 100, belum ada certificate_issued_at, dan ada perubahan progress
+            if (
+                $enrollment->progress >= 100 &&
+                !$enrollment->certificate_issued_at &&
+                $enrollment->isDirty('progress')
+            ) {
+
                 $enrollment->certificate_issued_at = now();
-                $enrollment->save();
+                $enrollment->saveQuietly(); // pakai saveQuietly agar tidak infinite loop
+
                 GenerateCertificateJob::dispatch($enrollment);
             }
         });

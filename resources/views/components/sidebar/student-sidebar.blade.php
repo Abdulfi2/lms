@@ -14,7 +14,7 @@
     <!-- Navigation -->
     <nav class="flex-1 p-3 space-y-1">
         <!-- Dashboard -->
-        <a href="#"
+        <a href="{{ route('student.dashboard') }}"
             class="flex items-center px-3 py-2.5 rounded-lg transition-all duration-200 group {{ request()->routeIs('student.dashboard') ? 'bg-primary text-white' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }}">
             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -25,7 +25,7 @@
         </a>
 
         <!-- My Courses -->
-        <a href="#"
+        <a href="{{ route('student.my-courses') }}"
             class="flex items-center px-3 py-2.5 rounded-lg transition-all duration-200 group {{ request()->routeIs('student.my-courses') ? 'bg-primary text-white' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }}">
             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -47,7 +47,7 @@
         </a>
 
         <!-- Assignments -->
-        <a href="#"
+        <a href="{{ route('student.assignments') }}"
             class="flex items-center px-3 py-2.5 rounded-lg transition-all duration-200 group {{ request()->routeIs('student.assignments') ? 'bg-primary text-white' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }}">
             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
