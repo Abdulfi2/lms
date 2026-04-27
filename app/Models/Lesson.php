@@ -65,4 +65,9 @@ class Lesson extends Model
     {
         return $this->hasOne(Quiz::class)->where('quiz_type', 'posttest');
     }
+
+    public function resources()
+    {
+        return $this->hasMany(LessonResource::class)->orderBy('order');
+    }
 }

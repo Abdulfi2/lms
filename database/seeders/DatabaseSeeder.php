@@ -16,6 +16,8 @@ class DatabaseSeeder extends Seeder
             SectionSeeder::class,
             LessonSeeder::class,
             QuizSeeder::class,
+            GamificationSeeder::class,
+            EventSeeder::class,
         ]);
     }
 }

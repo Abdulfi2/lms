@@ -1,5 +1,4 @@
 <?php
-// database/migrations/2024_01_01_000025_create_quizzes_table.php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -14,6 +13,13 @@ return new class extends Migration {
             $table->unsignedBigInteger('lesson_id')->nullable();
             $table->string('title');
             $table->text('description')->nullable();
+
+            // Kolom quiz_type, is_mandatory, min_score_to_pass ditempatkan setelah description
+            // (urutan alami, tanpa ->after)
+            $table->enum('quiz_type', ['pretest', 'posttest', 'practice', 'final'])->default('practice');
+            $table->boolean('is_mandatory')->default(true);
+            $table->integer('min_score_to_pass')->nullable();
+
             $table->integer('time_limit')->nullable()->comment('Time limit in minutes');
             $table->integer('attempts_allowed')->default(1);
             $table->integer('passing_score')->default(70);
@@ -21,9 +27,6 @@ return new class extends Migration {
             $table->boolean('show_results_immediately')->default(true);
             $table->boolean('show_correct_answers')->default(false);
             $table->boolean('show_explanation')->default(true);
-            $table->enum('quiz_type', ['pretest', 'posttest', 'practice', 'final'])->default('practice')->after('description');
-            $table->boolean('is_mandatory')->default(true)->after('quiz_type');
-            $table->integer('min_score_to_pass')->nullable()->after('is_mandatory');
             $table->boolean('is_published')->default(false);
             $table->timestamp('published_at')->nullable();
             $table->integer('total_questions')->default(0);

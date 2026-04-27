@@ -5,8 +5,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     public function up(): void
     {
         Schema::create('assignments', function (Blueprint $table) {
@@ -20,6 +19,8 @@ return new class extends Migration
             $table->integer('passing_score')->default(60);
             $table->integer('time_limit')->nullable()->comment('Time limit in minutes');
             $table->timestamp('due_date');
+            $table->boolean('is_published')->default(false);
+            $table->string('slug')->unique()->nullable();
             $table->boolean('allow_late_submission')->default(false);
             $table->integer('late_penalty')->default(0)->comment('Penalty percentage per day');
             $table->string('attachment')->nullable();
@@ -34,7 +35,7 @@ return new class extends Migration
             $table->float('average_score')->default(0);
             $table->softDeletes();
             $table->timestamps();
-            
+
             $table->foreign('course_id')->references('id')->on('courses')->onDelete('cascade');
             $table->foreign('lesson_id')->references('id')->on('lessons')->onDelete('set null');
             $table->index(['course_id', 'due_date']);

@@ -177,5 +177,71 @@
                 @endforelse
             </div>
         </div>
+
+        <!-- Gamification Card -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-2xl">{{ $gamification['current_level_icon'] ?? '🌱' }}</span>
+                        <h3 class="text-xl font-bold">Level {{ $gamification['current_level'] ?? 1 }}:
+                            {{ $gamification['current_level_name'] ?? 'Pemula' }}</h3>
+                    </div>
+                    <p class="text-gray-500 text-sm mt-1">{{ number_format($gamification['total_points'] ?? 0) }} poin</p>
+                    @if (!empty($gamification['next_level_name']))
+                        <div class="mt-2">
+                            <div class="flex justify-between text-xs text-gray-500 mb-1">
+                                <span>Progress ke Level {{ ($gamification['current_level'] ?? 1) + 1 }}</span>
+                                <span>{{ $gamification['progress_percentage'] ?? 0 }}%</span>
+                            </div>
+                            <div class="w-64 bg-gray-200 rounded-full h-2">
+                                <div class="bg-primary h-2 rounded-full"
+                                    style="width: {{ $gamification['progress_percentage'] ?? 0 }}%"></div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">Butuh
+                                {{ number_format($gamification['points_to_next_level'] ?? 0) }} poin lagi</p>
+                        </div>
+                    @endif
+                </div>
+
+                <div class="text-center">
+                    <div class="flex items-center space-x-1 text-yellow-500">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                            <path
+                                d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                        </svg>
+                        <span class="text-2xl font-bold">{{ $gamification['streak_days'] ?? 0 }}</span>
+                    </div>
+                    <p class="text-xs text-gray-500">Hari berturut-turut</p>
+                </div>
+            </div>
+
+            <!-- Badges -->
+            @if (!empty($gamification['badges']) && $gamification['badges']->count() > 0)
+                <div class="mt-4 pt-4 border-t dark:border-gray-700">
+                    <h4 class="text-sm font-semibold mb-2">Lencana yang Didapat</h4>
+                    <div class="flex flex-wrap gap-2">
+                        @foreach ($gamification['badges']->take(8) as $badge)
+                            <div class="group relative">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center"
+                                    style="background: {{ $badge->badge->color }}20">
+                                    <span class="text-xl">{{ $badge->badge->icon }}</span>
+                                </div>
+                                <div
+                                    class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap">
+                                    {{ $badge->badge->name }}
+                                </div>
+                            </div>
+                        @endforeach
+                        @if ($gamification['badges']->count() > 8)
+                            <div
+                                class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-xs font-semibold">
+                                +{{ $gamification['badges']->count() - 8 }}
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            @endif
+        </div>
     </div>
 @endsection

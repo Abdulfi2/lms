@@ -4,8 +4,11 @@
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
+use App\Models\Certificate;
 use App\Models\Enrollment;
 use App\Models\Course;
+use App\Models\UserPoint;
+use App\Services\GamificationService;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
@@ -14,7 +17,7 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
 
-        // Get enrollments with course
+        // Ambil semua enrollment aktif
         $enrollments = Enrollment::with('course')
             ->where('user_id', $user->id)
             ->where('status', 'active')
@@ -23,12 +26,19 @@ class DashboardController extends Controller
         $totalCourses = $enrollments->count();
         $completedCourses = $enrollments->filter(fn($e) => $e->progress >= 100)->count();
         $totalProgress = $enrollments->avg('progress') ?? 0;
-        $certificates = $user->certificates()->count();
 
-        // Ambil 5 sertifikat terbaru (jika ada)
-        $latestCertificates = $user->certificates()->latest()->take(5)->get();
+        // Sertifikat
+        $certificates = Certificate::where('user_id', $user->id)->count();
+        $latestCertificates = Certificate::with('course')
+            ->where('user_id', $user->id)
+            ->latest('issued_at')
+            ->take(5)
+            ->get();
 
-        // Recommended courses (exclude enrolled ones)
+        // ✅ Data gamifikasi (array)
+        $gamification = GamificationService::getUserProgress($user);
+
+        // Rekomendasi kursus
         $enrolledCourseIds = $enrollments->pluck('course_id')->toArray();
         $recommendedCourses = Course::published()
             ->whereNotIn('id', $enrolledCourseIds)
@@ -36,14 +46,22 @@ class DashboardController extends Controller
             ->take(4)
             ->get();
 
+        // Statistik tambahan (opsional)
+        $userPoints = UserPoint::firstOrCreate(['user_id' => $user->id]);
+        $totalPoints = $userPoints->total_points;
+        $currentLevel = $userPoints->current_level;
+
         return view('student.dashboard', compact(
             'enrollments',
             'totalCourses',
             'completedCourses',
-            'totalProgress',
+            'totalProgress',      // ← ini masih untuk progress bar kursus (integer)
             'certificates',
             'latestCertificates',
-            'recommendedCourses'
+            'recommendedCourses',
+            'totalPoints',
+            'currentLevel',
+            'gamification'        // ← kirim data gamifikasi dengan nama baru
         ));
     }
 

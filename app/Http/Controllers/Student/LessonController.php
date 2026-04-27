@@ -8,6 +8,8 @@ use App\Models\Lesson;
 use App\Models\Enrollment;
 use App\Models\LessonCompletion;
 use App\Jobs\GenerateCertificateJob;
+use App\Models\UserPoint;
+use App\Services\GamificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -202,6 +204,11 @@ class LessonController extends Controller
                 $message = $certificateGenerated
                     ? 'Selamat! Anda telah menyelesaikan kursus ini. Sertifikat telah dibuat!'
                     : 'Selamat! Anda telah menyelesaikan kursus ini. Sertifikat sedang diproses.';
+            }
+
+            if ($progress >= 100 && !$wasCompleted) {
+                GamificationService::courseCompleted($user, $course);
+                GamificationService::addPoints($user, 100, "Menyelesaikan kursus!");
             }
 
             return response()->json([

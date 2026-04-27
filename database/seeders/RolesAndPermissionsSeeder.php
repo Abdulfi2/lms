@@ -149,7 +149,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'view courses',
             'view enrollments',
             'view analytics',
-            'reply threads',
+            'report posts',
             'moderate forums',
         ]);
 

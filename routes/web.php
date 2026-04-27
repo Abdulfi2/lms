@@ -21,6 +21,7 @@ use App\Http\Controllers\Instructor\LessonController as InstructorLessonControll
 use App\Http\Controllers\Instructor\StudentController;
 use App\Http\Controllers\MailController;
 use App\Http\Controllers\PublicEventController;
+use App\Http\Controllers\Student\AchievementController;
 use App\Http\Controllers\Student\AssignmentController;
 use App\Http\Controllers\Student\CertificateController;
 use App\Http\Controllers\Student\DashboardController as StudentDashboardController;
@@ -29,9 +30,10 @@ use App\Http\Controllers\Student\EnrollmentController;
 use App\Http\Controllers\Student\LessonController as StudentLessonController;
 use App\Http\Controllers\Student\QuizController as StudentQuizController;
 use App\Http\Controllers\Student\ReviewController as StudentReviewController;
+use App\Http\Controllers\Student\ForumController as StudentForumController;
+use App\Http\Controllers\Student\EventController as StudentEventController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CourseController as PublicCourseController;
-use App\Http\Controllers\Student\QuizAttemptController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -91,7 +93,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('/events/{event}', [EventController::class, 'update'])->name('events.update');
         Route::delete('/events/{event}', [EventController::class, 'destroy'])->name('events.destroy');
 
-        // Event Status
+        // Additional routes
         Route::patch('/events/{event}/toggle-status', [EventController::class, 'toggleStatus'])->name('events.toggle-status');
 
         // Event Registration Management
@@ -167,11 +169,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/failed-jobs/retry-all', [FailedJobsController::class, 'retryAll'])->name('failed-jobs.retry-all');
         Route::delete('/failed-jobs/{id}', [FailedJobsController::class, 'delete'])->name('failed-jobs.delete');
         Route::delete('/failed-jobs', [FailedJobsController::class, 'deleteAll'])->name('failed-jobs.delete-all');
-
-        // Event Management
-        Route::resource('events', EventController::class);
-        Route::get('events/{event}/registrations', [EventController::class, 'registrations'])->name('events.registrations');
-        Route::patch('registrations/{registration}/status/{status}', [EventController::class, 'updateRegistrationStatus'])->name('registrations.update-status');
     });
 
     // Instructor Routes
@@ -219,11 +216,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/certificates/{certificate}/print', [CertificateController::class, 'print'])->name('certificates.print');
 
         // Assignments
-        Route::get('/assignments', [AssignmentController::class, 'index'])->name('assignments');
+        Route::get('/assignments', [AssignmentController::class, 'index'])->name('assignments.index');
+        Route::get('/assignments/{assignment}', [AssignmentController::class, 'show'])->name('assignments.show');
+        Route::get('/assignments/{assignment}/submit', [AssignmentController::class, 'create'])->name('assignments.submit');
+        Route::post('/assignments/{assignment}/submit', [AssignmentController::class, 'store'])->name('assignments.store');
+        Route::post('/assignments/{assignment}/cancel', [AssignmentController::class, 'cancel'])->name('assignments.cancel');
 
         // Enroll
         Route::post('/courses/{slug}/enroll', [EnrollmentController::class, 'enroll'])->name('courses.enroll');
 
+        // Quiz
+        Route::get('/quizzes', [StudentQuizController::class, 'index'])->name('quizzes.index');
+        Route::get('/quizzes/{quiz}', [StudentQuizController::class, 'show'])->name('quizzes.show');
         Route::get('/quizzes/{quiz}/start', [StudentQuizController::class, 'start'])->name('quizzes.start');
         Route::get('/quiz-attempts/{attempt}', [StudentQuizController::class, 'attempt'])->name('quizzes.attempt');
         Route::post('/quiz-attempts/{attempt}/submit', [StudentQuizController::class, 'submit'])->name('quizzes.submit');
@@ -233,6 +237,30 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/courses/{course}/review', [StudentReviewController::class, 'create'])->name('student.reviews.create');
         Route::post('/courses/{course}/review', [StudentReviewController::class, 'store'])->name('student.reviews.store');
 
+        // Forum
+        Route::get('/forums', [StudentForumController::class, 'index'])->name('forums.index');
+        Route::get('/courses/{course}/forums/{forum}', [StudentForumController::class, 'showForum'])->name('forums.show');
+        Route::get('/courses/{course}/forums/{forum}/create-thread', [StudentForumController::class, 'createThread'])->name('forums.thread.create');
+        Route::post('/courses/{course}/forums/{forum}/threads', [StudentForumController::class, 'storeThread'])->name('forums.thread.store');
+        Route::get('/courses/{course}/forums/{forum}/threads/{thread}', [StudentForumController::class, 'showThread'])->name('forums.thread.show');
+        Route::post('/courses/{course}/forums/{forum}/threads/{thread}/posts', [StudentForumController::class, 'storePost'])->name('forums.thread.post.store');
+        Route::post('/courses/{course}/forums/{forum}/threads/{thread}/posts/{post}/like', [StudentForumController::class, 'likePost'])->name('forums.thread.post.like');
+        Route::get('/courses/{course}/forums/{forum}/threads/{thread}/edit', [StudentForumController::class, 'editThread'])->name('forums.thread.edit');
+        Route::put('/courses/{course}/forums/{forum}/threads/{thread}', [StudentForumController::class, 'updateThread'])->name('forums.thread.update');
+        Route::delete('/courses/{course}/forums/{forum}/threads/{thread}/posts/{post}', [StudentForumController::class, 'deletePost'])->name('forums.thread.post.delete');
+
+        /*
+       |--------------------------------------------------------------------------
+       | Student Event Routes (perlu login)
+       |--------------------------------------------------------------------------
+       */
+        Route::get('/events', [StudentEventController::class, 'index'])->name('events.index');
+        Route::get('/events/{event}', [StudentEventController::class, 'show'])->name('events.show');
+        Route::post('/events/{event}/register', [StudentEventController::class, 'register'])->name('events.register');
+        Route::get('/my-events', [StudentEventController::class, 'myEvents'])->name('events.my');
+        Route::delete('/events/registrations/{registration}', [StudentEventController::class, 'cancelRegistration'])->name('events.cancel');
+        Route::post('/events/registrations/{registration}/payment', [StudentEventController::class, 'uploadPaymentProof'])->name('events.upload-payment');
+
         // Assignment routes
         Route::get('/assignments', [AssignmentController::class, 'index'])->name('assignments.index');
         Route::get('/assignments/{assignment}', [AssignmentController::class, 'show'])->name('assignments.show');
@@ -240,13 +268,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/assignments/{assignment}/submit', [AssignmentController::class, 'store'])->name('assignments.store');
         Route::post('/assignments/{assignment}/cancel', [AssignmentController::class, 'cancel'])->name('assignments.cancel');
 
-        /*
-        |--------------------------------------------------------------------------
-        | Student Event Routes (perlu login)
-        |--------------------------------------------------------------------------
-        */
-        Route::get('/my-events', [PublicEventController::class, 'myEvents'])->name('events.my');
-        Route::delete('/events/{registration}/cancel', [PublicEventController::class, 'cancelRegistration'])->name('events.cancel');
+        // Achievement
+        Route::get('/achievements', [AchievementController::class, 'index'])->name('achievements.index');
+        Route::get('/achievements/{achievement}', [AchievementController::class, 'show'])->name('achievements.show');
+        Route::get('/leaderboard', [AchievementController::class, 'leaderboard'])->name('leaderboard');
+        Route::get('/badges', [AchievementController::class, 'badges'])->name('badges');
     });
 
     // Forum routes (bisa diakses student & instructor yang terdaftar di course)
