@@ -1,8 +1,9 @@
-<x-client-layout>
+@extends('layouts.client')
+
+@section('content')
     <div x-data="forgotForm()" class="max-w-md mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 md:p-8">
         <div class="text-center mb-8">
-            <div
-                class="mx-auto w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mb-4">
+            <div class="mx-auto w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mb-4">
                 <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M15 7.5a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zM12 10.5v4.5m-6 4.5h12a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H6a2.25 2.25 0 00-2.25 2.25v9A2.25 2.25 0 006 18.75z">
@@ -56,8 +57,7 @@
             </button>
 
             <div class="mt-6 text-center">
-                <a href="{{ route('login') }}"
-                    class="text-sm text-primary hover:text-secondary inline-flex items-center">
+                <a href="{{ route('login') }}" class="text-sm text-primary hover:text-secondary inline-flex items-center">
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
@@ -68,45 +68,47 @@
         </form>
     </div>
 
-    <script>
-        function forgotForm() {
-            return {
-                form: {
-                    email: ''
-                },
-                errors: {},
-                loading: false,
-                async submitForm() {
-                    this.loading = true;
-                    this.errors = {};
+    @push('scripts')
+        <script>
+            function forgotForm() {
+                return {
+                    form: {
+                        email: ''
+                    },
+                    errors: {},
+                    loading: false,
+                    async submitForm() {
+                        this.loading = true;
+                        this.errors = {};
 
-                    try {
-                        const response = await fetch('{{ route('password.email') }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                                'Accept': 'application/json',
-                            },
-                            body: JSON.stringify(this.form)
-                        });
+                        try {
+                            const response = await fetch('{{ route('password.email') }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                    'Accept': 'application/json',
+                                },
+                                body: JSON.stringify(this.form)
+                            });
 
-                        const data = await response.json();
+                            const data = await response.json();
 
-                        if (response.ok) {
-                            window.toast.success('Link reset password telah dikirim ke email Anda.');
-                            this.form.email = '';
-                        } else {
-                            if (data.errors) this.errors = data.errors;
-                            else window.toast.error(data.message);
+                            if (response.ok) {
+                                window.toast.success('Link reset password telah dikirim ke email Anda.');
+                                this.form.email = '';
+                            } else {
+                                if (data.errors) this.errors = data.errors;
+                                else window.toast.error(data.message);
+                            }
+                            this.loading = false;
+                        } catch (error) {
+                            window.toast.error('Terjadi kesalahan, silakan coba lagi.');
+                            this.loading = false;
                         }
-                        this.loading = false;
-                    } catch (error) {
-                        window.toast.error('Terjadi kesalahan, silakan coba lagi.');
-                        this.loading = false;
                     }
                 }
             }
-        }
-    </script>
-</x-client-layout>
+        </script>
+    @endpush
+@endsection

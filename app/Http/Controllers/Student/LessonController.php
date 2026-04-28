@@ -74,8 +74,6 @@ class LessonController extends Controller
     public function complete(Request $request, Lesson $lesson)
     {
         try {
-            // ==================== VALIDATION ====================
-
             // Check lesson and section relationship
             if (!$lesson->section) {
                 return response()->json([
@@ -170,6 +168,18 @@ class LessonController extends Controller
 
             DB::commit();
 
+            // ==================== GAMIFICATION - UPDATE POINTS EVERY LESSON ====================
+            // Update daily streak
+            GamificationService::updateStreak($user);
+
+            // Add points for completing this lesson
+            $lessonPoints = $lesson->points ?? 10;
+            GamificationService::addPoints($user, $lessonPoints, "Menyelesaikan lesson: {$lesson->title} (+{$lessonPoints} poin)");
+
+            // Check badges and achievements after earning points
+            GamificationService::checkBadges($user);
+            GamificationService::checkAchievements($user);
+
             // ==================== GENERATE CERTIFICATE ====================
 
             $certificateGenerated = false;
@@ -182,6 +192,10 @@ class LessonController extends Controller
                     // Dispatch job to generate certificate (sync for immediate result)
                     GenerateCertificateJob::dispatchSync($enrollment);
                     $certificateGenerated = true;
+
+                    // Add bonus points for completing course
+                    GamificationService::addPoints($user, 100, "Menyelesaikan kursus: {$course->title} (+100 bonus poin)");
+                    GamificationService::courseCompleted($user, $course);
 
                     Log::info('Certificate generation dispatched', [
                         'enrollment_id' => $enrollment->id,
@@ -199,17 +213,22 @@ class LessonController extends Controller
 
             // ==================== RESPONSE ====================
 
-            $message = 'Lesson selesai!';
+            $message = 'Lesson selesai! +' . $lessonPoints . ' poin';
             if ($isNowCompleted && !$wasCompleted) {
                 $message = $certificateGenerated
-                    ? 'Selamat! Anda telah menyelesaikan kursus ini. Sertifikat telah dibuat!'
-                    : 'Selamat! Anda telah menyelesaikan kursus ini. Sertifikat sedang diproses.';
+                    ? 'Selamat! Anda telah menyelesaikan kursus ini. Sertifikat telah dibuat! +100 bonus poin'
+                    : 'Selamat! Anda telah menyelesaikan kursus ini. Sertifikat sedang diproses. +100 bonus poin';
             }
 
-            if ($progress >= 100 && !$wasCompleted) {
-                GamificationService::courseCompleted($user, $course);
-                GamificationService::addPoints($user, 100, "Menyelesaikan kursus!");
+            // Get next lesson URL
+            $nextLessonUrl = null;
+            $nextLesson = $this->getNextLesson($course, $lesson);
+            if ($nextLesson) {
+                $nextLessonUrl = route('student.lessons.show', [$course, $nextLesson]);
             }
+
+            // Get updated user points
+            $userPoint = UserPoint::firstOrCreate(['user_id' => $user->id]);
 
             return response()->json([
                 'success' => true,
@@ -217,7 +236,10 @@ class LessonController extends Controller
                 'progress' => $progress,
                 'completed' => $isNowCompleted,
                 'certificate_generated' => $certificateGenerated,
-                'next_lesson_url' => $this->getNextLessonUrl($course, $lesson)
+                'points_earned' => $lessonPoints,
+                'total_points' => $userPoint->total_points,
+                'current_level' => $userPoint->current_level,
+                'next_lesson_url' => $nextLessonUrl
             ]);
 
         } catch (\Exception $e) {
@@ -236,29 +258,70 @@ class LessonController extends Controller
         }
     }
 
+    public function trackTime(Request $request, Lesson $lesson)
+    {
+        try {
+            // Validasi apakah user terdaftar di course
+            $course = $lesson->section->course;
+            $enrollment = Enrollment::where('user_id', auth()->id())
+                ->where('course_id', $course->id)
+                ->exists();
+
+            if (!$enrollment) {
+                return response()->json(['success' => false], 403);
+            }
+
+            // Simpan atau update waktu belajar
+            $completion = LessonCompletion::firstOrCreate(
+                ['user_id' => auth()->id(), 'lesson_id' => $lesson->id],
+                ['time_spent' => 0]
+            );
+
+            $completion->increment('time_spent', $request->input('time_spent', 0));
+
+            return response()->json(['success' => true]);
+
+        } catch (\Exception $e) {
+            return response()->json(['success' => false], 500);
+        }
+    }
+
     /**
      * Get next lesson URL for auto-redirect.
      */
-    private function getNextLessonUrl($course, $currentLesson)
+    /**
+     * Get the next unfinished lesson in course.
+     */
+    private function getNextLesson($course, $currentLesson)
     {
-        $nextLesson = Lesson::join('sections', 'lessons.section_id', '=', 'sections.id')
+        // Ambil semua lesson dalam course dengan urutan yang benar
+        $allLessons = Lesson::join('sections', 'lessons.section_id', '=', 'sections.id')
             ->where('sections.course_id', $course->id)
-            ->where(function ($q) use ($currentLesson) {
-                $q->where('sections.order', '>', $currentLesson->section->order)
-                    ->orWhere(function ($sq) use ($currentLesson) {
-                        $sq->where('sections.order', $currentLesson->section->order)
-                            ->where('lessons.order', '>', $currentLesson->order);
-                    });
-            })
-            ->orderBy('sections.order')
-            ->orderBy('lessons.order')
-            ->select('lessons.*')
-            ->first();
+            ->orderBy('sections.order', 'asc')
+            ->orderBy('lessons.order', 'asc')
+            ->select('lessons.*', 'sections.order as section_order')
+            ->get();
 
-        if ($nextLesson) {
-            return route('student.lessons.show', [$course, $nextLesson]);
+        // Cari lesson yang belum selesai setelah current lesson
+        $foundCurrent = false;
+        foreach ($allLessons as $lessonItem) {
+            if ($foundCurrent) {
+                // Cek apakah lesson ini sudah selesai?
+                $isCompleted = LessonCompletion::where('user_id', auth()->id())
+                    ->where('lesson_id', $lessonItem->id)
+                    ->exists();
+
+                if (!$isCompleted) {
+                    return $lessonItem;
+                }
+            }
+
+            if ($lessonItem->id == $currentLesson->id) {
+                $foundCurrent = true;
+            }
         }
 
-        return route('student.courses.show', $course->slug);
+        return null;
     }
+
 }

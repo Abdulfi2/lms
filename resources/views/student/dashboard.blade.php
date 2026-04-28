@@ -142,7 +142,7 @@
                             <div class="mt-2">
                                 <span class="font-bold text-primary">{{ $course->formatted_price }}</span>
                             </div>
-                            <a href="{{ route('admin.courses.show', $course->slug) }}"
+                            <a href="{{ route('student.courses.show', $course->slug) }}"
                                 class="block mt-3 text-center text-sm text-primary hover:underline">Detail</a>
                         </div>
                     </div>

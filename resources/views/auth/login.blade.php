@@ -1,4 +1,6 @@
-<x-client-layout>
+@extends('layouts.client')
+
+@section('content')
     <div class="max-w-4xl m-auto">
         <div class="w-full m-6 px-6 py-4">
             <div x-data="loginForm()" class="bg-white rounded-2xl shadow-xl overflow-hidden">
@@ -17,8 +19,7 @@
                             <div class="mb-4">
                                 <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Alamat
                                     Email</label>
-                                <input type="email" name="email" id="email" x-model="form.email" required
-                                    autofocus
+                                <input type="email" name="email" id="email" x-model="form.email" required autofocus
                                     class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent transition @error('email') border-red-500 @enderror"
                                     placeholder="nama@example.com">
                             </div>
@@ -135,72 +136,74 @@
         </div>
     </div>
 
-    <script>
-        function loginForm() {
-            return {
-                form: {
-                    email: '',
-                    password: '',
-                    remember: false
-                },
-                errors: {},
-                loading: false,
-                showPassword: false,
-                togglePassword() {
-                    this.showPassword = !this.showPassword;
-                },
-                async submitForm() {
-                    this.loading = true;
-                    this.errors = {};
+    @push('scripts')
+        <script>
+            function loginForm() {
+                return {
+                    form: {
+                        email: '',
+                        password: '',
+                        remember: false
+                    },
+                    errors: {},
+                    loading: false,
+                    showPassword: false,
+                    togglePassword() {
+                        this.showPassword = !this.showPassword;
+                    },
+                    async submitForm() {
+                        this.loading = true;
+                        this.errors = {};
 
-                    try {
-                        const response = await fetch('{{ route('login') }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                                'Accept': 'application/json',
-                            },
-                            body: JSON.stringify({
-                                email: this.form.email,
-                                password: this.form.password,
-                                remember: this.form.remember
-                            })
-                        });
+                        try {
+                            const response = await fetch('{{ route('login') }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                    'Accept': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    email: this.form.email,
+                                    password: this.form.password,
+                                    remember: this.form.remember
+                                })
+                            });
 
-                        const data = await response.json();
+                            const data = await response.json();
 
-                        if (response.ok) {
-                            // Login sukses
-                            window.toast.success(data.message);
-                            setTimeout(() => {
-                                window.location.href = data.redirect || '/dashboard';
-                            }, 1000);
-                        } else {
-                            // Cek apakah perlu verifikasi email
-                            if (data.need_verification) {
-                                window.toast.warning(data.message);
+                            if (response.ok) {
+                                // Login sukses
+                                window.toast.success(data.message);
                                 setTimeout(() => {
-                                    window.location.href = data.redirect; // redirect ke verification.notice
-                                }, 1500);
+                                    window.location.href = data.redirect || '/dashboard';
+                                }, 1000);
                             } else {
-                                // Error biasa (password salah, dll)
-                                if (data.message) {
-                                    window.toast.error(data.message);
+                                // Cek apakah perlu verifikasi email
+                                if (data.need_verification) {
+                                    window.toast.warning(data.message);
+                                    setTimeout(() => {
+                                        window.location.href = data.redirect; // redirect ke verification.notice
+                                    }, 1500);
+                                } else {
+                                    // Error biasa (password salah, dll)
+                                    if (data.message) {
+                                        window.toast.error(data.message);
+                                    }
+                                    if (data.errors) {
+                                        this.errors = data.errors;
+                                    }
                                 }
-                                if (data.errors) {
-                                    this.errors = data.errors;
-                                }
+                                this.loading = false;
                             }
+                        } catch (error) {
+                            console.error(error);
+                            window.toast.error('Terjadi kesalahan jaringan. Silakan coba lagi.');
                             this.loading = false;
                         }
-                    } catch (error) {
-                        console.error(error);
-                        window.toast.error('Terjadi kesalahan jaringan. Silakan coba lagi.');
-                        this.loading = false;
                     }
                 }
             }
-        }
-    </script>
-</x-client-layout>
+        </script>
+    @endpush
+@endsection

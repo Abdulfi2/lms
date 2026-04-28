@@ -1,4 +1,6 @@
-<x-client-layout>
+@extends('layouts.client')
+
+@section('content')
     <div x-data="verifyForm()" class="max-w-md mx-auto bg-white rounded-2xl shadow-xl p-8 md:p-12 text-center">
         <div class="mx-auto w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mb-6">
             <svg class="w-10 h-10 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -49,40 +51,42 @@
         </div>
     </div>
 
-    <script>
-        function verifyForm() {
-            return {
-                loading: false,
-                async resend() {
-                    this.loading = true;
-                    const email = document.querySelector('input[name="email"]')?.value || '';
+    @push('scripts')
+        <script>
+            function verifyForm() {
+                return {
+                    loading: false,
+                    async resend() {
+                        this.loading = true;
+                        const email = document.querySelector('input[name="email"]')?.value || '';
 
-                    try {
-                        const response = await fetch('{{ route('verification.send') }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                                'Accept': 'application/json',
-                            },
-                            body: JSON.stringify({
-                                email: email
-                            })
-                        });
+                        try {
+                            const response = await fetch('{{ route('verification.send') }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                    'Accept': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    email: email
+                                })
+                            });
 
-                        if (response.ok) {
-                            window.toast.success('Link verifikasi baru telah dikirim ke email Anda.');
-                        } else {
-                            const data = await response.json();
-                            window.toast.error(data.message || 'Gagal mengirim ulang, silakan coba lagi.');
+                            if (response.ok) {
+                                window.toast.success('Link verifikasi baru telah dikirim ke email Anda.');
+                            } else {
+                                const data = await response.json();
+                                window.toast.error(data.message || 'Gagal mengirim ulang, silakan coba lagi.');
+                            }
+                        } catch (error) {
+                            window.toast.error('Terjadi kesalahan, silakan coba lagi.');
+                        } finally {
+                            this.loading = false;
                         }
-                    } catch (error) {
-                        window.toast.error('Terjadi kesalahan, silakan coba lagi.');
-                    } finally {
-                        this.loading = false;
                     }
                 }
             }
-        }
-    </script>
-</x-client-layout>
+        </script>
+    @endpush
+@endsection

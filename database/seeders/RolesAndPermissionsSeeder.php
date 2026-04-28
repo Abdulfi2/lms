@@ -87,6 +87,14 @@ class RolesAndPermissionsSeeder extends Seeder
             'manage event categories',
             'manage event types',
             'export event reports',
+
+            // Article management
+            'view articles',
+            'create articles',
+            'edit articles',
+            'delete articles',
+            'publish articles',
+            'manage article categories',
         ];
 
         foreach ($permissions as $permission) {
@@ -99,6 +107,8 @@ class RolesAndPermissionsSeeder extends Seeder
         $studentRole = Role::firstOrCreate(['name' => 'student', 'guard_name' => 'web']);
         $supportRole = Role::firstOrCreate(['name' => 'support', 'guard_name' => 'web']);
         $eventManagerRole = Role::firstOrCreate(['name' => 'event_manager', 'guard_name' => 'web']);
+        $editorRole = Role::firstOrCreate(['name' => 'editor', 'guard_name' => 'web']);
+        $authorRole = Role::firstOrCreate(['name' => 'author', 'guard_name' => 'web']);
 
         // Assign permissions to roles
         $adminRole->syncPermissions(Permission::all());
@@ -169,6 +179,19 @@ class RolesAndPermissionsSeeder extends Seeder
             'manage event categories',
             'manage event types',
             'export event reports',
+        ]);
+
+        $editorRole->givePermissionTo([
+            'view articles',
+            'create articles',
+            'edit articles',
+            'publish articles',
+        ]);
+
+        $authorRole->givePermissionTo([
+            'view articles',
+            'create articles',
+            'edit articles',
         ]);
 
         $this->command->info('Roles and permissions seeded successfully.');

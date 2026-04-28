@@ -1,226 +1,243 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LMS - Learning Management System</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#3B82F6',
-                        secondary: '#1D4ED8',
-                    }
-                }
-            }
+    <meta charset="utf-8">
+    <title>Sertifikat Kelulusan - {{ $course->title }}</title>
+    <style>
+        /* ========== RESET & BASE ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-    </script>
+
+        body {
+            font-family: 'DejaVu Sans', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            background: white;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Container dengan background image */
+        .certificate-container {
+            width: 100%;
+            position: relative;
+            background-image: url('public/images/background.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        /* Konten utama dengan padding yang proporsional */
+        .certificate-content {
+            padding: 40px 60px;
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        /* ========== HEADER ========== */
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .logo-wrapper img {
+            max-height: 64px;
+            width: auto;
+        }
+
+        /* ========== TITLE ========== */
+        .title-section {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .certificate-title {
+            font-size: 42px;
+            font-weight: 800;
+            color: #1f2937;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: #4b5563;
+        }
+
+        /* ========== RECIPIENT ========== */
+        .recipient-section {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .recipient-name {
+            font-size: 40px;
+            font-weight: 800;
+            color: #059669;
+            text-transform: uppercase;
+            margin: 15px 0;
+            padding: 10px 20px;
+            display: inline-block;
+            letter-spacing: 1px;
+        }
+
+        .course-label {
+            font-size: 14px;
+            color: #4b5563;
+            margin-top: 15px;
+        }
+
+        .course-title {
+            font-size: 26px;
+            font-weight: 700;
+            color: #1d4ed8;
+            margin: 10px 0;
+        }
+
+        /* ========== VERIFICATION SECTION ========== */
+        .verification-section {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .qr-box {
+            text-align: center;
+            padding: 15px 25px;
+            border-radius: 16px;
+            display: inline-block;
+        }
+
+        .qr-code img {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto;
+        }
+
+        .verification-code {
+            font-size: 11px;
+            color: #6b7280;
+            margin-top: 8px;
+            font-family: monospace;
+        }
+
+        /* ========== FOOTER ========== */
+        .footer-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .footer-left,
+        .footer-right {
+            flex: 1;
+        }
+
+        .footer-left {
+            text-align: left;
+        }
+
+        .footer-right {
+            text-align: right;
+        }
+
+        .footer-label {
+            font-size: 10px;
+            color: #9ca3af;
+            margin-bottom: 4px;
+        }
+
+        .footer-value {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .signature-line {
+            width: 160px;
+            height: 1px;
+            background: #d1d5db;
+            margin-top: 8px;
+            margin-bottom: 4px;
+            margin-left: auto;
+        }
+
+        /* ========== UTILITY ========== */
+        .text-center {
+            text-align: center;
+        }
+
+        /* Pastikan tidak ada page break */
+        .certificate-container,
+        .certificate-content {
+            page-break-inside: avoid;
+            page-break-after: avoid;
+        }
+    </style>
 </head>
-<body class="bg-gray-50 font-sans antialiased">
 
-    <!-- Navbar -->
-    <nav class="bg-white shadow-lg sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <a href="#" class="text-2xl font-bold text-primary">LMS</a>
+<body>
+    <div class="certificate-container">
+        <div class="certificate-content">
+            <!-- Header dengan Logo -->
+            <div class="header-section">
+                <div class="logo-wrapper">
+                    <img src="public/images/logo-zakatsukses.png" alt="Logo">
                 </div>
-                <div class="hidden md:flex items-center space-x-8">
-                    <a href="#" class="text-gray-700 hover:text-primary transition">Beranda</a>
-                    <a href="#" class="text-gray-700 hover:text-primary transition">Kursus</a>
-                    <a href="#" class="text-gray-700 hover:text-primary transition">Kategori</a>
-                    <a href="#" class="text-gray-700 hover:text-primary transition">Jadwal</a>
-                    <a href="#" class="text-gray-700 hover:text-primary transition">Bantuan</a>
+                <div></div> <!-- Spacer untuk keseimbangan -->
+            </div>
+
+            <!-- Title Section -->
+            <div class="title-section">
+                <h1 class="certificate-title">SERTIFIKAT KELULUSAN</h1>
+            </div>
+
+            <!-- Recipient Section -->
+            <div class="recipient-section">
+                <p class="subtitle">Diberikan kepada</p>
+                <div class="recipient-name">{{ $user->name }}</div>
+                <p class="course-label">Atas kelulusannya pada kelas</p>
+                <h2 class="course-title">{{ $course->title }}</h2>
+            </div>
+
+            <!-- Verification Section (QR Code) -->
+            <div class="verification-section">
+                <div class="qr-box">
+                    <div class="qr-code">
+                        <img src="data:image/png;base64,{{ $qr_code }}" alt="QR Code">
+                    </div>
+                    <p class="verification-code">Kode Verifikasi: {{ $verification_code }}</p>
+                    <p style="font-size: 9px; color: #9ca3af;">Scan QR untuk verifikasi</p>
                 </div>
-                <div class="flex items-center space-x-4">
-                    <a href="#" class="text-gray-700 hover:text-primary px-4 py-2 transition">Masuk</a>
-                    <a href="#"
-                        class="bg-primary text-white px-6 py-2 rounded-lg font-medium hover:bg-secondary transition shadow-md">Daftar</a>
+            </div>
+
+            <!-- Footer Section -->
+            <div class="footer-section">
+                <div class="footer-left">
+                    <div class="footer-label">Diterbitkan pada</div>
+                    <div class="footer-value">{{ $issued_at }}</div>
+                </div>
+                <div class="footer-right">
+                    <div class="footer-label">Direktur</div>
+                    <div class="footer-value">Dr. Sunarto Zulkifli S.TP, MM</div>
+                    <div class="signature-line"></div>
+                    <div style="font-size: 9px; color: #9ca3af; margin-top: 4px;">Chief Executive Officer</div>
                 </div>
             </div>
         </div>
-    </nav>
-
-    <!-- Hero Section -->
-    <section class="bg-gradient-to-r from-primary to-secondary text-white py-24">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid md:grid-cols-2 gap-12 items-center">
-                <div>
-                    <h1 class="text-5xl md:text-6xl font-bold mb-6 leading-tight">
-                        Belajar Lebih Mudah,<br>
-                        <span class="text-yellow-300">Terarah, dan Fleksibel</span>
-                    </h1>
-                    <p class="text-xl mb-8 text-blue-100 leading-relaxed">
-                        Platform pembelajaran modern untuk mengakses materi, mengikuti kelas online, 
-                        dan memantau progres belajar Anda dengan mudah.
-                    </p>
-                    <div class="flex flex-col sm:flex-row gap-4">
-                        <a href="#" class="bg-white text-primary px-8 py-4 rounded-xl font-semibold text-lg shadow-2xl hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300">Mulai Belajar</a>
-                        <a href="#" class="border-2 border-white text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white hover:text-primary transition-all duration-300">Lihat Kursus</a>
-                    </div>
-                </div>
-                <div class="relative">
-                    <!-- Placeholder untuk image -->
-                    <div class="bg-gradient-to-br from-purple-400 to-pink-500 rounded-3xl p-12 shadow-2xl transform rotate-6 hover:rotate-0 transition-transform duration-500">
-                        <div class="text-6xl animate-bounce">📚</div>
-                        <p class="text-center text-white font-bold mt-4">Dashboard LMS</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Fitur Utama -->
-    <section class="py-24 bg-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-20">
-                <h2 class="text-4xl font-bold text-gray-900 mb-4">Fitur Unggulan Kami</h2>
-                <p class="text-xl text-gray-600 max-w-2xl mx-auto">
-                    Semua fitur dirancang untuk memudahkan proses belajar mengajar Anda.
-                </p>
-            </div>
-            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-                <div class="group text-center p-8 rounded-2xl hover:shadow-2xl hover:-translate-y-4 transition-all duration-300 border border-gray-100">
-                    <div class="w-20 h-20 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl mx-auto mb-6 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">
-                        📱
-                    </div>
-                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Belajar Kapan Saja</h3>
-                    <p class="text-gray-600">Akses materi pelajaran dari mana saja, kapan saja melalui perangkat Anda.</p>
-                </div>
-                <div class="group text-center p-8 rounded-2xl hover:shadow-2xl hover:-translate-y-4 transition-all duration-300 border border-gray-100">
-                    <div class="w-20 h-20 bg-gradient-to-r from-green-500 to-green-600 rounded-2xl mx-auto mb-6 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">
-                        📊
-                    </div>
-                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Progress Otomatis</h3>
-                    <p class="text-gray-600">Pantau kemajuan belajar Anda secara real-time dengan dashboard interaktif.</p>
-                </div>
-                <div class="group text-center p-8 rounded-2xl hover:shadow-2xl hover:-translate-y-4 transition-all duration-300 border border-gray-100">
-                    <div class="w-20 h-20 bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl mx-auto mb-6 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">
-                        💬
-                    </div>
-                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Forum Diskusi</h3>
-                    <p class="text-gray-600">Diskusikan materi dengan teman dan pengajar melalui forum terintegrasi.</p>
-                </div>
-                <div class="group text-center p-8 rounded-2xl hover:shadow-2xl hover:-translate-y-4 transition-all duration-300 border border-gray-100">
-                    <div class="w-20 h-20 bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl mx-auto mb-6 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">
-                        🏆
-                    </div>
-                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Sertifikat</h3>
-                    <p class="text-gray-600">Dapatkan sertifikat resmi setelah menyelesaikan setiap kursus.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Kategori Kursus -->
-    <section class="py-24 bg-gray-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-20">
-                <h2 class="text-4xl font-bold text-gray-900 mb-4">Pilih Kategori Kursus</h2>
-                <p class="text-xl text-gray-600">Temukan kursus yang sesuai dengan minat dan kebutuhan belajar Anda.</p>
-            </div>
-            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <a href="#" class="group bg-white rounded-2xl p-8 text-center hover:shadow-xl hover:-translate-y-2 transition-all duration-300 border border-gray-100">
-                    <div class="w-16 h-16 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl mx-auto mb-6 flex items-center justify-center text-2xl text-white">
-                        💻
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">Teknologi</h3>
-                    <p class="text-gray-600">Programming, AI, Data Science</p>
-                </a>
-                <a href="#" class="group bg-white rounded-2xl p-8 text-center hover:shadow-xl hover:-translate-y-2 transition-all duration-300 border border-gray-100">
-                    <div class="w-16 h-16 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl mx-auto mb-6 flex items-center justify-center text-2xl text-white">
-                        🗣️
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">Bahasa</h3>
-                    <p class="text-gray-600">Inggris, Arab, Mandarin</p>
-                </a>
-                <a href="#" class="group bg-white rounded-2xl p-8 text-center hover:shadow-xl hover:-translate-y-2 transition-all duration-300 border border-gray-100">
-                    <div class="w-16 h-16 bg-gradient-to-r from-amber-500 to-orange-600 rounded-xl mx-auto mb-6 flex items-center justify-center text-2xl text-white">
-                        💼
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">Bisnis</h3>
-                    <p class="text-gray-600">Marketing, Manajemen</p>
-                </a>
-                <a href="#" class="group bg-white rounded-2xl p-8 text-center hover:shadow-xl hover:-translate-y-2 transition-all duration-300 border border-gray-100">
-                    <div class="w-16 h-16 bg-gradient-to-r from-rose-500 to-pink-600 rounded-xl mx-auto mb-6 flex items-center justify-center text-2xl text-white">
-                        🕌
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">Agama</h3>
-                    <p class="text-gray-600">Studi Islam, Fiqih</p>
-                </a>
-            </div>
-        </div>
-    </section>
-
-    <!-- Statistik -->
-    <section class="py-24 bg-gradient-to-r from-primary to-secondary text-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid md:grid-cols-3 gap-12 text-center">
-                <div>
-                    <div class="text-5xl font-bold mb-4">10K+</div>
-                    <div class="text-xl opacity-90">Peserta Aktif</div>
-                </div>
-                <div>
-                    <div class="text-5xl font-bold mb-4">300+</div>
-                    <div class="text-xl opacity-90">Materi Kursus</div>
-                </div>
-                <div>
-                    <div class="text-5xl font-bold mb-4">95%</div>
-                    <div class="text-xl opacity-90">Kepuasan Pengguna</div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- CTA Penutup -->
-    <section class="py-24 bg-white">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 class="text-4xl font-bold text-gray-900 mb-6">Siap Mulai Belajar Hari Ini?</h2>
-            <p class="text-xl text-gray-600 mb-12 max-w-2xl mx-auto">
-                Bergabunglah dengan ribuan siswa yang sudah sukses meningkatkan skill mereka bersama kami.
-            </p>
-            <a href="#" class="bg-primary text-white px-12 py-6 rounded-2xl font-bold text-xl shadow-2xl hover:shadow-3xl hover:-translate-y-1 transition-all duration-300">Daftar Sekarang Gratis!</a>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="bg-gray-900 text-white py-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid md:grid-cols-4 gap-8">
-                <div>
-                    <div class="text-2xl font-bold mb-4">LMS</div>
-                    <p class="text-gray-400">Platform pembelajaran modern untuk masa depan yang lebih baik.</p>
-                </div>
-                <div>
-                    <h4 class="font-bold mb-4">Produk</h4>
-                    <ul class="space-y-2 text-gray-40000">
-                        ><a href="#" class="hover:text-white transition">Kursus</a></l /li>
-                        ><a href="#" class="hover:text-white transition">Jadwal</a></l /li>
-                        ><a href="#" class="hover:text-white transition">Kategori</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-bold mb-4">Bantuan</h4>
-                    <ul class="space-y-2 text-gray-40000">
-                        ><a href="#" class="hover:text-white transition">FAQ</a></l /li>
-                        ><a href="#" class="hover:text-white transition">Kontak</a></l /li>
-                        ><a href="#" class="hover:text-white transition">Kebijakan</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-bold mb-4">Hubungi Kami</h4>
-                    <div class="text-gray-400 space-y-2">
-                        <div>📧 support@lms.com</div>
-                        <div>📱 +62 21 12345678</div>
-                    </div>
-                </div>
-            </div>
-            <div class="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-                <p>&copy; 2026 LMS. Semua hak dilindungi.</p>
-            </div>
-        </div>
-    </footer>
+    </div>
 </body>
+
 </html>

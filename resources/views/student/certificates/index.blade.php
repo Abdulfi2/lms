@@ -15,9 +15,37 @@
                 </svg>
                 <h3 class="text-lg font-medium text-gray-900 dark:text-white">Belum Ada Sertifikat</h3>
                 <p class="text-gray-500 mt-1">Selesaikan kursus untuk mendapatkan sertifikat.</p>
+
+                @php
+                    $completedCourses = App\Models\Enrollment::where('user_id', Auth::id())
+                        ->where('progress', '>=', 100)
+                        ->with('course')
+                        ->get();
+                @endphp
+
+                @if ($completedCourses->count() > 0)
+                    <div class="mt-4">
+                        <p class="text-sm text-gray-600 mb-2">Kursus yang sudah selesai namun belum ada sertifikat:</p>
+                        @foreach ($completedCourses as $enrollment)
+                            <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg mb-2">
+                                <span>{{ $enrollment->course->title }}</span>
+                                <form action="{{ route('student.certificates.regenerate', $enrollment->course->slug) }}"
+                                    method="POST">
+                                    @csrf
+                                    <button type="submit"
+                                        class="px-3 py-1 bg-primary text-white rounded-lg text-sm hover:bg-secondary">
+                                        Generate Sertifikat
+                                    </button>
+                                </form>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+
                 <a href="{{ route('courses.index') }}"
-                    class="mt-4 inline-block px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary">Jelajahi
-                    Kursus</a>
+                    class="mt-4 inline-block px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary">
+                    Jelajahi Kursus
+                </a>
             </div>
         @else
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

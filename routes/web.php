@@ -1,8 +1,17 @@
 <?php
 
+use App\Http\Controllers\Admin\ArticleCategoryController;
+use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\ForumController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\MailController;
+use App\Http\Controllers\PublicEventController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\CourseController as PublicCourseController;
+use App\Http\Controllers\UserSettingController;
+use App\Http\Controllers\Admin\ArticleController as AdminArticleController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\CategoryController;
-
 use App\Http\Controllers\Admin\CourseController;
 use App\Http\Controllers\Admin\EventController;
 use App\Http\Controllers\Admin\FailedJobsController;
@@ -12,15 +21,12 @@ use App\Http\Controllers\Admin\LessonController;
 use App\Http\Controllers\Admin\TagController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
-use App\Http\Controllers\ForumController;
 use App\Http\Controllers\Instructor\DashboardController as InstructorDashboardController;
 use App\Http\Controllers\Instructor\CourseController as InstructorCourseController;
 use App\Http\Controllers\Instructor\QuizController;
 use App\Http\Controllers\Instructor\SectionController as InstructorSectionController;
 use App\Http\Controllers\Instructor\LessonController as InstructorLessonController;
 use App\Http\Controllers\Instructor\StudentController;
-use App\Http\Controllers\MailController;
-use App\Http\Controllers\PublicEventController;
 use App\Http\Controllers\Student\AchievementController;
 use App\Http\Controllers\Student\AssignmentController;
 use App\Http\Controllers\Student\CertificateController;
@@ -32,8 +38,6 @@ use App\Http\Controllers\Student\QuizController as StudentQuizController;
 use App\Http\Controllers\Student\ReviewController as StudentReviewController;
 use App\Http\Controllers\Student\ForumController as StudentForumController;
 use App\Http\Controllers\Student\EventController as StudentEventController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\CourseController as PublicCourseController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -46,20 +50,22 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
-Route::get('/', function () {
-    return view('client.pages.home');
-})->name('home');
-
-Route::get('/certificate/verify/{code}', [CertificateController::class, 'verify'])->name('certificate.verify');
 
 /*
 |--------------------------------------------------------------------------
 | Public Event Routes (tanpa login)
 |--------------------------------------------------------------------------
 */
+Route::get('/', [HomeController::class, 'index'])->name('home');
+
+Route::get('/articles', [ArticleController::class, 'index'])->name('articles.index');
+Route::get('/articles/{slug}', [ArticleController::class, 'show'])->name('articles.show');
+
 Route::get('/events', [PublicEventController::class, 'index'])->name('events.index');
 Route::get('/events/{slug}', [PublicEventController::class, 'show'])->name('events.show');
 Route::post('/events/{slug}/register', [PublicEventController::class, 'register'])->name('events.register');
+
+Route::get('/certificate/verify/{code}', [CertificateController::class, 'verify'])->name('certificate.verify');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     // Redirect berdasarkan role
@@ -118,9 +124,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('users', UserController::class);
         Route::post('users/bulk-delete', [UserController::class, 'bulkDestroy'])->name('users.bulk-delete');
         Route::patch('users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
-        // Route::resource('/courses', AdminCourseController::class);
-        // Route::get('/analytics', [AdminDashboardController::class, 'analytics'])->name('analytics');
-        // Route::get('/payments', [AdminDashboardController::class, 'payments'])->name('payments');
 
         // Role Management
         Route::get('/roles', [RolePermissionController::class, 'roles'])->name('roles.index');
@@ -137,6 +140,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/permissions/{permission}/edit', [RolePermissionController::class, 'editPermission'])->name('permissions.edit');
         Route::put('/permissions/{permission}', [RolePermissionController::class, 'updatePermission'])->name('permissions.update');
         Route::delete('/permissions/{permission}', [RolePermissionController::class, 'destroyPermission'])->name('permissions.destroy');
+
+        // Articles
+        Route::resource('articles', AdminArticleController::class);
+        Route::patch('articles/{article}/toggle-status', [AdminArticleController::class, 'toggleStatus'])->name('articles.toggle-status');
+        Route::resource('article-categories', ArticleCategoryController::class);
 
         // Categories & Tags
         Route::resource('categories', CategoryController::class);
@@ -209,13 +217,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/courses/{course}/lessons/{lesson}', [StudentLessonController::class, 'show'])->name('lessons.show');
         Route::post('/lessons/{lesson}/complete', [StudentLessonController::class, 'complete'])->name('lessons.complete');
 
-        // Certificates
+        // Certificate
         Route::get('/certificates', [CertificateController::class, 'index'])->name('certificates.index');
         Route::get('/certificates/{certificate}', [CertificateController::class, 'show'])->name('certificates.show');
         Route::get('/certificates/{certificate}/download', [CertificateController::class, 'download'])->name('certificates.download');
         Route::get('/certificates/{certificate}/print', [CertificateController::class, 'print'])->name('certificates.print');
 
-        // Assignments
+        // Regenerate certificate
+        Route::post('/certificates/regenerate/{course:slug}', [CertificateController::class, 'regenerate'])->name('certificates.regenerate');
+        Route::get('/certificates/check/{course:slug}', [CertificateController::class, 'checkStatus'])->name('certificates.check');
+
+        // Assignment
         Route::get('/assignments', [AssignmentController::class, 'index'])->name('assignments.index');
         Route::get('/assignments/{assignment}', [AssignmentController::class, 'show'])->name('assignments.show');
         Route::get('/assignments/{assignment}/submit', [AssignmentController::class, 'create'])->name('assignments.submit');
@@ -234,8 +246,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/quiz-attempts/{attempt}/result', [StudentQuizController::class, 'result'])->name('quizzes.result');
 
         // Review
-        Route::get('/courses/{course}/review', [StudentReviewController::class, 'create'])->name('student.reviews.create');
-        Route::post('/courses/{course}/review', [StudentReviewController::class, 'store'])->name('student.reviews.store');
+        Route::get('/courses/{course:slug}/review/create', [StudentReviewController::class, 'create'])->name('reviews.create');
+        Route::post('/courses/{course:slug}/review', [StudentReviewController::class, 'store'])->name('reviews.store');
+        Route::get('/courses/{course:slug}/review/edit', [StudentReviewController::class, 'edit'])->name('reviews.edit');
+        Route::put('/courses/{course:slug}/review', [StudentReviewController::class, 'update'])->name('reviews.update');
+        Route::delete('/courses/{course:slug}/review', [StudentReviewController::class, 'destroy'])->name('reviews.destroy');
 
         // Forum
         Route::get('/forums', [StudentForumController::class, 'index'])->name('forums.index');
@@ -261,18 +276,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/events/registrations/{registration}', [StudentEventController::class, 'cancelRegistration'])->name('events.cancel');
         Route::post('/events/registrations/{registration}/payment', [StudentEventController::class, 'uploadPaymentProof'])->name('events.upload-payment');
 
-        // Assignment routes
-        Route::get('/assignments', [AssignmentController::class, 'index'])->name('assignments.index');
-        Route::get('/assignments/{assignment}', [AssignmentController::class, 'show'])->name('assignments.show');
-        Route::get('/assignments/{assignment}/submit', [AssignmentController::class, 'create'])->name('assignments.submit');
-        Route::post('/assignments/{assignment}/submit', [AssignmentController::class, 'store'])->name('assignments.store');
-        Route::post('/assignments/{assignment}/cancel', [AssignmentController::class, 'cancel'])->name('assignments.cancel');
-
         // Achievement
         Route::get('/achievements', [AchievementController::class, 'index'])->name('achievements.index');
         Route::get('/achievements/{achievement}', [AchievementController::class, 'show'])->name('achievements.show');
         Route::get('/leaderboard', [AchievementController::class, 'leaderboard'])->name('leaderboard');
         Route::get('/badges', [AchievementController::class, 'badges'])->name('badges');
+
+        Route::post('/lessons/{lesson}/track-time', [StudentLessonController::class, 'trackTime'])->name('lessons.track');
     });
 
     // Forum routes (bisa diakses student & instructor yang terdaftar di course)
@@ -297,6 +307,34 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+
+Route::middleware(['auth', 'verified'])->prefix('settings')->name('settings.')->group(function () {
+    Route::get('/', [UserSettingController::class, 'index'])->name('index');
+    Route::post('/general', [UserSettingController::class, 'updateGeneral'])->name('general');
+    Route::post('/notifications', [UserSettingController::class, 'updateNotifications'])->name('notifications');
+    Route::post('/learning', [UserSettingController::class, 'updateLearning'])->name('learning');
+    Route::post('/privacy', [UserSettingController::class, 'updatePrivacy'])->name('privacy');
+    Route::post('/accessibility', [UserSettingController::class, 'updateAccessibility'])->name('accessibility');
+    Route::post('/reset', [UserSettingController::class, 'resetToDefault'])->name('reset');
+});
+
+Route::get('/lang/{locale}', function ($locale) {
+    if (!in_array($locale, ['id', 'en'])) {
+        $locale = 'id';
+    }
+
+    // Simpan ke session
+    session(['locale' => $locale]);
+    app()->setLocale($locale);
+
+    // Simpan ke database jika user login
+    if (Illuminate\Support\Facades\Auth::check()) {
+        $settings = App\Models\UserSetting::firstOrCreate(['user_id' => Illuminate\Support\Facades\Auth::id()]);
+        $settings->update(['language' => $locale]);
+    }
+
+    return redirect()->back();
+})->name('lang.switch');
 
 Route::get('/auth/google', [MailController::class, 'getAuthUrl']);
 Route::get('/auth/google/callback', [MailController::class, 'handleCallback']);

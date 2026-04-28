@@ -1,4 +1,6 @@
-<x-client-layout>
+@extends('layouts.client')
+
+@section('content')
     <div x-data="confirmForm()" class="max-w-md mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 md:p-8">
         <div class="text-center mb-8">
             <div
@@ -56,48 +58,50 @@
         </form>
     </div>
 
-    <script>
-        function confirmForm() {
-            return {
-                form: {
-                    password: ''
-                },
-                errors: {},
-                loading: false,
-                showPassword: false,
-                togglePassword() {
-                    this.showPassword = !this.showPassword;
-                },
-                async submitForm() {
-                    this.loading = true;
-                    this.errors = {};
+    @push('scripts')
+        <script>
+            function confirmForm() {
+                return {
+                    form: {
+                        password: ''
+                    },
+                    errors: {},
+                    loading: false,
+                    showPassword: false,
+                    togglePassword() {
+                        this.showPassword = !this.showPassword;
+                    },
+                    async submitForm() {
+                        this.loading = true;
+                        this.errors = {};
 
-                    try {
-                        const response = await fetch('{{ route('password.confirm') }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                                'Accept': 'application/json',
-                            },
-                            body: JSON.stringify(this.form)
-                        });
+                        try {
+                            const response = await fetch('{{ route('password.confirm') }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                    'Accept': 'application/json',
+                                },
+                                body: JSON.stringify(this.form)
+                            });
 
-                        const data = await response.json();
+                            const data = await response.json();
 
-                        if (response.ok) {
-                            window.location.href = data.redirect || '/dashboard';
-                        } else {
-                            if (data.errors) this.errors = data.errors;
-                            else window.toast.error(data.message || 'Password salah.');
+                            if (response.ok) {
+                                window.location.href = data.redirect || '/dashboard';
+                            } else {
+                                if (data.errors) this.errors = data.errors;
+                                else window.toast.error(data.message || 'Password salah.');
+                                this.loading = false;
+                            }
+                        } catch (error) {
+                            window.toast.error('Terjadi kesalahan, silakan coba lagi.');
                             this.loading = false;
                         }
-                    } catch (error) {
-                        window.toast.error('Terjadi kesalahan, silakan coba lagi.');
-                        this.loading = false;
                     }
                 }
             }
-        }
-    </script>
-</x-client-layout>
+        </script>
+    @endpush
+@endsection

@@ -1,6 +1,8 @@
-@extends('layouts.app')
+@extends('layouts.client')
 
 @section('title', $event->title)
+@section('page-title', $event->title)
+@section('page-subtitle', $event->type)
 
 @section('content')
     <div class="max-w-4xl mx-auto px-4 py-8">

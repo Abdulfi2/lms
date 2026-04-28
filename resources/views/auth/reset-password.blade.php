@@ -1,4 +1,6 @@
-<x-client-layout>
+@extends('layouts.client')
+
+@section('content')
     <div x-data="resetPasswordForm()" x-init="init()"
         class="max-w-md mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden">
         <!-- Header dengan icon -->
@@ -100,8 +102,8 @@
                             <div class="h-1 flex-1 rounded-full"
                                 :class="strength >= 3 ? (strength >= 4 ? 'bg-green-500' : 'bg-yellow-500') : 'bg-gray-200'">
                             </div>
-                            <div class="h-1 flex-1 rounded-full"
-                                :class="strength >= 4 ? 'bg-green-500' : 'bg-gray-200'"></div>
+                            <div class="h-1 flex-1 rounded-full" :class="strength >= 4 ? 'bg-green-500' : 'bg-gray-200'">
+                            </div>
                         </div>
                         <p class="text-xs mt-1"
                             :class="strength >= 4 ? 'text-green-600' : (strength >= 2 ? 'text-yellow-600' : 'text-gray-500')"
@@ -175,8 +177,7 @@
                         </svg>
                         <span>Minimal 1 angka</span>
                     </div>
-                    <div class="flex items-center text-xs"
-                        :class="hasSpecialChar ? 'text-green-600' : 'text-gray-500'">
+                    <div class="flex items-center text-xs" :class="hasSpecialChar ? 'text-green-600' : 'text-gray-500'">
                         <svg class="w-3 h-3 mr-1" :class="hasSpecialChar ? 'text-green-500' : 'text-gray-400'"
                             fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd"
@@ -207,8 +208,7 @@
 
             <!-- Link Back to Login -->
             <div class="mt-6 text-center">
-                <a href="{{ route('login') }}"
-                    class="text-sm text-primary hover:text-secondary inline-flex items-center">
+                <a href="{{ route('login') }}" class="text-sm text-primary hover:text-secondary inline-flex items-center">
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
@@ -219,146 +219,148 @@
         </div>
     </div>
 
-    <script>
-        function resetPasswordForm() {
-            return {
-                form: {
-                    token: '{{ $token ?? '' }}',
-                    email: '{{ $email ?? '' }}',
-                    password: '',
-                    password_confirmation: ''
-                },
-                errors: {},
-                loading: false,
-                showPassword: false,
-                showConfirmPassword: false,
-                tokenExpired: false,
-                sessionError: '',
-                sessionSuccess: '',
+    @push('scripts')
+        <script>
+            function resetPasswordForm() {
+                return {
+                    form: {
+                        token: '{{ $token ?? '' }}',
+                        email: '{{ $email ?? '' }}',
+                        password: '',
+                        password_confirmation: ''
+                    },
+                    errors: {},
+                    loading: false,
+                    showPassword: false,
+                    showConfirmPassword: false,
+                    tokenExpired: false,
+                    sessionError: '',
+                    sessionSuccess: '',
 
-                // Password strength properties
-                strength: 0,
-                strengthText: '',
-                hasMinLength: false,
-                hasUppercase: false,
-                hasLowercase: false,
-                hasNumber: false,
-                hasSpecialChar: false,
+                    // Password strength properties
+                    strength: 0,
+                    strengthText: '',
+                    hasMinLength: false,
+                    hasUppercase: false,
+                    hasLowercase: false,
+                    hasNumber: false,
+                    hasSpecialChar: false,
 
-                init() {
-                    // Check if token is empty (expired/invalid)
-                    if (!this.form.token || !this.form.email) {
-                        this.tokenExpired = true;
-                    }
+                    init() {
+                        // Check if token is empty (expired/invalid)
+                        if (!this.form.token || !this.form.email) {
+                            this.tokenExpired = true;
+                        }
 
-                    // Get session messages
-                    @if (session('error'))
-                        this.sessionError = '{{ session('error') }}';
-                        this.tokenExpired = true;
-                    @endif
+                        // Get session messages
+                        @if (session('error'))
+                            this.sessionError = '{{ session('error') }}';
+                            this.tokenExpired = true;
+                        @endif
 
-                    @if (session('status'))
-                        this.sessionSuccess = '{{ session('status') }}';
-                    @endif
-                },
+                        @if (session('status'))
+                            this.sessionSuccess = '{{ session('status') }}';
+                        @endif
+                    },
 
-                togglePassword() {
-                    this.showPassword = !this.showPassword;
-                },
-                toggleConfirmPassword() {
-                    this.showConfirmPassword = !this.showConfirmPassword;
-                },
+                    togglePassword() {
+                        this.showPassword = !this.showPassword;
+                    },
+                    toggleConfirmPassword() {
+                        this.showConfirmPassword = !this.showConfirmPassword;
+                    },
 
-                checkPasswordStrength() {
-                    const password = this.form.password;
+                    checkPasswordStrength() {
+                        const password = this.form.password;
 
-                    this.hasMinLength = password.length >= 8;
-                    this.hasUppercase = /[A-Z]/.test(password);
-                    this.hasLowercase = /[a-z]/.test(password);
-                    this.hasNumber = /[0-9]/.test(password);
-                    this.hasSpecialChar = /[@$!%*?&]/.test(password);
+                        this.hasMinLength = password.length >= 8;
+                        this.hasUppercase = /[A-Z]/.test(password);
+                        this.hasLowercase = /[a-z]/.test(password);
+                        this.hasNumber = /[0-9]/.test(password);
+                        this.hasSpecialChar = /[@$!%*?&]/.test(password);
 
-                    // Calculate strength (0-4)
-                    let count = 0;
-                    if (this.hasMinLength) count++;
-                    if (this.hasUppercase) count++;
-                    if (this.hasLowercase) count++;
-                    if (this.hasNumber) count++;
-                    if (this.hasSpecialChar) count++;
+                        // Calculate strength (0-4)
+                        let count = 0;
+                        if (this.hasMinLength) count++;
+                        if (this.hasUppercase) count++;
+                        if (this.hasLowercase) count++;
+                        if (this.hasNumber) count++;
+                        if (this.hasSpecialChar) count++;
 
-                    this.strength = count;
+                        this.strength = count;
 
-                    if (count >= 4) {
-                        this.strengthText = 'Kuat';
-                    } else if (count >= 2) {
-                        this.strengthText = 'Sedang';
-                    } else if (count > 0) {
-                        this.strengthText = 'Lemah';
-                    } else {
-                        this.strengthText = '';
-                    }
-                },
-
-                async submitForm() {
-                    this.loading = true;
-                    this.errors = {};
-
-                    // Check password match
-                    if (this.form.password !== this.form.password_confirmation) {
-                        this.errors.password_confirmation = 'Konfirmasi password tidak cocok.';
-                        this.loading = false;
-                        return;
-                    }
-
-                    // Check password strength
-                    if (this.strength < 4) {
-                        this.errors.password = 'Password terlalu lemah. Gunakan kombinasi yang lebih kuat.';
-                        this.loading = false;
-                        return;
-                    }
-
-                    try {
-                        const response = await fetch('{{ route('password.update') }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                                'Accept': 'application/json',
-                            },
-                            body: JSON.stringify({
-                                token: this.form.token,
-                                email: this.form.email,
-                                password: this.form.password,
-                                password_confirmation: this.form.password_confirmation
-                            })
-                        });
-
-                        const data = await response.json();
-
-                        if (response.ok) {
-                            window.toast.success('Password berhasil direset! Silakan login.');
-                            setTimeout(() => {
-                                window.location.href = data.redirect || '{{ route('login') }}';
-                            }, 1500);
+                        if (count >= 4) {
+                            this.strengthText = 'Kuat';
+                        } else if (count >= 2) {
+                            this.strengthText = 'Sedang';
+                        } else if (count > 0) {
+                            this.strengthText = 'Lemah';
                         } else {
-                            if (data.is_expired) {
-                                this.tokenExpired = true;
-                                window.toast.error(data.message);
-                            } else if (data.errors) {
-                                this.errors = data.errors;
-                                window.toast.error('Periksa kembali input Anda.');
+                            this.strengthText = '';
+                        }
+                    },
+
+                    async submitForm() {
+                        this.loading = true;
+                        this.errors = {};
+
+                        // Check password match
+                        if (this.form.password !== this.form.password_confirmation) {
+                            this.errors.password_confirmation = 'Konfirmasi password tidak cocok.';
+                            this.loading = false;
+                            return;
+                        }
+
+                        // Check password strength
+                        if (this.strength < 4) {
+                            this.errors.password = 'Password terlalu lemah. Gunakan kombinasi yang lebih kuat.';
+                            this.loading = false;
+                            return;
+                        }
+
+                        try {
+                            const response = await fetch('{{ route('password.update') }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                    'Accept': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    token: this.form.token,
+                                    email: this.form.email,
+                                    password: this.form.password,
+                                    password_confirmation: this.form.password_confirmation
+                                })
+                            });
+
+                            const data = await response.json();
+
+                            if (response.ok) {
+                                window.toast.success('Password berhasil direset! Silakan login.');
+                                setTimeout(() => {
+                                    window.location.href = data.redirect || '{{ route('login') }}';
+                                }, 1500);
                             } else {
-                                window.toast.error(data.message || 'Terjadi kesalahan, silakan coba lagi.');
+                                if (data.is_expired) {
+                                    this.tokenExpired = true;
+                                    window.toast.error(data.message);
+                                } else if (data.errors) {
+                                    this.errors = data.errors;
+                                    window.toast.error('Periksa kembali input Anda.');
+                                } else {
+                                    window.toast.error(data.message || 'Terjadi kesalahan, silakan coba lagi.');
+                                }
+                                this.loading = false;
                             }
+                        } catch (error) {
+                            console.error(error);
+                            window.toast.error('Terjadi kesalahan, silakan coba lagi.');
                             this.loading = false;
                         }
-                    } catch (error) {
-                        console.error(error);
-                        window.toast.error('Terjadi kesalahan, silakan coba lagi.');
-                        this.loading = false;
                     }
                 }
             }
-        }
-    </script>
-</x-client-layout>
+        </script>
+    @endpush
+@endsection

@@ -3,6 +3,7 @@
 
 namespace App\Jobs;
 
+
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -10,8 +11,13 @@ use Illuminate\Queue\SerializesModels;
 use App\Models\Enrollment;
 use App\Models\Certificate;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use Endroid\QrCode\Builder\Builder;
+use Endroid\QrCode\Writer\PngWriter;
+use Endroid\QrCode\Encoding\Encoding;
+use Endroid\QrCode\ErrorCorrectionLevel;
+use Endroid\QrCode\RoundBlockSizeMode;
 
 class GenerateCertificateJob implements ShouldQueue
 {
@@ -50,30 +56,45 @@ class GenerateCertificateJob implements ShouldQueue
 
             $certificateNumber = 'CERT-' . strtoupper(uniqid()) . '-' . $user->id . '-' . $course->id;
             $verificationCode = md5($certificateNumber . $user->email . now());
+            $verificationUrl = url('/certificate/verify/' . $verificationCode);
+
+            // ========== GENERATE QR CODE (v5.x) ==========
+            $qrCode = Builder::create()
+                ->writer(new PngWriter())
+                ->data($verificationUrl)
+                ->encoding(new Encoding('UTF-8'))
+                ->errorCorrectionLevel(ErrorCorrectionLevel::High)
+                ->size(200)
+                ->margin(10)
+                ->roundBlockSizeMode(RoundBlockSizeMode::Margin) // menggunakan enum langsung
+                ->build();
+
+            $qrCodeBase64 = base64_encode($qrCode->getString());
 
             $data = [
                 'user' => $user,
                 'course' => $course,
-                'date' => now(),
+                'issued_at' => now()->format('d F Y'),
                 'certificate_number' => $certificateNumber,
                 'verification_code' => $verificationCode,
+                'verification_url' => $verificationUrl,
+                'qr_code' => $qrCodeBase64,
+                'sections' => $course->sections,
+                'total_hours' => $course->duration_total ?? 45,
             ];
 
-            // ========== PERBAIKAN: Gunakan Facade PDF langsung ==========
+            // Generate PDF
             $pdf = Pdf::loadView('certificates.template', $data);
             $pdf->setPaper('A4', 'landscape');
 
             $filename = 'certificates/certificate_' . $user->id . '_' . $course->id . '.pdf';
 
-            // Buat folder jika belum ada
             if (!Storage::disk('public')->exists('certificates')) {
                 Storage::disk('public')->makeDirectory('certificates');
             }
 
-            // Simpan PDF
             Storage::disk('public')->put($filename, $pdf->output());
 
-            // Simpan record sertifikat
             Certificate::create([
                 'user_id' => $user->id,
                 'course_id' => $course->id,
@@ -85,14 +106,9 @@ class GenerateCertificateJob implements ShouldQueue
                 'verification_code' => $verificationCode,
             ]);
 
-            // Update enrollment
             $this->enrollment->update(['certificate_issued_at' => now()]);
 
-            Log::info('Certificate generated successfully', [
-                'user_id' => $user->id,
-                'course_id' => $course->id,
-                'certificate_number' => $certificateNumber
-            ]);
+            Log::info('Certificate generated successfully');
 
         } catch (\Exception $e) {
             Log::error('Certificate generation failed: ' . $e->getMessage(), [

@@ -26,6 +26,7 @@ class User extends Authenticatable
         'two_factor_enabled',
         'two_factor_secret',
         'two_factor_recovery_codes',
+        'last_seen_at',
     ];
 
     protected $hidden = ['password', 'remember_token', 'two_factor_secret'];
@@ -36,6 +37,7 @@ class User extends Authenticatable
         'is_active' => 'boolean',
         'two_factor_enabled' => 'boolean',
         'deleted_at' => 'datetime',
+        'last_seen_at' => 'datetime',
     ];
 
     protected $appends = ['role_name', 'avatar_url', 'is_email_verified'];

@@ -14,12 +14,25 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Spatie\Permission\Models\Role;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class RegisteredUserController extends Controller
 {
-    public function create()
+    /**
+     * Display the registration view.
+     */
+    public function create(Request $request)
     {
-        return view('auth.register');
+        // Ambil parameter role dari URL (default: student)
+        $role = $request->query('role', 'student');
+
+        // Validasi role yang diizinkan
+        if (!in_array($role, ['student', 'instructor'])) {
+            $role = 'student';
+        }
+
+        return view('auth.register', compact('role'));
     }
 
     /**
@@ -29,75 +42,102 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        // Validasi input
+        // Validasi input termasuk role
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'role' => ['required', 'in:student,instructor'], // Validasi role dari hidden field
         ]);
 
         try {
-            // Eksekusi dalam transaction
-            $user = $this->executeWithTransaction(
-                callback: function () use ($validated, $request) {
-                    // Parse nama
-                    $nameParts = explode(' ', $validated['name'], 2);
-                    $firstName = $nameParts[0];
-                    $lastName = $nameParts[1] ?? '';
+            DB::beginTransaction();
 
-                    // Create user
-                    $user = User::create([
-                        'name' => $validated['name'],
-                        'email' => $validated['email'],
-                        'password' => Hash::make($validated['password']),
-                        'default_role' => 'student',
-                        'is_active' => true,
-                    ]);
+            // Parse nama untuk first_name dan last_name
+            $nameParts = explode(' ', $validated['name'], 2);
+            $firstName = $nameParts[0];
+            $lastName = $nameParts[1] ?? '';
 
-                    // Assign role student
-                    $studentRole = Role::findByName('student', 'web');
-                    $user->assignRole($studentRole);
+            // Create user
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+                'default_role' => $validated['role'],
+                'is_active' => true,
+            ]);
 
-                    // Create profile
-                    Profile::create([
-                        'profileable_id' => $user->id,
-                        'profileable_type' => User::class,
-                        'profile_type' => 'student',
-                        'first_name' => $firstName,
-                        'last_name' => $lastName,
-                        'nickname' => $firstName,
-                        'is_active' => true,
-                        'approval_status' => 'approved',
-                    ]);
+            // Assign role sesuai pilihan
+            $role = Role::findByName($validated['role'], 'web');
+            $user->assignRole($role);
 
-                    return $user;
-                },
-                operation: 'register',
-                context: [
-                    'table' => 'users',
-                    'description' => "User registration with email: {$validated['email']}",
-                    'new_data' => ['email' => $validated['email'], 'name' => $validated['name']]
-                ]
-            );
+            // Create profile
+            $profileData = [
+                'profileable_id' => $user->id,
+                'profileable_type' => User::class,
+                'profile_type' => $validated['role'],
+                'first_name' => $firstName,
+                'last_name' => $lastName,
+                'nickname' => $firstName,
+                'is_active' => true,
+                'approval_status' => $validated['role'] === 'instructor' ? 'pending' : 'approved',
+            ];
 
+            // Jika role instructor, tambahkan data tambahan (opsional)
+            if ($validated['role'] === 'instructor') {
+                $profileData['professional_info'] = json_encode([
+                    'status' => 'pending_approval',
+                    'applied_at' => now()->toDateTimeString(),
+                ]);
+            }
+
+            Profile::create($profileData);
+
+            DB::commit();
+
+            // Log activity
+            Log::info('User registered', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'role' => $validated['role']
+            ]);
+
+            // Set session untuk verifikasi email
             session([
                 'verification_email' => $user->email,
                 'verification_needed' => true
             ]);
 
+            // Trigger event registered (untuk kirim email verifikasi)
             event(new Registered($user));
 
             // Login user
-            return redirect()->route('verification.notice')
-                ->with('success', 'Pendaftaran berhasil! Silakan verifikasi email Anda.');
+            Auth::login($user);
 
-        } catch (ValidationException $e) {
-            throw $e;
-        } catch (\Throwable $e) {
-            // Log error sudah dilakukan oleh executeWithTransaction
-            // Tampilkan pesan error friendly ke user
+            // Redirect berdasarkan role
+            $redirectMessage = $validated['role'] === 'instructor'
+                ? 'Pendaftaran berhasil! Akun instruktur Anda akan segera diverifikasi oleh admin.'
+                : 'Pendaftaran berhasil! Silakan verifikasi email Anda.';
+
+            if ($validated['role'] === 'instructor') {
+                return redirect()->route('instructor.dashboard')
+                    ->with('success', $redirectMessage);
+            }
+
+            return redirect()->route('verification.notice')
+                ->with('success', $redirectMessage);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Registration failed: ' . $e->getMessage(), [
+                'email' => $validated['email'] ?? null,
+                'role' => $validated['role'] ?? null,
+                'trace' => $e->getTraceAsString()
+            ]);
+
             throw ValidationException::withMessages([
-                'email' => ['Registration failed. Please try again later.'],
+                'email' => ['Registrasi gagal. Silakan coba lagi.'],
             ]);
         }
     }

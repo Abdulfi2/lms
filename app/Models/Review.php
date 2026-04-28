@@ -1,4 +1,5 @@
 <?php
+// app/Models/Review.php
 
 namespace App\Models;
 
@@ -40,5 +41,10 @@ class Review extends Model
     public function scopeApproved($query)
     {
         return $query->where('is_approved', true);
+    }
+
+    public function scopePending($query)
+    {
+        return $query->where('is_approved', false);
     }
 }
