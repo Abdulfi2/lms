@@ -4,6 +4,7 @@ return [
     'main' => 'Main',
     'dashboard' => 'Dashboard',
     'my_courses' => 'My Courses',
+    'wishlist' => 'My Wishlist',
     'learning' => 'Learning',
     'assignments' => 'Assignments',
     'certificates' => 'Certificates',

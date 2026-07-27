@@ -102,7 +102,7 @@ class AssignmentController extends Controller
             ->first();
 
         $isLate = $assignment->due_date < now() && !$submission;
-        $canSubmit = !$submission || ($submission->status === 'draft');
+        $canSubmit = !$submission || in_array($submission->status, ['draft', 'submitted', 'returned']);
         $isGraded = $submission && $submission->status === 'graded';
 
         return view('student.assignments.show', compact(
@@ -154,16 +154,26 @@ class AssignmentController extends Controller
             'attachment' => 'nullable|file|max:10240|mimes:pdf,doc,docx,zip,jpg,png',
         ]);
 
+        $isLate = $assignment->due_date < now();
+
+        // Tegakkan aturan telat di server, bukan hanya lewat atribut `disabled` di tombol HTML.
+        if ($isLate && !$assignment->allow_late_submission) {
+            return back()->with('error', 'Deadline tugas sudah lewat dan pengiriman terlambat tidak diizinkan.');
+        }
+
+        // Submission yang sudah final (graded) tidak boleh ditimpa oleh POST langsung ke store().
+        $existingSubmission = Submission::where('assignment_id', $assignment->id)
+            ->where('student_id', auth()->id())
+            ->first();
+
+        if ($existingSubmission && $existingSubmission->status === 'graded') {
+            return back()->with('error', 'Tugas ini sudah dinilai dan tidak dapat dikirim ulang.');
+        }
+
         try {
             DB::beginTransaction();
 
-            $isLate = $assignment->due_date < now();
-            $latePenalty = 0;
-
-            if ($isLate && $assignment->allow_late_submission) {
-                $daysLate = now()->diffInDays($assignment->due_date);
-                $latePenalty = $assignment->late_penalty * $daysLate;
-            }
+            $daysLate = $isLate ? now()->diffInDays($assignment->due_date) : 0;
 
             $submission = Submission::updateOrCreate(
                 ['assignment_id' => $assignment->id, 'student_id' => auth()->id()],
@@ -198,7 +208,8 @@ class AssignmentController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Gagal mengirim tugas: ' . $e->getMessage());
+            \Log::error('Assignment submission failed: ' . $e->getMessage());
+            return back()->with('error', 'Gagal mengirim tugas. Silakan coba lagi.');
         }
     }
 

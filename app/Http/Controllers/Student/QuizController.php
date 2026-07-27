@@ -128,38 +128,53 @@ class QuizController extends Controller
             return back()->with('error', 'Quiz belum dipublikasikan.');
         }
 
-        // Check attempt limit
-        $attemptCount = QuizAttempt::where('quiz_id', $quiz->id)
-            ->where('user_id', $user->id)
-            ->count();
+        // Kunci baris quiz selama transaksi supaya dua request start() yang datang
+        // bersamaan (double-klik/tab ganda) tidak lolos pengecekan di bawah secara paralel.
+        DB::beginTransaction();
+        try {
+            Quiz::whereKey($quiz->id)->lockForUpdate()->first();
 
-        if ($attemptCount >= $quiz->attempts_allowed) {
-            return back()->with('error', "Anda telah mencapai batas maksimal percobaan ({$quiz->attempts_allowed} kali).");
+            // Check attempt limit
+            $attemptCount = QuizAttempt::where('quiz_id', $quiz->id)
+                ->where('user_id', $user->id)
+                ->count();
+
+            if ($attemptCount >= $quiz->attempts_allowed) {
+                DB::rollBack();
+                return back()->with('error', "Anda telah mencapai batas maksimal percobaan ({$quiz->attempts_allowed} kali).");
+            }
+
+            // Check for incomplete attempt
+            $inProgressAttempt = QuizAttempt::where('quiz_id', $quiz->id)
+                ->where('user_id', $user->id)
+                ->where('status', 'in_progress')
+                ->first();
+
+            if ($inProgressAttempt) {
+                DB::rollBack();
+                return redirect()->route('student.quizzes.attempt', $inProgressAttempt)
+                    ->with('warning', 'Anda memiliki quiz yang belum selesai. Lanjutkan dari mana Anda berhenti.');
+            }
+
+            // Create new attempt
+            $attempt = QuizAttempt::create([
+                'quiz_id' => $quiz->id,
+                'user_id' => $user->id,
+                'started_at' => now(),
+                'status' => 'in_progress',
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ]);
+
+            // Update quiz total attempts
+            $quiz->increment('total_attempts');
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Quiz start failed: ' . $e->getMessage());
+            return back()->with('error', 'Gagal memulai quiz. Silakan coba lagi.');
         }
-
-        // Check for incomplete attempt
-        $inProgressAttempt = QuizAttempt::where('quiz_id', $quiz->id)
-            ->where('user_id', $user->id)
-            ->where('status', 'in_progress')
-            ->first();
-
-        if ($inProgressAttempt) {
-            return redirect()->route('student.quizzes.attempt', $inProgressAttempt)
-                ->with('warning', 'Anda memiliki quiz yang belum selesai. Lanjutkan dari mana Anda berhenti.');
-        }
-
-        // Create new attempt
-        $attempt = QuizAttempt::create([
-            'quiz_id' => $quiz->id,
-            'user_id' => $user->id,
-            'started_at' => now(),
-            'status' => 'in_progress',
-            'ip_address' => request()->ip(),
-            'user_agent' => request()->userAgent(),
-        ]);
-
-        // Update quiz total attempts
-        $quiz->increment('total_attempts');
 
         Log::info('Quiz started', [
             'user_id' => $user->id,
@@ -228,78 +243,101 @@ class QuizController extends Controller
         $correctAnswers = 0;
         $totalQuestions = $quiz->questions()->count();
 
-        DB::beginTransaction();
-
-        foreach ($answers as $questionId => $answerData) {
-            $question = $quiz->questions()->find($questionId);
-            if (!$question)
-                continue;
-
-            $selectedOptionId = null;
-            $isCorrect = false;
-            $pointsEarned = 0;
-            $answerText = null;
-
-            if ($question->type === 'multiple_choice' && isset($answerData['option_id'])) {
-                $option = $question->options()->find($answerData['option_id']);
-                if ($option) {
-                    $selectedOptionId = $option->id;
-                    $isCorrect = $option->is_correct;
-                    $pointsEarned = $isCorrect ? $question->points : 0;
-                    if ($isCorrect)
-                        $correctAnswers++;
-                }
-            } elseif ($question->type === 'true_false') {
-                $userAnswer = $answerData['value'] ?? ($answerData === 'true' ? 'true' : 'false');
-                $option = $question->options()->where('option_text', $userAnswer === 'true' ? 'Benar' : 'Salah')->first();
-                if ($option) {
-                    $selectedOptionId = $option->id;
-                    $isCorrect = $option->is_correct;
-                    $pointsEarned = $isCorrect ? $question->points : 0;
-                    if ($isCorrect)
-                        $correctAnswers++;
-                }
-            } elseif ($question->type === 'essay') {
-                $answerText = is_string($answerData) ? $answerData : ($answerData['text'] ?? null);
-                $pointsEarned = 0; // Akan dinilai manual oleh instructor
-            }
-
-            $totalPoints += $question->points;
-            $earnedPoints += $pointsEarned;
-
-            QuizAnswer::create([
-                'attempt_id' => $attempt->id,
-                'question_id' => $questionId,
-                'selected_option_id' => $selectedOptionId,
-                'answer_text' => $answerText,
-                'is_correct' => $isCorrect,
-                'points_earned' => $pointsEarned,
-            ]);
+        // Waktu selalu dihitung dari server, bukan dari input client, dan batas waktu
+        // ditegakkan di sini juga (bukan hanya saat halaman attempt() dibuka ulang) —
+        // supaya siswa tidak bisa mengerjakan tanpa batas waktu selama tidak reload halaman.
+        $timeSpent = now()->diffInSeconds($attempt->started_at);
+        if ($quiz->time_limit > 0 && $timeSpent > ($quiz->time_limit * 60) + 30) {
+            // Waktu sudah habis di server: perlakukan seperti auto-submit (jawaban dianggap kosong)
+            $answers = [];
         }
 
-        // Hitung persentase
-        $percentage = $totalPoints > 0 ? round(($earnedPoints / $totalPoints) * 100, 2) : 0;
-        $isPassed = $percentage >= $quiz->passing_score;
-        $timeSpent = $request->input('time_spent', now()->diffInSeconds($attempt->started_at));
+        DB::beginTransaction();
 
-        // Update attempt
-        $attempt->update([
-            'completed_at' => now(),
-            'time_spent' => $timeSpent,
-            'score' => $earnedPoints,
-            'percentage' => $percentage,
-            'is_passed' => $isPassed,
-            'status' => 'completed',
-        ]);
+        // Kunci baris attempt untuk mencegah submit() ganda (double-klik) memproses
+        // jawaban dan mengubah skor dua kali secara paralel.
+        $attempt = QuizAttempt::whereKey($attempt->id)->lockForUpdate()->first();
+        if ($attempt->status !== 'in_progress') {
+            DB::rollBack();
+            return redirect()->route('student.quizzes.result', $attempt)
+                ->with('warning', 'Quiz ini sudah diselesaikan sebelumnya.');
+        }
 
-        // Update quiz average score
-        $quiz->update([
-            'average_score' => QuizAttempt::where('quiz_id', $quiz->id)
-                ->where('status', 'completed')
-                ->avg('percentage') ?? 0
-        ]);
+        try {
+            foreach ($answers as $questionId => $answerData) {
+                $question = $quiz->questions()->find($questionId);
+                if (!$question)
+                    continue;
 
-        DB::commit();
+                $selectedOptionId = null;
+                $isCorrect = false;
+                $pointsEarned = 0;
+                $answerText = null;
+
+                if ($question->type === 'multiple_choice' && isset($answerData['option_id'])) {
+                    $option = $question->options()->find($answerData['option_id']);
+                    if ($option) {
+                        $selectedOptionId = $option->id;
+                        $isCorrect = $option->is_correct;
+                        $pointsEarned = $isCorrect ? $question->points : 0;
+                        if ($isCorrect)
+                            $correctAnswers++;
+                    }
+                } elseif ($question->type === 'true_false') {
+                    $userAnswer = $answerData['value'] ?? ($answerData === 'true' ? 'true' : 'false');
+                    $option = $question->options()->where('option_text', $userAnswer === 'true' ? 'Benar' : 'Salah')->first();
+                    if ($option) {
+                        $selectedOptionId = $option->id;
+                        $isCorrect = $option->is_correct;
+                        $pointsEarned = $isCorrect ? $question->points : 0;
+                        if ($isCorrect)
+                            $correctAnswers++;
+                    }
+                } elseif ($question->type === 'essay') {
+                    $answerText = is_string($answerData) ? $answerData : ($answerData['text'] ?? null);
+                    $pointsEarned = 0; // Akan dinilai manual oleh instructor
+                }
+
+                $totalPoints += $question->points;
+                $earnedPoints += $pointsEarned;
+
+                QuizAnswer::create([
+                    'attempt_id' => $attempt->id,
+                    'question_id' => $questionId,
+                    'selected_option_id' => $selectedOptionId,
+                    'answer_text' => $answerText,
+                    'is_correct' => $isCorrect,
+                    'points_earned' => $pointsEarned,
+                ]);
+            }
+
+            // Hitung persentase
+            $percentage = $totalPoints > 0 ? round(($earnedPoints / $totalPoints) * 100, 2) : 0;
+            $isPassed = $percentage >= $quiz->passing_score;
+
+            // Update attempt
+            $attempt->update([
+                'completed_at' => now(),
+                'time_spent' => $timeSpent,
+                'score' => $earnedPoints,
+                'percentage' => $percentage,
+                'is_passed' => $isPassed,
+                'status' => 'completed',
+            ]);
+
+            // Update quiz average score
+            $quiz->update([
+                'average_score' => QuizAttempt::where('quiz_id', $quiz->id)
+                    ->where('status', 'completed')
+                    ->avg('percentage') ?? 0
+            ]);
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Quiz submit failed: ' . $e->getMessage());
+            return back()->with('error', 'Gagal menyimpan jawaban quiz. Silakan coba lagi.');
+        }
 
         // Gamification: award points if passed
         if ($isPassed) {

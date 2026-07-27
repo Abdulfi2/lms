@@ -119,11 +119,6 @@ class RegisteredUserController extends Controller
                 ? 'Pendaftaran berhasil! Akun instruktur Anda akan segera diverifikasi oleh admin.'
                 : 'Pendaftaran berhasil! Silakan verifikasi email Anda.';
 
-            if ($validated['role'] === 'instructor') {
-                return redirect()->route('instructor.dashboard')
-                    ->with('success', $redirectMessage);
-            }
-
             return redirect()->route('verification.notice')
                 ->with('success', $redirectMessage);
 

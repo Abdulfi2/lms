@@ -56,11 +56,19 @@ class SectionController extends Controller
 
     public function edit(Course $course, Section $section)
     {
+        if ($section->course_id !== $course->id) {
+            abort(404);
+        }
+
         return view('admin.courses.sections.edit', compact('course', 'section'));
     }
 
     public function update(Request $request, Course $course, Section $section)
     {
+        if ($section->course_id !== $course->id) {
+            abort(404);
+        }
+
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -92,6 +100,10 @@ class SectionController extends Controller
 
     public function destroy(Course $course, Section $section)
     {
+        if ($section->course_id !== $course->id) {
+            abort(404);
+        }
+
         try {
             DB::beginTransaction();
             $section->delete();

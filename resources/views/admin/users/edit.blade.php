@@ -125,9 +125,9 @@
                             <select x-model="form.role"
                                 class="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
                                 <option value="">Pilih Role</option>
-                                <option value="admin">Admin</option>
-                                <option value="instructor">Instructor</option>
-                                <option value="student">Student</option>
+                                @foreach ($roles as $roleOption)
+                                    <option value="{{ $roleOption->name }}">{{ ucfirst(str_replace('_', ' ', $roleOption->name)) }}</option>
+                                @endforeach
                             </select>
                             <p x-show="errors.role" class="mt-1 text-xs text-red-600" x-text="errors.role"></p>
                         </div>

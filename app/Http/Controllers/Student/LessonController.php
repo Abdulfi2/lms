@@ -29,7 +29,16 @@ class LessonController extends Controller
         // Check enrollment
         $enrollment = Enrollment::where('user_id', auth()->id())
             ->where('course_id', $course->id)
+            ->whereIn('status', ['active', 'completed'])
+            ->where(function ($q) {
+                $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+            })
             ->firstOrFail();
+
+        if ($enrollment->payment_status !== 'paid') {
+            return redirect()->route('student.courses.show', $course->slug)
+                ->with('error', 'Selesaikan pembayaran terlebih dahulu untuk mengakses materi ini.');
+        }
 
         // Get all lessons for navigation
         $allLessons = Lesson::join('sections', 'lessons.section_id', '=', 'sections.id')
@@ -112,6 +121,20 @@ class LessonController extends Controller
                 ], 403);
             }
 
+            if (!in_array($enrollment->status, ['active', 'completed']) || ($enrollment->expires_at && $enrollment->expires_at->isPast())) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Akses Anda ke kursus ini sudah tidak aktif'
+                ], 403);
+            }
+
+            if ($enrollment->payment_status !== 'paid') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Selesaikan pembayaran terlebih dahulu untuk mengakses kursus ini'
+                ], 402);
+            }
+
             // ==================== PREVENT DUPLICATE ====================
 
             $alreadyCompleted = LessonCompletion::where('user_id', $user->id)
@@ -163,6 +186,7 @@ class LessonController extends Controller
 
             $enrollment->update([
                 'progress' => $progress,
+                'status' => $isNowCompleted ? 'completed' : $enrollment->status,
                 'completed_at' => $isNowCompleted && !$wasCompleted ? now() : $enrollment->completed_at,
             ]);
 
@@ -265,6 +289,11 @@ class LessonController extends Controller
             $course = $lesson->section->course;
             $enrollment = Enrollment::where('user_id', auth()->id())
                 ->where('course_id', $course->id)
+                ->whereIn('status', ['active', 'completed'])
+                ->where('payment_status', 'paid')
+                ->where(function ($q) {
+                    $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+                })
                 ->exists();
 
             if (!$enrollment) {

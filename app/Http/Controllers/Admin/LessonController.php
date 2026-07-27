@@ -13,17 +13,29 @@ class LessonController extends Controller
 {
     public function index(Course $course, Section $section)
     {
+        if ($section->course_id !== $course->id) {
+            abort(404);
+        }
+
         $lessons = $section->lessons()->orderBy('order')->get();
         return view('admin.courses.sections.lessons.index', compact('course', 'section', 'lessons'));
     }
 
     public function create(Course $course, Section $section)
     {
+        if ($section->course_id !== $course->id) {
+            abort(404);
+        }
+
         return view('admin.courses.sections.lessons.create', compact('course', 'section'));
     }
 
     public function store(Request $request, Course $course, Section $section)
     {
+        if ($section->course_id !== $course->id) {
+            abort(404);
+        }
+
         $request->validate([
             'title' => 'required|string|max:255',
             'type' => 'required|in:video,article,quiz,assignment,live,discussion',
@@ -57,7 +69,7 @@ class LessonController extends Controller
                 return response()->json(['success' => true, 'message' => 'Lesson berhasil ditambahkan.', 'data' => $lesson]);
             }
 
-            return redirect()->route('admin.courses.sections.lessons.index', [$course, $section])
+            return redirect()->route('admin.lessons.index', [$course, $section])
                 ->with('success', 'Lesson berhasil ditambahkan.');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -67,11 +79,19 @@ class LessonController extends Controller
 
     public function edit(Course $course, Section $section, Lesson $lesson)
     {
+        if ($section->course_id !== $course->id || $lesson->section_id !== $section->id) {
+            abort(404);
+        }
+
         return view('admin.courses.sections.lessons.edit', compact('course', 'section', 'lesson'));
     }
 
     public function update(Request $request, Course $course, Section $section, Lesson $lesson)
     {
+        if ($section->course_id !== $course->id || $lesson->section_id !== $section->id) {
+            abort(404);
+        }
+
         $request->validate([
             'title' => 'required|string|max:255',
             'type' => 'required|in:video,article,quiz,assignment,live,discussion',
@@ -103,7 +123,7 @@ class LessonController extends Controller
                 return response()->json(['success' => true, 'message' => 'Lesson berhasil diperbarui.']);
             }
 
-            return redirect()->route('admin.courses.sections.lessons.index', [$course, $section])
+            return redirect()->route('admin.lessons.index', [$course, $section])
                 ->with('success', 'Lesson berhasil diperbarui.');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -113,6 +133,10 @@ class LessonController extends Controller
 
     public function destroy(Course $course, Section $section, Lesson $lesson)
     {
+        if ($section->course_id !== $course->id || $lesson->section_id !== $section->id) {
+            abort(404);
+        }
+
         try {
             DB::beginTransaction();
             $lesson->delete();
@@ -121,7 +145,7 @@ class LessonController extends Controller
             if (request()->wantsJson()) {
                 return response()->json(['success' => true, 'message' => 'Lesson berhasil dihapus.']);
             }
-            return redirect()->route('admin.courses.sections.lessons.index', [$course, $section])
+            return redirect()->route('admin.lessons.index', [$course, $section])
                 ->with('success', 'Lesson berhasil dihapus.');
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Gagal menghapus lesson.'], 500);

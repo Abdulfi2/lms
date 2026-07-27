@@ -13,6 +13,12 @@ use App\Models\User;
 class RolePermissionController extends Controller
 {
     /**
+     * Role bawaan sistem — dipakai langsung oleh middleware `role:...` di routes/web.php,
+     * jadi tidak boleh diganti nama atau dihapus lewat UI ini.
+     */
+    private const SYSTEM_ROLES = ['admin', 'instructor', 'student', 'event_manager'];
+
+    /**
      * Display a listing of roles.
      */
     /**
@@ -90,12 +96,21 @@ class RolePermissionController extends Controller
 
             DB::commit();
 
-            return redirect()->route('admin.roles.index')
-                ->with('success', "Role '{$role->name}' berhasil dibuat.");
+            // JSON konsisten dengan updateRole() — form create.blade.php mengirim fetch()
+            // dengan Accept: application/json dan membaca data.success, bukan redirect HTML.
+            return response()->json([
+                'success' => true,
+                'message' => "Role '{$role->name}' berhasil dibuat.",
+                'redirect' => route('admin.roles.index'),
+            ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Gagal membuat role: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal membuat role: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
@@ -116,22 +131,23 @@ class RolePermissionController extends Controller
      */
     public function updateRole(Request $request, Role $role)
     {
-        // Prevent editing super admin role
-        if ($role->name === 'admin' && !$request->has('force')) {
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Role Admin tidak dapat diubah untuk keamanan.'
-                ], 403);
-            }
-            return back()->with('error', 'Role Admin tidak dapat diubah untuk keamanan.');
-        }
-
         $request->validate([
             'name' => 'required|string|max:255|unique:roles,name,' . $role->id,
             'permissions' => 'nullable|array',
             'permissions.*' => 'exists:permissions,name',
         ]);
+
+        // Role sistem tidak boleh diganti nama (akan merusak middleware role:... di routes/web.php).
+        // Tidak ada cara untuk melewati ini dari client — sebelumnya ada parameter 'force' yang
+        // bisa dikirim bebas oleh siapa pun sehingga proteksi ini sebenarnya tidak berfungsi.
+        if (in_array($role->name, self::SYSTEM_ROLES) && $request->name !== $role->name) {
+            $message = "Role '{$role->name}' adalah role sistem dan tidak dapat diganti namanya.";
+
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $message], 403);
+            }
+            return back()->with('error', $message);
+        }
 
         try {
             DB::beginTransaction();
@@ -168,7 +184,7 @@ class RolePermissionController extends Controller
     public function destroyRole(Role $role)
     {
         // Prevent deleting important roles
-        if (in_array($role->name, ['admin', 'instructor', 'student'])) {
+        if (in_array($role->name, self::SYSTEM_ROLES)) {
             return response()->json([
                 'success' => false,
                 'message' => "Role '{$role->name}' tidak dapat dihapus karena merupakan role sistem."

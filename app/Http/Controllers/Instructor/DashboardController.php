@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Payment;
+use App\Models\Submission;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -77,8 +78,20 @@ class DashboardController extends Controller
             ->limit(10)
             ->get();
 
-        // Tugas yang perlu dinilai (jika ada fitur assignment)
-        // Sementara kita asumsikan belum ada, bisa ditambahkan nanti.
+        // Submission yang menunggu dinilai — ini paling time-sensitive bagi instruktur,
+        // jadi ditonjolkan di dashboard utama, bukan cuma di sidebar.
+        $pendingGradingCount = Submission::whereHas('assignment.course', function ($q) use ($instructorId) {
+            $q->where('instructor_id', $instructorId);
+        })->where('status', 'submitted')->count();
+
+        $pendingSubmissions = Submission::with(['assignment.course', 'student'])
+            ->whereHas('assignment.course', function ($q) use ($instructorId) {
+                $q->where('instructor_id', $instructorId);
+            })
+            ->where('status', 'submitted')
+            ->latest('submitted_at')
+            ->limit(5)
+            ->get();
 
         return view('instructor.dashboard', compact(
             'totalCourses',
@@ -91,7 +104,9 @@ class DashboardController extends Controller
             'topCourses',
             'chartLabels',
             'chartData',
-            'recentEnrollments'
+            'recentEnrollments',
+            'pendingGradingCount',
+            'pendingSubmissions'
         ));
     }
 }

@@ -42,7 +42,12 @@ class Section extends Model
             $section->updateCounts();
         });
         static::deleted(function ($section) {
-            $section->updateCounts();
+            // JANGAN panggil $section->updateCounts() di sini — method itu memanggil
+            // saveQuietly() pada model ini, tapi setelah delete() Eloquent sudah
+            // menandai $section->exists = false, sehingga save() akan meng-INSERT ULANG
+            // baris yang baru saja dihapus (dengan id yang sama). Section jadi tidak
+            // pernah benar-benar terhapus. Cukup perbarui hitungan di course induknya.
+            $section->course?->updateCounts();
         });
     }
 

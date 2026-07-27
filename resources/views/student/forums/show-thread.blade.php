@@ -28,6 +28,12 @@
                         <span>{{ $thread->created_at->diffForHumans() }}</span>
                     </div>
                 </div>
+                @if ($thread->user_id === auth()->id())
+                    <a href="{{ route('student.forums.thread.edit', [$course, $forum, $thread]) }}"
+                        class="px-3 py-1.5 text-xs border rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 shrink-0">
+                        Edit Thread
+                    </a>
+                @endif
             </div>
 
             <div class="mt-4 prose max-w-none dark:prose-invert">
@@ -72,6 +78,15 @@
                                 </svg>
                                 <span id="like-count-{{ $post->id }}">{{ $post->like_count }}</span>
                             </button>
+                            @if ($post->user_id !== auth()->id())
+                                <button onclick="toggleReportForm({{ $post->id }})"
+                                    class="flex items-center text-gray-400 hover:text-yellow-600 transition" title="Lapor post ini">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M3 3v18h2v-8h4.5l.5 1h6.5V5h-6l-.5-1H5" />
+                                    </svg>
+                                </button>
+                            @endif
                             @if ($post->user_id === auth()->id() || auth()->user()->hasRole('admin'))
                                 <form
                                     action="{{ route('student.forums.thread.post.delete', [$course, $forum, $thread, $post]) }}"
@@ -90,6 +105,25 @@
                     <div class="mt-4 prose max-w-none dark:prose-invert">
                         {!! nl2br(e($post->content)) !!}
                     </div>
+                    @if ($post->user_id !== auth()->id())
+                        <div id="report-form-{{ $post->id }}" class="hidden mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                            <p class="text-sm font-medium mb-2">Laporkan post ini</p>
+                            <select id="report-reason-{{ $post->id }}" class="w-full rounded-lg border-gray-300 text-sm mb-2">
+                                <option value="spam">Spam</option>
+                                <option value="offensive">Konten Tidak Pantas</option>
+                                <option value="harassment">Pelecehan</option>
+                                <option value="other">Lainnya</option>
+                            </select>
+                            <textarea id="report-description-{{ $post->id }}" rows="2" placeholder="Keterangan tambahan (opsional)"
+                                class="w-full rounded-lg border-gray-300 text-sm mb-2"></textarea>
+                            <div class="flex justify-end space-x-2">
+                                <button onclick="toggleReportForm({{ $post->id }})"
+                                    class="px-3 py-1.5 text-xs border rounded-lg">Batal</button>
+                                <button onclick="submitReport({{ $post->id }})"
+                                    class="px-3 py-1.5 text-xs bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">Kirim Laporan</button>
+                            </div>
+                        </div>
+                    @endif
                 </div>
             @endforeach
         </div>
@@ -121,6 +155,32 @@
 
     @push('scripts')
         <script>
+            function toggleReportForm(postId) {
+                document.getElementById(`report-form-${postId}`).classList.toggle('hidden');
+            }
+
+            function submitReport(postId) {
+                const reason = document.getElementById(`report-reason-${postId}`).value;
+                const description = document.getElementById(`report-description-${postId}`).value;
+
+                fetch(`/student/courses/{{ $course->id }}/forums/{{ $forum->id }}/threads/{{ $thread->id }}/posts/${postId}/report`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ reason, description })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        alert(data.message);
+                        if (data.success) {
+                            toggleReportForm(postId);
+                        }
+                    });
+            }
+
             function likePost(postId) {
                 fetch(`/student/courses/{{ $course->id }}/forums/{{ $forum->id }}/threads/{{ $thread->id }}/posts/${postId}/like`, {
                         method: 'POST',

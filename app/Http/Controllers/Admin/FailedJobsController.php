@@ -4,8 +4,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Queue;
 use Illuminate\Http\Request;
 
 class FailedJobsController extends Controller
@@ -21,13 +21,18 @@ class FailedJobsController extends Controller
     }
 
     /**
-     * Retry a specific failed job
+     * Retry a specific failed job.
+     * Note: `queue:retry` is only available as an Artisan command, not a Queue facade method.
      */
     public function retry($id)
     {
-        Queue::retry($id);
+        if (!DB::table('failed_jobs')->where('id', $id)->exists()) {
+            return response()->json(['success' => false, 'message' => 'Job tidak ditemukan.'], 404);
+        }
 
-        return redirect()->back()->with('success', 'Job berhasil di-retry.');
+        Artisan::call('queue:retry', ['id' => [$id]]);
+
+        return response()->json(['success' => true, 'message' => 'Job berhasil di-retry.']);
     }
 
     /**
@@ -35,9 +40,9 @@ class FailedJobsController extends Controller
      */
     public function retryAll()
     {
-        Queue::retryAll();
+        Artisan::call('queue:retry', ['id' => ['all']]);
 
-        return redirect()->back()->with('success', 'Semua job gagal di-retry.');
+        return response()->json(['success' => true, 'message' => 'Semua job gagal di-retry.']);
     }
 
     /**
@@ -45,9 +50,13 @@ class FailedJobsController extends Controller
      */
     public function delete($id)
     {
-        DB::table('failed_jobs')->where('id', $id)->delete();
+        $deleted = DB::table('failed_jobs')->where('id', $id)->delete();
 
-        return redirect()->back()->with('success', 'Job berhasil dihapus.');
+        if (!$deleted) {
+            return response()->json(['success' => false, 'message' => 'Job tidak ditemukan.'], 404);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Job berhasil dihapus.']);
     }
 
     /**
@@ -57,7 +66,7 @@ class FailedJobsController extends Controller
     {
         DB::table('failed_jobs')->truncate();
 
-        return redirect()->back()->with('success', 'Semua job gagal dihapus.');
+        return response()->json(['success' => true, 'message' => 'Semua job gagal dihapus.']);
     }
 
     /**
@@ -66,6 +75,10 @@ class FailedJobsController extends Controller
     public function show($id)
     {
         $job = DB::table('failed_jobs')->where('id', $id)->first();
+
+        if (!$job) {
+            abort(404, 'Failed job tidak ditemukan.');
+        }
 
         // Decode payload untuk melihat detail
         $payload = json_decode($job->payload, true);

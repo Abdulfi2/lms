@@ -15,6 +15,11 @@
                         <div class="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
                             {{ round($enrollment->progress) }}%
                         </div>
+                        @if ($enrollment->payment_status !== 'paid')
+                            <div class="absolute top-2 left-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full font-semibold">
+                                Menunggu Pembayaran
+                            </div>
+                        @endif
                     </div>
                     <div class="p-4">
                         <h4 class="font-semibold text-gray-800 dark:text-white mb-1">{{ $enrollment->course->title }}</h4>
@@ -33,7 +38,9 @@
                             <span class="text-sm text-gray-500">Terdaftar:
                                 {{ $enrollment->created_at->format('d/m/Y') }}</span>
                             <a href="{{ route('student.courses.show', $enrollment->course) }}"
-                                class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary text-sm">Lanjutkan</a>
+                                class="px-4 py-2 {{ $enrollment->payment_status !== 'paid' ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-primary hover:bg-secondary' }} text-white rounded-lg text-sm">
+                                {{ $enrollment->payment_status !== 'paid' ? 'Cek Status' : 'Lanjutkan' }}
+                            </a>
                         </div>
                     </div>
                 </div>

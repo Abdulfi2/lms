@@ -53,11 +53,6 @@ class Article extends Model
                 $article->slug = Str::slug($article->title) . '-' . uniqid();
             }
         });
-        static::updating(function ($article) {
-            if ($article->isDirty('title')) {
-                $article->slug = Str::slug($article->title) . '-' . $article->id;
-            }
-        });
     }
 
     // ============ SCOPES ============

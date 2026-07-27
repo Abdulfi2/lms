@@ -4,6 +4,7 @@
 namespace App\Jobs;
 
 use App\Models\Assignment;
+use App\Models\Notification;
 use App\Models\User;
 use App\Notifications\NewAssignmentNotification;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -31,7 +32,23 @@ class SendAssignmentNotificationJob implements ShouldQueue
     public function handle(): void
     {
         foreach ($this->students as $student) {
-            $student->notify(new NewAssignmentNotification($this->assignment));
+            // Catat notifikasi in-app dulu, terpisah dari pengiriman email — supaya
+            // gangguan pada mail server tidak menghalangi notifikasi in-app muncul.
+            Notification::create([
+                'user_id' => $student->id,
+                'type' => 'new_assignment',
+                'title' => 'Tugas Baru: ' . $this->assignment->title,
+                'message' => 'Tugas baru telah ditambahkan pada kursus "' . $this->assignment->course->title . '".',
+                'action_url' => '/student/assignments/' . $this->assignment->id,
+                'channel' => 'database',
+                'sent_at' => now(),
+            ]);
+
+            try {
+                $student->notify(new NewAssignmentNotification($this->assignment));
+            } catch (\Throwable $e) {
+                Log::error('Gagal kirim email notifikasi assignment ke user ' . $student->id . ': ' . $e->getMessage());
+            }
         }
     }
 

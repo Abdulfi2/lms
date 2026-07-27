@@ -71,5 +71,6 @@ class Kernel extends HttpKernel
         'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
         'clear.verification.session' => \App\Http\Middleware\ClearVerificationSession::class,
         'ability' => \App\Http\Middleware\CheckTokenAbility::class,
+        'instructor.approved' => \App\Http\Middleware\EnsureInstructorApproved::class,
     ];
 }

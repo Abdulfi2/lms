@@ -9,10 +9,13 @@ use App\Models\LessonCompletion;
 use App\Models\Certificate;
 use App\Models\Review;
 use App\Models\UserPoint;
-use App\Services\GamificationService;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
+/**
+ * Halaman BELAJAR (sections/lessons/progress/sertifikat), wajib enrollment aktif & lunas.
+ * Untuk halaman kursus publik/marketing (browse tanpa enrollment), lihat
+ * App\Http\Controllers\CourseController — namanya sama, fungsinya beda.
+ */
 class CourseController extends Controller
 {
     public function show($slug)
@@ -33,11 +36,20 @@ class CourseController extends Controller
         $enrollment = Enrollment::where('user_id', Auth::id())
             ->where('course_id', $course->id)
             ->whereIn('status', ['active', 'completed'])
+            ->where(function ($q) {
+                $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+            })
             ->first();
 
         if (!$enrollment) {
             return redirect()->route('courses.show', $course->slug)
-                ->with('error', 'Anda harus terdaftar di kursus ini terlebih dahulu.');
+                ->with('error', 'Anda harus terdaftar di kursus ini terlebih dahulu, atau akses Anda sudah kedaluwarsa.');
+        }
+
+        if ($enrollment->payment_status !== 'paid') {
+            // Tampilkan halaman status yang jelas, bukan melempar balik ke halaman
+            // marketing dengan pesan sekali tayang yang hilang setelah reload.
+            return view('student.courses.payment-pending', compact('course', 'enrollment'));
         }
 
         // 3. Ambil sections dan lessons
@@ -95,35 +107,11 @@ class CourseController extends Controller
             }
         }
 
-        // 6. Jika semua lesson sudah selesai, tandai enrollment completed
-        $isCourseCompleted = $completedLessons >= $totalLessons && $totalLessons > 0;
-
-        if ($isCourseCompleted && $enrollment->status != 'completed') {
-            DB::beginTransaction();
-            try {
-                $enrollment->update([
-                    'status' => 'completed',
-                    'completed_at' => now(),
-                    'progress' => 100
-                ]);
-
-                // Generate sertifikat otomatis
-                if (!$enrollment->certificate_issued_at) {
-                    $enrollment->certificate_issued_at = now();
-                    $enrollment->save();
-                    \App\Jobs\GenerateCertificateJob::dispatch($enrollment);
-                }
-
-                // Gamification: tambah poin
-                GamificationService::courseCompleted(Auth::user(), $course);
-                GamificationService::addPoints(Auth::user(), 100, "Menyelesaikan kursus: {$course->title}");
-
-                DB::commit();
-            } catch (\Exception $e) {
-                DB::rollBack();
-                \Log::error('Course completion error: ' . $e->getMessage());
-            }
-        }
+        // 6. Status penyelesaian kursus (untuk tampilan saja — status/sertifikat/poin
+        // sudah ditandai secara otomatis di LessonController::complete() saat lesson
+        // terakhir diselesaikan, bukan di sini, karena GET request tidak boleh punya efek samping).
+        $isCourseCompleted = $enrollment->status === 'completed'
+            || ($completedLessons >= $totalLessons && $totalLessons > 0);
 
         // 7. Ambil sertifikat jika ada
         $certificate = Certificate::where('user_id', Auth::id())

@@ -14,13 +14,15 @@ class Review extends Model
         'comment',
         'is_approved',
         'approved_by',
-        'approved_at'
+        'approved_at',
+        'instructor_response'
     ];
 
     protected $casts = [
         'rating' => 'integer',
         'is_approved' => 'boolean',
         'approved_at' => 'datetime',
+        'instructor_response' => 'array',
     ];
 
     public function user()

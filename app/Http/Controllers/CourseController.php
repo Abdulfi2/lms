@@ -7,6 +7,11 @@ use App\Models\Category;
 use App\Models\Enrollment;
 use Illuminate\Http\Request;
 
+/**
+ * Halaman kursus PUBLIK/marketing (browse & landing page), bisa diakses tanpa enrollment.
+ * Untuk halaman belajar (sections/lessons/progress, wajib enrollment aktif & lunas),
+ * lihat App\Http\Controllers\Student\CourseController — namanya sama, fungsinya beda.
+ */
 class CourseController extends Controller
 {
     /**
@@ -83,12 +88,14 @@ class CourseController extends Controller
         // Cek apakah user sudah login dan sudah terdaftar di kursus ini
         $isEnrolled = false;
         $enrollment = null;
+        $isWishlisted = false;
         if (auth()->check()) {
             $enrollment = Enrollment::where('user_id', auth()->id())
                 ->where('course_id', $course->id)
                 ->whereIn('status', ['active', 'completed'])
                 ->first();
             $isEnrolled = !is_null($enrollment);
+            $isWishlisted = \App\Models\Wishlist::where('user_id', auth()->id())->where('course_id', $course->id)->exists();
         }
 
         // Hitung rating rata-rata dari review yang sudah disetujui
@@ -109,6 +116,7 @@ class CourseController extends Controller
             'course',
             'isEnrolled',
             'enrollment',
+            'isWishlisted',
             'averageRating',
             'ratingCount',
             'recentReviews',

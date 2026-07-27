@@ -4,6 +4,7 @@ return [
     'main' => 'Utama',
     'dashboard' => 'Dashboard',
     'my_courses' => 'Kursus Saya',
+    'wishlist' => 'Wishlist Saya',
     'learning' => 'Pembelajaran',
     'assignments' => 'Tugas',
     'certificates' => 'Sertifikat',

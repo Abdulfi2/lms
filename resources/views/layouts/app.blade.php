@@ -31,6 +31,7 @@ window.addEventListener('resize', handleResize);"
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
         /* Sidebar transition */
@@ -95,7 +96,7 @@ window.addEventListener('resize', handleResize);"
                 class="hidden lg:block fixed lg:relative z-30 h-full sidebar-transition"
                 :class="sidebarOpen ? 'w-64' : 'w-20'">
                 @auth
-                    @if (auth()->user()->hasRole('admin'))
+                    @if (auth()->user()->hasRole('admin') || auth()->user()->hasRole('event_manager'))
                         @include('components.sidebar.admin-sidebar')
                     @elseif(auth()->user()->hasRole('instructor'))
                         @include('components.sidebar.instructor-sidebar')
@@ -208,6 +209,8 @@ window.addEventListener('resize', handleResize);"
                             <p class="text-xs text-gray-500 dark:text-gray-400">
                                 @if (auth()->user()->hasRole('admin'))
                                     Administrator
+                                @elseif(auth()->user()->hasRole('event_manager'))
+                                    Event Manager
                                 @elseif(auth()->user()->hasRole('instructor'))
                                     Instruktur
                                 @else
@@ -228,7 +231,7 @@ window.addEventListener('resize', handleResize);"
 
             <!-- Navigation Menu -->
             @auth
-                @if (auth()->user()->hasRole('admin'))
+                @if (auth()->user()->hasRole('admin') || auth()->user()->hasRole('event_manager'))
                     @include('components.sidebar.mobile-admin-sidebar')
                 @elseif(auth()->user()->hasRole('instructor'))
                     @include('components.sidebar.mobile-instructor-sidebar')

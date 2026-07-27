@@ -41,10 +41,7 @@
                                 <td class="px-6 py-4 text-xs">{{ $course->formatted_price }}</td>
                                 <td class="px-6 py-4 text-xs">{{ $course->total_students }}</td>
                                 <td class="px-6 py-4">
-                                    <span
-                                        class="px-2 py-1 text-xs rounded-full {{ $course->status == 'published' ? 'bg-green-100 text-green-800' : ($course->status == 'draft' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800') }}">
-                                        {{ ucfirst($course->status) }}
-                                    </span>
+                                    <x-status-badge :status="$course->status" />
                                 </td>
                                 <td class="px-6 py-4 text-xs">{{ $course->created_at->format('d/m/Y') }}</td>
                                 <td class="px-6 py-4 text-right">

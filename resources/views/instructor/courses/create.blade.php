@@ -102,7 +102,8 @@
                             <label class="block text-sm font-medium mb-1">Status</label>
                             <select x-model="form.status" class="w-full rounded-lg border-gray-300">
                                 <option value="draft">Draft</option>
-                                <option value="published">Published</option>
+                                <option value="pending">Ajukan untuk Review Admin</option>
+                                <option value="published">Published (langsung tayang)</option>
                                 <option value="archived">Archived</option>
                             </select>
                         </div>

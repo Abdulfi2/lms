@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             QuizSeeder::class,
             GamificationSeeder::class,
             EventSeeder::class,
+            SettingsSeeder::class,
         ]);
     }
 }

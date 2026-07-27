@@ -36,9 +36,15 @@ class UserController extends Controller
             $query->role($request->role);
         }
 
-        // Filter by status (active/inactive)
+        // Filter by status (active/inactive/pending_approval)
         if ($request->filled('status')) {
-            $query->where('is_active', $request->status == 'active');
+            if ($request->status === 'pending_approval') {
+                $query->whereHas('profile', function ($q) {
+                    $q->where('approval_status', 'pending');
+                });
+            } else {
+                $query->where('is_active', $request->status == 'active');
+            }
         }
 
 
@@ -139,6 +145,24 @@ class UserController extends Controller
      */
     public function update(UpdateUserRequest $request, User $user)
     {
+        // Cegah admin mengunci diri sendiri: ganti role sendiri jadi bukan admin,
+        // atau menonaktifkan akun sendiri.
+        if ($user->id === auth()->id()) {
+            if ($request->role !== 'admin') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak dapat mengubah role akun Anda sendiri.'
+                ], 422);
+            }
+
+            if (!$request->has('is_active')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak dapat menonaktifkan akun Anda sendiri.'
+                ], 422);
+            }
+        }
+
         try {
             DB::beginTransaction();
 
@@ -288,10 +312,47 @@ class UserController extends Controller
     }
 
     /**
+     * Approve or reject a pending instructor application (AJAX).
+     */
+    public function updateApprovalStatus(Request $request, User $user)
+    {
+        $request->validate([
+            'approval_status' => 'required|in:approved,rejected',
+        ]);
+
+        if (!$user->profile) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User ini belum memiliki profil.'
+            ], 422);
+        }
+
+        $user->profile->update([
+            'approval_status' => $request->approval_status,
+            'approved_at' => $request->approval_status === 'approved' ? now() : null,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'approval_status' => $request->approval_status,
+            'message' => $request->approval_status === 'approved'
+                ? 'Instruktur berhasil disetujui.'
+                : 'Pengajuan instruktur ditolak.'
+        ]);
+    }
+
+    /**
      * Toggle user active status (AJAX)
      */
     public function toggleStatus(User $user)
     {
+        if ($user->id === auth()->id()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak dapat menonaktifkan akun Anda sendiri.'
+            ], 422);
+        }
+
         try {
             $user->update(['is_active' => !$user->is_active]);
 

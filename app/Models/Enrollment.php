@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Jobs\GenerateCertificateJob;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -15,8 +14,12 @@ class Enrollment extends Model
     protected $fillable = [
         'user_id',
         'course_id',
+        'coupon_id',
         'amount_paid',
+        'discount_amount',
         'payment_status',
+        'refund_reason',
+        'refunded_at',
         'status',
         'progress',
         'enrolled_at',
@@ -26,6 +29,16 @@ class Enrollment extends Model
         'rating_given',
         'review_given',
         'last_lesson_id'
+    ];
+
+    protected $casts = [
+        'enrolled_at' => 'datetime',
+        'completed_at' => 'datetime',
+        'expires_at' => 'datetime',
+        'certificate_issued_at' => 'datetime',
+        'refunded_at' => 'datetime',
+        'rating_given' => 'boolean',
+        'review_given' => 'boolean',
     ];
 
     // =====================
@@ -42,21 +55,8 @@ class Enrollment extends Model
         return $this->belongsTo(Course::class);
     }
 
-    protected static function booted()
+    public function coupon()
     {
-        static::updated(function ($enrollment) {
-            // Hanya generate jika progress >= 100, belum ada certificate_issued_at, dan ada perubahan progress
-            if (
-                $enrollment->progress >= 100 &&
-                !$enrollment->certificate_issued_at &&
-                $enrollment->isDirty('progress')
-            ) {
-
-                $enrollment->certificate_issued_at = now();
-                $enrollment->saveQuietly(); // pakai saveQuietly agar tidak infinite loop
-
-                GenerateCertificateJob::dispatch($enrollment);
-            }
-        });
+        return $this->belongsTo(Coupon::class);
     }
 }

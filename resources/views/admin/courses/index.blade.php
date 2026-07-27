@@ -85,11 +85,11 @@
                                         x-text="course.level"></span>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <button @click="toggleStatus(course.id, course.status)"
+                                    <button @click="course.status === 'pending' ? null : toggleStatus(course.id, course.status)"
                                         class="px-2 py-1 text-xs rounded-full"
                                         :class="{
                                             'bg-gray-100 text-gray-800': course.status === 'draft',
-                                            'bg-yellow-100 text-yellow-800': course.status === 'pending',
+                                            'bg-yellow-100 text-yellow-800 cursor-default': course.status === 'pending',
                                             'bg-green-100 text-green-800': course.status === 'published',
                                             'bg-red-100 text-red-800': course.status === 'archived'
                                         }"
@@ -97,6 +97,26 @@
                                 </td>
                                 <td class="px-6 py-4 text-sm" x-text="course.total_students"></td>
                                 <td class="px-6 py-4 text-right space-x-2">
+                                    <template x-if="course.status === 'pending'">
+                                        <span class="inline-flex space-x-2">
+                                            <button @click="approveCourse(course.id)" class="text-green-600 hover:text-green-800" title="Setujui">
+                                                <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                                </svg>
+                                            </button>
+                                            <button @click="rejectCourse(course.id)" class="text-red-600 hover:text-red-800" title="Tolak">
+                                                <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </span>
+                                    </template>
+                                    <a :href="'/admin/courses/' + course.id" class="text-gray-600 hover:text-gray-800" title="Lihat Detail">
+                                        <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                    </a>
                                     <a :href="'/admin/courses/' + course.id + '/sections'"
                                         class="text-green-600 hover:text-green-800" title="Kelola Sections">
                                         <svg class="w-5 h-5 inline" fill="none" stroke="currentColor"
@@ -168,7 +188,43 @@
                     from: 0,
                     to: 0,
                     init() {
+                        const params = new URLSearchParams(window.location.search);
+                        this.filters.search = params.get('search') || '';
+                        this.filters.status = params.get('status') || '';
+                        this.filters.level = params.get('level') || '';
+                        this.filters.instructor_id = params.get('instructor_id') || '';
+
                         this.fetchCourses();
+                    },
+                    approveCourse(id) {
+                        if (!confirm('Setujui dan publikasikan kursus ini?')) return;
+                        fetch(`/admin/courses/${id}/approve`, {
+                                method: 'PATCH',
+                                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }
+                            })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.success) { window.toast.success(data.message); this.fetchCourses(); }
+                                else window.toast.error(data.message);
+                            });
+                    },
+                    rejectCourse(id) {
+                        const reason = prompt('Alasan penolakan (akan dikirim ke instruktur):');
+                        if (!reason) return;
+                        fetch(`/admin/courses/${id}/reject`, {
+                                method: 'PATCH',
+                                headers: {
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({ reason })
+                            })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.success) { window.toast.success(data.message); this.fetchCourses(); }
+                                else window.toast.error(data.message);
+                            });
                     },
                     fetchCourses() {
                         this.loading = true;

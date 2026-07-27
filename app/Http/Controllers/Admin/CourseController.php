@@ -71,7 +71,6 @@ class CourseController extends Controller
             }
 
             $data['slug'] = $request->slug ?: \Illuminate\Support\Str::slug($request->title);
-            $data['instructor_id'] = $request->instructor_id ?? auth()->id();
 
             $course = Course::create($data);
 
@@ -136,7 +135,7 @@ class CourseController extends Controller
                 if ($course->thumbnail && Storage::disk('public')->exists($course->thumbnail)) {
                     Storage::disk('public')->delete($course->thumbnail);
                 }
-                $path = $request->file('thumbnail')->upload('courses/thumbnails', 'public');
+                $path = $request->file('thumbnail')->store('courses/thumbnails', 'public');
                 $data['thumbnail'] = $path;
             }
 
@@ -196,6 +195,15 @@ class CourseController extends Controller
             }
             $course->categories()->detach();
             $course->tags()->detach();
+
+            // Course pakai SoftDeletes, jadi FK onDelete('cascade') di DB tidak pernah
+            // ter-trigger untuk konten strukturalnya. Hapus eksplisit di sini supaya
+            // sections/lessons/quiz tidak nyangkut merujuk ke course yang sudah "dihapus".
+            // Data riwayat siswa (enrollment, sertifikat, review, payment) SENGAJA tidak
+            // disentuh supaya sertifikat/riwayat belajar siswa tetap ada.
+            $course->sections()->delete();
+            $course->quizzes()->delete();
+
             $course->delete();
             DB::commit();
 
@@ -220,6 +228,15 @@ class CourseController extends Controller
 
     public function toggleStatus(Course $course)
     {
+        // Kursus yang masih menunggu approval tidak boleh ikut ke-toggle langsung jadi
+        // published lewat sini — harus lewat approve()/reject() supaya alurnya jelas.
+        if ($course->status === 'pending') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kursus ini masih menunggu approval. Gunakan tombol Setujui/Tolak.'
+            ], 422);
+        }
+
         $newStatus = $course->status === 'published' ? 'draft' : 'published';
         $course->update(['status' => $newStatus, 'published_at' => $newStatus === 'published' ? now() : null]);
 
@@ -228,6 +245,43 @@ class CourseController extends Controller
             'status' => $newStatus,
             'message' => 'Status kursus berhasil diubah.'
         ]);
+    }
+
+    /**
+     * Setujui kursus yang statusnya pending -> published.
+     */
+    public function approve(Course $course)
+    {
+        if ($course->status !== 'pending') {
+            return response()->json(['success' => false, 'message' => 'Kursus ini tidak sedang menunggu approval.'], 422);
+        }
+
+        $course->update([
+            'status' => 'published',
+            'published_at' => now(),
+            'rejection_reason' => null,
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Kursus berhasil disetujui dan dipublikasikan.']);
+    }
+
+    /**
+     * Tolak kursus yang statusnya pending -> kembali ke draft, dengan alasan untuk instruktur.
+     */
+    public function reject(Request $request, Course $course)
+    {
+        if ($course->status !== 'pending') {
+            return response()->json(['success' => false, 'message' => 'Kursus ini tidak sedang menunggu approval.'], 422);
+        }
+
+        $request->validate(['reason' => 'required|string|max:1000']);
+
+        $course->update([
+            'status' => 'draft',
+            'rejection_reason' => $request->reason,
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Kursus ditolak dan dikembalikan ke instruktur sebagai draft.']);
     }
 
     public function show(Course $course)

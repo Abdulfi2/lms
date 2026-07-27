@@ -46,6 +46,15 @@ class StoreCourseRequest extends FormRequest
             'categories.*' => 'exists:categories,id',
             'tags' => 'nullable|array',
             'tags.*' => 'exists:tags,id',
+            'instructor_id' => [
+                'required',
+                'exists:users,id',
+                function ($attribute, $value, $fail) {
+                    if (!\App\Models\User::find($value)?->hasRole('instructor')) {
+                        $fail('User yang dipilih bukan instruktur.');
+                    }
+                },
+            ],
         ];
     }
 
@@ -57,6 +66,7 @@ class StoreCourseRequest extends FormRequest
             'price.required' => 'Harga kursus wajib diisi.',
             'level.required' => 'Level kursus wajib dipilih.',
             'status.required' => 'Status kursus wajib dipilih.',
+            'instructor_id.required' => 'Instruktur wajib dipilih.',
         ];
     }
 }

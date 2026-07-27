@@ -93,6 +93,16 @@ class User extends Authenticatable
             ->withPivot('earned_at');
     }
 
+    /**
+     * Notifikasi in-app (tabel notifications kustom). Diberi nama berbeda dari
+     * notifications() milik trait Notifiable karena skema tabelnya berbeda
+     * (user_id, bukan notifiable_type/notifiable_id) dan tidak kompatibel.
+     */
+    public function appNotifications()
+    {
+        return $this->hasMany(Notification::class, 'user_id');
+    }
+
     // ========== HELPER METHODS ==========
 
     public function isStudent(): bool

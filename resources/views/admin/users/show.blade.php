@@ -30,6 +30,35 @@
                         {{ $user->last_login_at ? $user->last_login_at->format('d/m/Y H:i') : '-' }}</div>
                 </div>
 
+                @if ($user->hasRole('instructor') && $user->profile)
+                    <div class="mt-4 p-4 rounded-lg border dark:border-gray-700 flex items-center justify-between">
+                        <div>
+                            <strong>Status Persetujuan Instruktur:</strong>
+                            <span class="ml-1 inline-block px-2 py-1 text-xs rounded-full
+                                @if ($user->profile->approval_status === 'approved') bg-green-100 text-green-800
+                                @elseif ($user->profile->approval_status === 'rejected') bg-red-100 text-red-800
+                                @else bg-yellow-100 text-yellow-800 @endif">
+                                {{ ucfirst($user->profile->approval_status ?? 'pending') }}
+                            </span>
+                        </div>
+                        @if ($user->profile->approval_status !== 'approved')
+                            <form method="POST" action="{{ route('admin.users.approval-status', $user) }}">
+                                @csrf
+                                @method('PATCH')
+                                <input type="hidden" name="approval_status" value="approved">
+                                <button type="submit" class="px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700">Setujui</button>
+                            </form>
+                        @else
+                            <form method="POST" action="{{ route('admin.users.approval-status', $user) }}">
+                                @csrf
+                                @method('PATCH')
+                                <input type="hidden" name="approval_status" value="rejected">
+                                <button type="submit" class="px-3 py-1.5 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700">Cabut Persetujuan</button>
+                            </form>
+                        @endif
+                    </div>
+                @endif
+
                 <hr class="my-4 dark:border-gray-700">
                 <h3 class="text-lg font-semibold mb-3">Profil Lengkap</h3>
                 @if ($user->profile)

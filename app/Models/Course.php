@@ -39,6 +39,7 @@ class Course extends Model
         'enrolled_count',
         'wishlist_count',
         'status',
+        'rejection_reason',
         'is_featured',
         'has_certificate',
         'certificate_template',
@@ -118,6 +119,11 @@ class Course extends Model
     public function reviews()
     {
         return $this->hasMany(Review::class);
+    }
+
+    public function wishlists()
+    {
+        return $this->hasMany(Wishlist::class);
     }
 
     // Accessors

@@ -74,6 +74,43 @@
             </div>
         </div>
 
+        <!-- Tugas Menunggu Dinilai -->
+        @if ($pendingGradingCount > 0)
+            <div class="bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900 rounded-xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-red-100 dark:bg-red-900 rounded-lg flex items-center justify-center mr-3">
+                            <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-red-800 dark:text-red-400">{{ $pendingGradingCount }} tugas menunggu dinilai</h3>
+                            <p class="text-sm text-red-600 dark:text-red-500">Siswa menunggu feedback dan nilai dari Anda.</p>
+                        </div>
+                    </div>
+                    <a href="{{ route('instructor.submissions.index') }}"
+                        class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-semibold whitespace-nowrap">
+                        Nilai Sekarang
+                    </a>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 rounded-lg divide-y dark:divide-gray-700">
+                    @foreach ($pendingSubmissions as $submission)
+                        <div class="p-3 flex items-center justify-between text-sm">
+                            <div>
+                                <span class="font-semibold text-gray-800 dark:text-white">{{ $submission->student->name ?? '-' }}</span>
+                                <span class="text-gray-400 mx-1">&middot;</span>
+                                <span class="text-gray-500">{{ $submission->assignment->title ?? '-' }}</span>
+                            </div>
+                            <span class="text-xs text-gray-400">{{ optional($submission->submitted_at)->diffForHumans() }}</span>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
         <!-- Chart Pendapatan -->
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Pendapatan 6 Bulan Terakhir</h3>

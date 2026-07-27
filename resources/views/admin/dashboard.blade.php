@@ -6,14 +6,90 @@
 
 @section('content')
     <div class="space-y-6">
+        @php
+            $needsAttention = $pendingInstructorApprovals + $pendingPayments + $pendingReviews + $pendingCourses + $pendingPostReports + $newContactMessages + $failedJobsCount;
+        @endphp
+
+        <!-- Butuh Perhatian -->
+        @if ($needsAttention > 0)
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Butuh Perhatian</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    @if ($pendingInstructorApprovals > 0)
+                        <a href="{{ route('admin.users.index', ['status' => 'pending_approval']) }}"
+                            class="flex items-center justify-between p-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition">
+                            <div>
+                                <p class="text-sm text-yellow-800 dark:text-yellow-400">Instruktur Menunggu Approval</p>
+                                <p class="text-2xl font-bold text-yellow-700 dark:text-yellow-300">{{ $pendingInstructorApprovals }}</p>
+                            </div>
+                        </a>
+                    @endif
+                    @if ($pendingPayments > 0)
+                        <a href="{{ route('admin.enrollments.index') }}"
+                            class="flex items-center justify-between p-4 rounded-lg bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 transition">
+                            <div>
+                                <p class="text-sm text-orange-800 dark:text-orange-400">Pembayaran Menunggu Konfirmasi</p>
+                                <p class="text-2xl font-bold text-orange-700 dark:text-orange-300">{{ $pendingPayments }}</p>
+                            </div>
+                        </a>
+                    @endif
+                    @if ($pendingReviews > 0)
+                        <a href="{{ route('admin.reviews.index') }}"
+                            class="flex items-center justify-between p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition">
+                            <div>
+                                <p class="text-sm text-blue-800 dark:text-blue-400">Ulasan Menunggu Approval</p>
+                                <p class="text-2xl font-bold text-blue-700 dark:text-blue-300">{{ $pendingReviews }}</p>
+                            </div>
+                        </a>
+                    @endif
+                    @if ($pendingCourses > 0)
+                        <a href="{{ route('admin.courses.index', ['status' => 'pending']) }}"
+                            class="flex items-center justify-between p-4 rounded-lg bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition">
+                            <div>
+                                <p class="text-sm text-purple-800 dark:text-purple-400">Kursus Menunggu Approval</p>
+                                <p class="text-2xl font-bold text-purple-700 dark:text-purple-300">{{ $pendingCourses }}</p>
+                            </div>
+                        </a>
+                    @endif
+                    @if ($pendingPostReports > 0)
+                        <a href="{{ route('admin.post-reports.index') }}"
+                            class="flex items-center justify-between p-4 rounded-lg bg-pink-50 dark:bg-pink-900/20 hover:bg-pink-100 dark:hover:bg-pink-900/30 transition">
+                            <div>
+                                <p class="text-sm text-pink-800 dark:text-pink-400">Laporan Forum Menunggu</p>
+                                <p class="text-2xl font-bold text-pink-700 dark:text-pink-300">{{ $pendingPostReports }}</p>
+                            </div>
+                        </a>
+                    @endif
+                    @if ($newContactMessages > 0)
+                        <a href="{{ route('admin.contact-messages.index') }}"
+                            class="flex items-center justify-between p-4 rounded-lg bg-teal-50 dark:bg-teal-900/20 hover:bg-teal-100 dark:hover:bg-teal-900/30 transition">
+                            <div>
+                                <p class="text-sm text-teal-800 dark:text-teal-400">Pesan Kontak Baru</p>
+                                <p class="text-2xl font-bold text-teal-700 dark:text-teal-300">{{ $newContactMessages }}</p>
+                            </div>
+                        </a>
+                    @endif
+                    @if ($failedJobsCount > 0)
+                        <a href="{{ route('admin.failed-jobs.index') }}"
+                            class="flex items-center justify-between p-4 rounded-lg bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 transition">
+                            <div>
+                                <p class="text-sm text-red-800 dark:text-red-400">Failed Jobs</p>
+                                <p class="text-2xl font-bold text-red-700 dark:text-red-300">{{ $failedJobsCount }}</p>
+                            </div>
+                        </a>
+                    @endif
+                </div>
+            </div>
+        @endif
+
         <!-- Stats Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-gray-500 dark:text-gray-400 text-sm">Total Users</p>
-                        <p class="text-2xl font-bold text-gray-800 dark:text-white">1,234</p>
-                        <p class="text-green-500 text-sm mt-2">↑ 12% dari bulan lalu</p>
+                        <p class="text-2xl font-bold text-gray-800 dark:text-white">{{ number_format($totalUsers) }}</p>
+                        <p class="text-green-500 text-sm mt-2">+{{ $newUsersThisMonth }} bulan ini</p>
                     </div>
                     <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
                         <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -29,8 +105,8 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-gray-500 dark:text-gray-400 text-sm">Total Courses</p>
-                        <p class="text-2xl font-bold text-gray-800 dark:text-white">45</p>
-                        <p class="text-green-500 text-sm mt-2">↑ 5 kursus baru</p>
+                        <p class="text-2xl font-bold text-gray-800 dark:text-white">{{ number_format($totalCourses) }}</p>
+                        <p class="text-green-500 text-sm mt-2">+{{ $newCoursesThisMonth }} kursus baru bulan ini</p>
                     </div>
                     <div class="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
                         <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -46,8 +122,8 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-gray-500 dark:text-gray-400 text-sm">Total Revenue</p>
-                        <p class="text-2xl font-bold text-gray-800 dark:text-white">Rp 125.5M</p>
-                        <p class="text-green-500 text-sm mt-2">↑ 23% dari bulan lalu</p>
+                        <p class="text-2xl font-bold text-gray-800 dark:text-white">Rp {{ number_format($totalRevenue, 0, ',', '.') }}</p>
+                        <p class="text-green-500 text-sm mt-2">Rp {{ number_format($revenueThisMonth, 0, ',', '.') }} bulan ini</p>
                     </div>
                     <div class="w-12 h-12 bg-yellow-100 dark:bg-yellow-900 rounded-lg flex items-center justify-center">
                         <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -63,8 +139,8 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-gray-500 dark:text-gray-400 text-sm">Completion Rate</p>
-                        <p class="text-2xl font-bold text-gray-800 dark:text-white">78%</p>
-                        <p class="text-green-500 text-sm mt-2">↑ 5% dari bulan lalu</p>
+                        <p class="text-2xl font-bold text-gray-800 dark:text-white">{{ $completionRate }}%</p>
+                        <p class="text-gray-400 text-sm mt-2">dari seluruh enrollment</p>
                     </div>
                     <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
                         <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -80,40 +156,26 @@
         <!-- Charts -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
-                <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Statistik Pendaftaran</h3>
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Statistik Pendaftaran (6 Bulan Terakhir)</h3>
                 <canvas id="enrollmentChart" height="200"></canvas>
             </div>
 
             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
                 <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Kursus Populer</h3>
                 <div class="space-y-4">
-                    <div>
-                        <div class="flex justify-between mb-1">
-                            <span class="text-sm text-gray-600 dark:text-gray-400">Laravel 10 Mastery</span>
-                            <span class="text-sm text-gray-600 dark:text-gray-400">1,234 siswa</span>
+                    @forelse ($popularCourses as $course)
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-sm text-gray-600 dark:text-gray-400">{{ Str::limit($course->title, 30) }}</span>
+                                <span class="text-sm text-gray-600 dark:text-gray-400">{{ number_format($course->total_students) }} siswa</span>
+                            </div>
+                            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                <div class="bg-primary h-2 rounded-full" style="width: {{ round(($course->total_students / $maxStudents) * 100) }}%"></div>
+                            </div>
                         </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="bg-primary h-2 rounded-full" style="width: 85%"></div>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="flex justify-between mb-1">
-                            <span class="text-sm text-gray-600 dark:text-gray-400">Vue.js 3 Complete</span>
-                            <span class="text-sm text-gray-600 dark:text-gray-400">987 siswa</span>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="bg-primary h-2 rounded-full" style="width: 68%"></div>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="flex justify-between mb-1">
-                            <span class="text-sm text-gray-600 dark:text-gray-400">Tailwind CSS Master</span>
-                            <span class="text-sm text-gray-600 dark:text-gray-400">756 siswa</span>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="bg-primary h-2 rounded-full" style="width: 52%"></div>
-                        </div>
-                    </div>
+                    @empty
+                        <p class="text-sm text-gray-500">Belum ada data kursus.</p>
+                    @endforelse
                 </div>
             </div>
         </div>
@@ -138,20 +200,22 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y dark:divide-gray-700">
-                        <tr>
-                            <td class="px-6 py-4 text-sm text-gray-800 dark:text-white">John Doe</td>
-                            <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">john@example.com</td>
-                            <td class="px-6 py-4"><span
-                                    class="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">Student</span></td>
-                            <td class="px-6 py-4 text-sm text-gray-500">2 jam lalu</td>
-                        </tr>
-                        <tr>
-                            <td class="px-6 py-4 text-sm text-gray-800 dark:text-white">Jane Smith</td>
-                            <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">jane@example.com</td>
-                            <td class="px-6 py-4"><span
-                                    class="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">Instructor</span></td>
-                            <td class="px-6 py-4 text-sm text-gray-500">5 jam lalu</td>
-                        </tr>
+                        @forelse ($recentUsers as $user)
+                            <tr>
+                                <td class="px-6 py-4 text-sm text-gray-800 dark:text-white">{{ $user->name }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{{ $user->email }}</td>
+                                <td class="px-6 py-4">
+                                    <span class="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
+                                        {{ ucfirst($user->roles->first()->name ?? '-') }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-sm text-gray-500">{{ $user->created_at->diffForHumans() }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4" class="px-6 py-8 text-center text-gray-500">Belum ada user.</td>
+                            </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
@@ -160,15 +224,14 @@
 
     @push('scripts')
         <script>
-            // Enrollment Chart
             const ctx = document.getElementById('enrollmentChart').getContext('2d');
             new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun'],
+                    labels: @json($chartLabels),
                     datasets: [{
                         label: 'Pendaftaran',
-                        data: [65, 78, 89, 94, 112, 145],
+                        data: @json($chartData),
                         borderColor: '#3B82F6',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
                         tension: 0.3,

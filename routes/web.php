@@ -1,12 +1,26 @@
 <?php
 
 use App\Http\Controllers\Admin\ArticleCategoryController;
+use App\Http\Controllers\Admin\CertificateController as AdminCertificateController;
+use App\Http\Controllers\Admin\AchievementController as AdminAchievementController;
+use App\Http\Controllers\Admin\BadgeController as AdminBadgeController;
+use App\Http\Controllers\Admin\LevelController as AdminLevelController;
+use App\Http\Controllers\Admin\ActivityLogController;
+use App\Http\Controllers\Admin\SettingController as AdminSettingController;
+use App\Http\Controllers\Admin\WishlistController as AdminWishlistController;
+use App\Http\Controllers\Admin\PayoutController as AdminPayoutController;
+use App\Http\Controllers\Admin\PostReportController as AdminPostReportController;
+use App\Http\Controllers\Admin\CouponController as AdminCouponController;
+use App\Http\Controllers\Admin\NotificationController as AdminNotificationController;
+use App\Http\Controllers\Admin\AnalyticsController as AdminAnalyticsController;
+use App\Http\Controllers\Admin\ContactMessageController as AdminContactMessageController;
 use App\Http\Controllers\ArticleController;
-use App\Http\Controllers\ForumController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\MailController;
 use App\Http\Controllers\PublicEventController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\CourseController as PublicCourseController;
 use App\Http\Controllers\UserSettingController;
 use App\Http\Controllers\Admin\ArticleController as AdminArticleController;
@@ -21,12 +35,19 @@ use App\Http\Controllers\Admin\LessonController;
 use App\Http\Controllers\Admin\TagController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
+use App\Http\Controllers\Admin\EnrollmentController as AdminEnrollmentController;
 use App\Http\Controllers\Instructor\DashboardController as InstructorDashboardController;
 use App\Http\Controllers\Instructor\CourseController as InstructorCourseController;
 use App\Http\Controllers\Instructor\QuizController;
 use App\Http\Controllers\Instructor\SectionController as InstructorSectionController;
 use App\Http\Controllers\Instructor\LessonController as InstructorLessonController;
+use App\Http\Controllers\Instructor\AssignmentController as InstructorAssignmentController;
 use App\Http\Controllers\Instructor\StudentController;
+use App\Http\Controllers\Instructor\SubmissionController;
+use App\Http\Controllers\Instructor\ReviewController as InstructorReviewController;
+use App\Http\Controllers\Instructor\AnalyticsController as InstructorAnalyticsController;
+use App\Http\Controllers\Instructor\EarningsController as InstructorEarningsController;
+use App\Http\Controllers\Instructor\ForumController as InstructorForumController;
 use App\Http\Controllers\Student\AchievementController;
 use App\Http\Controllers\Student\AssignmentController;
 use App\Http\Controllers\Student\CertificateController;
@@ -38,6 +59,7 @@ use App\Http\Controllers\Student\QuizController as StudentQuizController;
 use App\Http\Controllers\Student\ReviewController as StudentReviewController;
 use App\Http\Controllers\Student\ForumController as StudentForumController;
 use App\Http\Controllers\Student\EventController as StudentEventController;
+use App\Http\Controllers\Student\WishlistController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -67,6 +89,14 @@ Route::post('/events/{slug}/register', [PublicEventController::class, 'register'
 
 Route::get('/certificate/verify/{code}', [CertificateController::class, 'verify'])->name('certificate.verify');
 
+Route::get('/contact', [ContactController::class, 'create'])->name('contact.create');
+Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
+
+Route::view('/about', 'public.about')->name('about');
+Route::view('/faq', 'public.faq')->name('faq');
+Route::view('/privacy-policy', 'public.privacy-policy')->name('privacy-policy');
+Route::view('/terms', 'public.terms')->name('terms');
+
 Route::middleware(['auth', 'verified'])->group(function () {
     // Redirect berdasarkan role
     Route::get('/dashboard', function () {
@@ -76,6 +106,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             return redirect()->route('admin.dashboard');
         } elseif ($user->hasRole('instructor')) {
             return redirect()->route('instructor.dashboard');
+        } elseif ($user->hasRole('event_manager')) {
+            // Role ini hanya diberi akses ke manajemen event (lihat middleware
+            // 'role:admin|event_manager' di bawah), jadi tidak punya dashboard sendiri.
+            return redirect()->route('admin.events.index');
         }
         return redirect()->route('student.dashboard');
     })->name('dashboard');
@@ -120,10 +154,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Admin Routes
     Route::middleware(['role:admin'])->prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/analytics', [AdminAnalyticsController::class, 'index'])->name('analytics');
 
         Route::resource('users', UserController::class);
         Route::post('users/bulk-delete', [UserController::class, 'bulkDestroy'])->name('users.bulk-delete');
         Route::patch('users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
+        Route::patch('users/{user}/approval-status', [UserController::class, 'updateApprovalStatus'])->name('users.approval-status');
 
         // Role Management
         Route::get('/roles', [RolePermissionController::class, 'roles'])->name('roles.index');
@@ -142,19 +178,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/permissions/{permission}', [RolePermissionController::class, 'destroyPermission'])->name('permissions.destroy');
 
         // Articles
-        Route::resource('articles', AdminArticleController::class);
+        Route::resource('articles', AdminArticleController::class)->except(['show']);
         Route::patch('articles/{article}/toggle-status', [AdminArticleController::class, 'toggleStatus'])->name('articles.toggle-status');
-        Route::resource('article-categories', ArticleCategoryController::class);
+        Route::resource('article-categories', ArticleCategoryController::class)->except(['show']);
 
         // Categories & Tags
-        Route::resource('categories', CategoryController::class);
+        Route::resource('categories', CategoryController::class)->except(['show']);
         Route::patch('categories/{category}/toggle-status', [CategoryController::class, 'toggleStatus'])->name('categories.toggle-status');
-        Route::resource('tags', TagController::class);
+        Route::resource('tags', TagController::class)->except(['show']);
         Route::patch('tags/{tag}/toggle-status', [TagController::class, 'toggleStatus'])->name('tags.toggle-status');
 
         // Course
         Route::resource('courses', CourseController::class);
         Route::patch('courses/{course}/toggle-status', [CourseController::class, 'toggleStatus'])->name('courses.toggle-status');
+        Route::patch('courses/{course}/approve', [CourseController::class, 'approve'])->name('courses.approve');
+        Route::patch('courses/{course}/reject', [CourseController::class, 'reject'])->name('courses.reject');
 
         Route::prefix('courses/{course}')->group(function () {
             Route::resource('sections', SectionController::class)->except(['show']);
@@ -166,9 +204,65 @@ Route::middleware(['auth', 'verified'])->group(function () {
             });
         });
 
+        // Konfirmasi pembayaran manual (belum ada payment gateway)
+        Route::get('/enrollments', [AdminEnrollmentController::class, 'index'])->name('enrollments.index');
+        Route::patch('/enrollments/{enrollment}/mark-paid', [AdminEnrollmentController::class, 'markPaid'])->name('enrollments.mark-paid');
+        Route::post('/enrollments/{enrollment}/refund', [AdminEnrollmentController::class, 'refund'])->name('enrollments.refund');
+
         Route::get('/reviews', [AdminReviewController::class, 'index'])->name('reviews.index');
         Route::patch('/reviews/{review}/approve', [AdminReviewController::class, 'approve'])->name('reviews.approve');
         Route::delete('/reviews/{review}', [AdminReviewController::class, 'destroy'])->name('reviews.destroy');
+
+        // Manajemen Sertifikat
+        Route::get('/certificates', [AdminCertificateController::class, 'index'])->name('certificates.index');
+        Route::get('/certificates/{certificate}', [AdminCertificateController::class, 'show'])->name('certificates.show');
+        Route::patch('/certificates/{certificate}/toggle-verified', [AdminCertificateController::class, 'toggleVerified'])->name('certificates.toggle-verified');
+        Route::delete('/certificates/{certificate}', [AdminCertificateController::class, 'destroy'])->name('certificates.destroy');
+
+        // Gamifikasi: Achievement, Badge, Level
+        Route::resource('achievements', AdminAchievementController::class)->except(['show']);
+        Route::patch('achievements/{achievement}/toggle-status', [AdminAchievementController::class, 'toggleStatus'])->name('achievements.toggle-status');
+        Route::resource('badges', AdminBadgeController::class)->except(['show']);
+        Route::patch('badges/{badge}/toggle-status', [AdminBadgeController::class, 'toggleStatus'])->name('badges.toggle-status');
+        Route::resource('levels', AdminLevelController::class)->except(['show']);
+
+        // Activity Log (read-only)
+        Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
+        Route::get('/activity-logs/{activityLog}', [ActivityLogController::class, 'show'])->name('activity-logs.show');
+
+        // Site Settings
+        Route::get('/settings', [AdminSettingController::class, 'index'])->name('settings.index');
+        Route::put('/settings', [AdminSettingController::class, 'update'])->name('settings.update');
+
+        // Statistik Wishlist
+        Route::get('/wishlists', [AdminWishlistController::class, 'index'])->name('wishlists.index');
+
+        // Instructor Payout
+        Route::get('/payouts', [AdminPayoutController::class, 'index'])->name('payouts.index');
+        Route::get('/payouts/{instructor}', [AdminPayoutController::class, 'show'])->name('payouts.show');
+        Route::post('/payouts/{instructor}', [AdminPayoutController::class, 'store'])->name('payouts.store');
+        Route::delete('/payouts/entry/{payout}', [AdminPayoutController::class, 'destroy'])->name('payouts.destroy');
+
+        // Moderasi Laporan Forum
+        Route::get('/post-reports', [AdminPostReportController::class, 'index'])->name('post-reports.index');
+        Route::patch('/post-reports/{postReport}/dismiss', [AdminPostReportController::class, 'dismiss'])->name('post-reports.dismiss');
+        Route::delete('/post-reports/{postReport}/resolve', [AdminPostReportController::class, 'resolve'])->name('post-reports.resolve');
+
+        // Coupon / Diskon
+        Route::resource('coupons', AdminCouponController::class)->except(['show']);
+        Route::patch('coupons/{coupon}/toggle-status', [AdminCouponController::class, 'toggleStatus'])->name('coupons.toggle-status');
+
+        // Broadcast Notifikasi / Pengumuman
+        Route::get('/notifications', [AdminNotificationController::class, 'index'])->name('notifications.index');
+        Route::get('/notifications/create', [AdminNotificationController::class, 'create'])->name('notifications.create');
+        Route::post('/notifications', [AdminNotificationController::class, 'store'])->name('notifications.store');
+
+        // Inbox Pesan Kontak
+        Route::get('/contact-messages', [AdminContactMessageController::class, 'index'])->name('contact-messages.index');
+        Route::get('/contact-messages/{contactMessage}', [AdminContactMessageController::class, 'show'])->name('contact-messages.show');
+        Route::post('/contact-messages/{contactMessage}/reply', [AdminContactMessageController::class, 'reply'])->name('contact-messages.reply');
+        Route::patch('/contact-messages/{contactMessage}/close', [AdminContactMessageController::class, 'close'])->name('contact-messages.close');
+        Route::delete('/contact-messages/{contactMessage}', [AdminContactMessageController::class, 'destroy'])->name('contact-messages.destroy');
 
         // Failed Jobs Management
         Route::get('/failed-jobs', [FailedJobsController::class, 'index'])->name('failed-jobs.index');
@@ -179,10 +273,27 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/failed-jobs', [FailedJobsController::class, 'deleteAll'])->name('failed-jobs.delete-all');
     });
 
-    // Instructor Routes
+    // Halaman status untuk instruktur yang belum/tidak disetujui admin — sengaja di luar
+    // middleware 'instructor.approved' supaya tidak memicu redirect loop.
     Route::middleware(['role:instructor'])->prefix('instructor')->name('instructor.')->group(function () {
+        Route::get('/pending-approval', function () {
+            $status = auth()->user()->profile?->approval_status ?? 'approved';
+
+            if ($status === 'approved') {
+                return redirect()->route('instructor.dashboard');
+            }
+
+            return view('instructor.pending-approval', ['status' => $status]);
+        })->name('pending-approval');
+    });
+
+    // Instructor Routes
+    Route::middleware(['role:instructor', 'instructor.approved'])->prefix('instructor')->name('instructor.')->group(function () {
         Route::get('/dashboard', [InstructorDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/analytics', [InstructorAnalyticsController::class, 'index'])->name('analytics');
+        Route::get('/earnings', [InstructorEarningsController::class, 'index'])->name('earnings.index');
         Route::resource('courses', InstructorCourseController::class);
+        Route::resource('assignments', InstructorAssignmentController::class)->except(['show']);
 
         Route::prefix('courses/{course}')->name('courses.')->group(function () {
             Route::resource('sections', InstructorSectionController::class);
@@ -194,6 +305,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::post('lessons/update-order', [InstructorLessonController::class, 'updateOrder'])->name('lessons.update-order');
             });
 
+            // Quiz Management (nested di dalam course)
             Route::resource('quizzes', QuizController::class);
             Route::post('quizzes/{quiz}/questions', [QuizController::class, 'storeQuestion'])->name('quizzes.questions.store');
             Route::put('quizzes/{quiz}/questions/{question}', [QuizController::class, 'updateQuestion'])->name('quizzes.questions.update');
@@ -202,6 +314,28 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::get('/students', [StudentController::class, 'index'])->name('students.index');
         Route::get('/students/{user}/progress', [StudentController::class, 'progress'])->name('students.progress');
+
+        // Submission & Grading Management
+        Route::get('/submissions', [SubmissionController::class, 'index'])->name('submissions.index');
+        Route::get('/submissions/assignment/{assignment}', [SubmissionController::class, 'show'])->name('submissions.show');
+        Route::get('/submissions/{submission}/edit', [SubmissionController::class, 'edit'])->name('submissions.edit');
+        Route::put('/submissions/{submission}', [SubmissionController::class, 'update'])->name('submissions.update');
+
+        // Review & Feedback Management
+        Route::get('/reviews', [InstructorReviewController::class, 'index'])->name('reviews.index');
+        Route::put('/reviews/{review}', [InstructorReviewController::class, 'update'])->name('reviews.update');
+
+        // Forum & Community Management
+        Route::get('/forums', [InstructorForumController::class, 'index'])->name('forums.index');
+        Route::prefix('courses/{course}/forums/{forum}')->name('forums.')->group(function () {
+            Route::get('/', [InstructorForumController::class, 'showForum'])->name('show');
+            Route::get('/threads/{thread}', [InstructorForumController::class, 'showThread'])->name('thread.show');
+            Route::post('/threads/{thread}/posts', [InstructorForumController::class, 'storePost'])->name('thread.post.store');
+            Route::post('/threads/{thread}/posts/{post}/solution', [InstructorForumController::class, 'markAsSolution'])->name('thread.post.solution');
+            Route::post('/threads/{thread}/lock', [InstructorForumController::class, 'toggleLock'])->name('thread.lock');
+            Route::post('/threads/{thread}/pin', [InstructorForumController::class, 'togglePin'])->name('thread.pin');
+            Route::delete('/threads/{thread}/posts/{post}', [InstructorForumController::class, 'deletePost'])->name('thread.post.delete');
+        });
     });
 
     // Student Routes
@@ -260,6 +394,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/courses/{course}/forums/{forum}/threads/{thread}', [StudentForumController::class, 'showThread'])->name('forums.thread.show');
         Route::post('/courses/{course}/forums/{forum}/threads/{thread}/posts', [StudentForumController::class, 'storePost'])->name('forums.thread.post.store');
         Route::post('/courses/{course}/forums/{forum}/threads/{thread}/posts/{post}/like', [StudentForumController::class, 'likePost'])->name('forums.thread.post.like');
+        Route::post('/courses/{course}/forums/{forum}/threads/{thread}/posts/{post}/report', [StudentForumController::class, 'reportPost'])->name('forums.thread.post.report');
         Route::get('/courses/{course}/forums/{forum}/threads/{thread}/edit', [StudentForumController::class, 'editThread'])->name('forums.thread.edit');
         Route::put('/courses/{course}/forums/{forum}/threads/{thread}', [StudentForumController::class, 'updateThread'])->name('forums.thread.update');
         Route::delete('/courses/{course}/forums/{forum}/threads/{thread}/posts/{post}', [StudentForumController::class, 'deletePost'])->name('forums.thread.post.delete');
@@ -283,29 +418,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/badges', [AchievementController::class, 'badges'])->name('badges');
 
         Route::post('/lessons/{lesson}/track-time', [StudentLessonController::class, 'trackTime'])->name('lessons.track');
+
+        // Wishlist
+        Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
+        Route::post('/wishlist/{course}/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
+        Route::delete('/wishlist/{wishlist}', [WishlistController::class, 'destroy'])->name('wishlist.destroy');
     });
 
-    // Forum routes (bisa diakses student & instructor yang terdaftar di course)
-    Route::middleware(['role:instructor|student'])->group(function () {
-        Route::prefix('courses/{course}/forum')->name('forums.')->group(function () {
-            Route::get('/', [ForumController::class, 'index'])->name('index');
-            Route::get('/create-thread', [ForumController::class, 'createThread'])->name('thread.create');
-            Route::post('/threads', [ForumController::class, 'storeThread'])->name('thread.store');
-            Route::get('/threads/{thread}', [ForumController::class, 'showThread'])->name('thread.show');
-            Route::post('/threads/{thread}/posts', [ForumController::class, 'storePost'])->name('thread.post.store');
-            Route::post('/threads/{thread}/posts/{post}/like', [ForumController::class, 'likePost'])->name('thread.post.like');
-            Route::post('/threads/{thread}/posts/{post}/solution', [ForumController::class, 'markAsSolution'])->name('thread.post.solution');
-            Route::post('/threads/{thread}/lock', [ForumController::class, 'toggleLock'])->name('thread.lock');
-            Route::post('/threads/{thread}/pin', [ForumController::class, 'togglePin'])->name('thread.pin');
-            Route::delete('/threads/{thread}/posts/{post}', [ForumController::class, 'deletePost'])->name('thread.post.delete');
-        });
-    });
 
 
     // Profile Routes (Semua role)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Notifikasi (Semua role)
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/{notification}', [NotificationController::class, 'markRead'])->name('notifications.read');
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('notifications.mark-all-read');
 });
 
 Route::middleware(['auth', 'verified'])->prefix('settings')->name('settings.')->group(function () {

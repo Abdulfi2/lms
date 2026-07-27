@@ -52,7 +52,15 @@ class UpdateCourseRequest extends FormRequest
             'categories.*' => 'exists:categories,id',
             'tags' => 'nullable|array',
             'tags.*' => 'exists:tags,id',
-            'instructor_id' => 'required|exists:users,id',
+            'instructor_id' => [
+                'required',
+                'exists:users,id',
+                function ($attribute, $value, $fail) {
+                    if (!\App\Models\User::find($value)?->hasRole('instructor')) {
+                        $fail('User yang dipilih bukan instruktur.');
+                    }
+                },
+            ],
         ];
     }
 

@@ -69,6 +69,10 @@
                 </button>
 
                 <!-- Notifications -->
+                @php
+                    $navNotifications = auth()->user()->appNotifications()->latest('sent_at')->limit(8)->get();
+                    $navUnreadCount = auth()->user()->appNotifications()->unread()->count();
+                @endphp
                 <div class="relative" x-data="{ open: false }">
                     <button @click="open = !open"
                         class="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700">
@@ -77,20 +81,34 @@
                                 d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9">
                             </path>
                         </svg>
-                        <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                        @if ($navUnreadCount > 0)
+                            <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                        @endif
                     </button>
 
                     <div x-show="open" @click.away="open = false" x-transition.duration.200
                         class="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 z-50"
                         style="display: none;">
-                        <div class="px-4 py-2 border-b dark:border-gray-700">
+                        <div class="px-4 py-2 border-b dark:border-gray-700 flex items-center justify-between">
                             <h3 class="font-semibold text-gray-800 dark:text-white">Notifikasi</h3>
+                            @if ($navUnreadCount > 0)
+                                <span class="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">{{ $navUnreadCount }} baru</span>
+                            @endif
                         </div>
                         <div class="max-h-96 overflow-y-auto">
-                            <div class="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
-                                <p class="text-sm text-gray-600 dark:text-gray-400">Selamat datang di LMS!</p>
-                                <p class="text-xs text-gray-400 mt-1">Baru saja</p>
-                            </div>
+                            @forelse ($navNotifications as $notification)
+                                <a href="{{ route('notifications.read', $notification) }}"
+                                    class="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer {{ !$notification->read_at ? 'bg-blue-50/50 dark:bg-blue-900/10' : '' }}">
+                                    <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $notification->title }}</p>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">{{ \Illuminate\Support\Str::limit($notification->message, 80) }}</p>
+                                    <p class="text-xs text-gray-400 mt-1">{{ $notification->sent_at->diffForHumans() }}</p>
+                                </a>
+                            @empty
+                                <div class="px-4 py-6 text-center text-sm text-gray-400">Belum ada notifikasi.</div>
+                            @endforelse
+                        </div>
+                        <div class="px-4 py-2 border-t dark:border-gray-700">
+                            <a href="{{ route('notifications.index') }}" class="text-xs text-primary hover:underline">Lihat semua notifikasi</a>
                         </div>
                     </div>
                 </div>

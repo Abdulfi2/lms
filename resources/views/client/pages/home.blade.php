@@ -14,13 +14,11 @@
         <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
             <div class="text-center">
                 <h1 class="text-4xl md:text-6xl font-extrabold text-white mb-6 leading-tight">
-                    Belajar Tanpa Batas
-                    <span class="block text-yellow-300">Tingkatkan Skillmu Sekarang!</span>
+                    {{ \App\Models\Setting::get('hero_title', 'Belajar Tanpa Batas') }}
+                    <span class="block text-yellow-300">{{ \App\Models\Setting::get('hero_subtitle', 'Tingkatkan Skillmu Sekarang!') }}</span>
                 </h1>
                 <p class="text-xl text-white/90 max-w-2xl mx-auto mb-8">
-                    Platform pembelajaran online terbaik dengan ribuan kursus berkualitas dari instruktur
-                    berpengalaman.
-                    Mulai perjalanan belajarmu hari ini!
+                    {{ \App\Models\Setting::get('hero_description', 'Platform pembelajaran online terbaik dengan ribuan kursus berkualitas dari instruktur berpengalaman. Mulai perjalanan belajarmu hari ini!') }}
                 </p>
                 <div class="flex flex-col sm:flex-row justify-center gap-4">
                     <a href="{{ route('register', ['role' => 'student']) }}"
@@ -41,19 +39,19 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
                 <div>
-                    <div class="text-4xl font-bold text-primary">50K+</div>
+                    <div class="text-4xl font-bold text-primary">{{ \App\Models\Setting::get('stat_students', '50K+') }}</div>
                     <div class="text-gray-600 dark:text-gray-400 mt-1">Siswa Aktif</div>
                 </div>
                 <div>
-                    <div class="text-4xl font-bold text-primary">500+</div>
+                    <div class="text-4xl font-bold text-primary">{{ \App\Models\Setting::get('stat_courses', '500+') }}</div>
                     <div class="text-gray-600 dark:text-gray-400 mt-1">Kursus Premium</div>
                 </div>
                 <div>
-                    <div class="text-4xl font-bold text-primary">200+</div>
+                    <div class="text-4xl font-bold text-primary">{{ \App\Models\Setting::get('stat_instructors', '200+') }}</div>
                     <div class="text-gray-600 dark:text-gray-400 mt-1">Instruktur Ahli</div>
                 </div>
                 <div>
-                    <div class="text-4xl font-bold text-primary">100K+</div>
+                    <div class="text-4xl font-bold text-primary">{{ \App\Models\Setting::get('stat_certificates', '100K+') }}</div>
                     <div class="text-gray-600 dark:text-gray-400 mt-1">Sertifikat Diterbitkan</div>
                 </div>
             </div>

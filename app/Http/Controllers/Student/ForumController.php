@@ -9,6 +9,7 @@ use App\Models\Forum;
 use App\Models\Thread;
 use App\Models\Post;
 use App\Models\PostLike;
+use App\Models\PostReport;
 use App\Models\Tag;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -266,6 +267,48 @@ class ForumController extends Controller
             'liked' => $liked,
             'like_count' => $post->like_count
         ]);
+    }
+
+    /**
+     * Lapor post yang dianggap melanggar (AJAX).
+     */
+    public function reportPost(Request $request, Course $course, Forum $forum, Thread $thread, Post $post)
+    {
+        $isEnrolled = auth()->user()->enrollments()
+            ->where('course_id', $course->id)
+            ->where('status', 'active')
+            ->exists();
+
+        if (!$isEnrolled) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        if ($post->user_id === auth()->id()) {
+            return response()->json(['success' => false, 'message' => 'Anda tidak bisa melaporkan post sendiri.'], 422);
+        }
+
+        $existing = PostReport::where('post_id', $post->id)->where('user_id', auth()->id())->exists();
+
+        if ($existing) {
+            return response()->json(['success' => false, 'message' => 'Anda sudah melaporkan post ini sebelumnya.'], 422);
+        }
+
+        $request->validate([
+            'reason' => 'required|in:spam,offensive,harassment,other',
+            'description' => 'nullable|string|max:500',
+        ]);
+
+        PostReport::create([
+            'post_id' => $post->id,
+            'user_id' => auth()->id(),
+            'reason' => $request->input('reason'),
+            'description' => $request->input('description'),
+            'status' => 'pending',
+        ]);
+
+        $post->increment('report_count');
+
+        return response()->json(['success' => true, 'message' => 'Laporan terkirim. Admin akan meninjau post ini.']);
     }
 
     /**

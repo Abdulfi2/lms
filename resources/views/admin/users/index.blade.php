@@ -23,9 +23,9 @@
                 <select x-model="filters.role" @change="fetchUsers()"
                     class="rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white py-2 px-3 focus:ring-2 focus:ring-primary">
                     <option value="">Semua Role</option>
-                    <option value="admin">Admin</option>
-                    <option value="instructor">Instructor</option>
-                    <option value="student">Student</option>
+                    @foreach ($roles as $roleOption)
+                        <option value="{{ $roleOption->name }}">{{ ucfirst(str_replace('_', ' ', $roleOption->name)) }}</option>
+                    @endforeach
                 </select>
 
                 <select x-model="filters.status" @change="fetchUsers()"
@@ -33,6 +33,7 @@
                     <option value="">Semua Status</option>
                     <option value="active">Aktif</option>
                     <option value="inactive">Tidak Aktif</option>
+                    <option value="pending_approval">Menunggu Approval</option>
                 </select>
 
                 <button @click="fetchUsers()" class="p-2 bg-primary text-white rounded-lg hover:bg-secondary transition">
@@ -51,6 +52,15 @@
                 </svg>
                 Tambah User
             </a>
+        </div>
+
+        <!-- Bulk Actions -->
+        <div x-show="selectedIds.length > 0" x-cloak
+            class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 flex items-center gap-3">
+            <span class="text-sm" x-text="selectedIds.length + ' user dipilih'"></span>
+            <button @click="confirmBulkDelete" class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700">
+                Hapus Terpilih
+            </button>
         </div>
 
         <!-- Tabel User -->
@@ -108,9 +118,15 @@
                                         class="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">Instructor</span>
                                     <span x-show="user.role_name === 'student'"
                                         class="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">Student</span>
+                                    <span x-show="!['admin', 'instructor', 'student'].includes(user.role_name) && user.role_name"
+                                        class="px-2 py-1 text-xs bg-purple-100 text-purple-800 rounded-full capitalize"
+                                        x-text="(user.role_name || '').replace('_', ' ')"></span>
                                     <!-- Fallback jika role_name tidak ada -->
                                     <span x-show="!user.role_name"
                                         class="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded-full">-</span>
+                                    <div x-show="user.profile && user.profile.approval_status === 'pending'" class="mt-1">
+                                        <span class="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full">Menunggu Approval</span>
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4">
                                     <button @click="toggleStatus(user.id, user.is_active)"
@@ -191,6 +207,35 @@
         </div>
     </div>
 
+    <!-- Modal Konfirmasi Hapus Massal -->
+    <div x-show="bulkDeleteModalOpen" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" @click="bulkDeleteModalOpen = false"></div>
+            <div class="relative bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
+                <div class="text-center">
+                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                        <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                            </path>
+                        </svg>
+                    </div>
+                    <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">Hapus User Terpilih</h3>
+                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                        Yakin ingin menghapus <span x-text="selectedIds.length" class="font-semibold"></span> user
+                        yang dipilih? Tindakan ini tidak dapat dibatalkan.
+                    </p>
+                    <div class="mt-5 flex justify-center space-x-3">
+                        <button @click="bulkDeleteModalOpen = false"
+                            class="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300">Batal</button>
+                        <button @click="bulkDelete"
+                            class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Hapus</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Konfirmasi Hapus -->
     <div x-show="deleteModalOpen" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
         <div class="flex items-center justify-center min-h-screen px-4">
@@ -241,8 +286,16 @@
                     deleteModalOpen: false,
                     deleteUserId: null,
                     deleteUserName: '',
+                    bulkDeleteModalOpen: false,
 
                     init() {
+                        // Baca filter awal dari query string URL (mis. link dari dashboard
+                        // "Instruktur Menunggu Approval" yang membawa ?status=pending_approval)
+                        const params = new URLSearchParams(window.location.search);
+                        this.filters.search = params.get('search') || '';
+                        this.filters.role = params.get('role') || '';
+                        this.filters.status = params.get('status') || '';
+
                         this.fetchUsers();
                     },
 
@@ -354,6 +407,34 @@
                     formatDate(date) {
                         if (!date) return '-';
                         return new Date(date).toLocaleDateString('id-ID');
+                    },
+
+                    confirmBulkDelete() {
+                        if (this.selectedIds.length === 0) return;
+                        this.bulkDeleteModalOpen = true;
+                    },
+
+                    bulkDelete() {
+                        fetch('{{ route('admin.users.bulk-delete') }}', {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({ ids: this.selectedIds })
+                            })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.success) {
+                                    window.toast.success(data.message);
+                                    this.bulkDeleteModalOpen = false;
+                                    this.fetchUsers();
+                                } else {
+                                    window.toast.error(data.message || 'Gagal menghapus user terpilih');
+                                }
+                            })
+                            .catch(() => window.toast.error('Gagal menghapus user terpilih'));
                     }
                 }
             }

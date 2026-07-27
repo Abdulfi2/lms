@@ -20,11 +20,11 @@
             <div>
                 <h4 class="font-semibold text-gray-900 dark:text-white mb-4">Tentang</h4>
                 <ul class="space-y-2 text-sm">
-                    <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-primary transition">Tentang
+                    <li><a href="{{ route('about') }}" class="text-gray-600 dark:text-gray-400 hover:text-primary transition">Tentang
                             Kami</a></li>
                     <li><a href="#"
                             class="text-gray-600 dark:text-gray-400 hover:text-primary transition">Karir</a></li>
-                    <li><a href="#"
+                    <li><a href="{{ route('articles.index') }}"
                             class="text-gray-600 dark:text-gray-400 hover:text-primary transition">Blog</a></li>
                 </ul>
             </div>
@@ -32,14 +32,14 @@
             <div>
                 <h4 class="font-semibold text-gray-900 dark:text-white mb-4">Bantuan</h4>
                 <ul class="space-y-2 text-sm">
-                    <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-primary transition">FAQ</a>
+                    <li><a href="{{ route('faq') }}" class="text-gray-600 dark:text-gray-400 hover:text-primary transition">FAQ</a>
                     </li>
-                    <li><a href="#"
+                    <li><a href="{{ route('contact.create') }}"
                             class="text-gray-600 dark:text-gray-400 hover:text-primary transition">Kontak</a></li>
-                    <li><a href="#"
+                    <li><a href="{{ route('privacy-policy') }}"
                             class="text-gray-600 dark:text-gray-400 hover:text-primary transition">Kebijakan Privasi</a>
                     </li>
-                    <li><a href="#" class="text-gray-600 dark:text-gray-400 hover:text-primary transition">Syarat
+                    <li><a href="{{ route('terms') }}" class="text-gray-600 dark:text-gray-400 hover:text-primary transition">Syarat
                             & Ketentuan</a></li>
                 </ul>
             </div>
@@ -47,7 +47,7 @@
             <div>
                 <h4 class="font-semibold text-gray-900 dark:text-white mb-4">Hubungi Kami</h4>
                 <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                    <li><i class="fas fa-envelope mr-2 w-4"></i> support@lms.com</li>
+                    <li><i class="fas fa-envelope mr-2 w-4"></i> {{ \App\Models\Setting::get('contact_email', 'support@lms.com') }}</li>
                     <li><i class="fas fa-phone mr-2 w-4"></i> +62 21 12345678</li>
                 </ul>
                 <div class="flex space-x-4 mt-4">

@@ -64,10 +64,7 @@
                                     </div>
                                 </div>
                                 <div>
-                                    <span
-                                        class="px-2 py-1 text-xs rounded-full {{ $quiz->is_published ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
-                                        {{ $quiz->is_published ? 'Published' : 'Draft' }}
-                                    </span>
+                                    <x-status-badge :status="$quiz->is_published" />
                                 </div>
                             </div>
 

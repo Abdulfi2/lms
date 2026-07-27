@@ -103,11 +103,21 @@
                             <label class="block text-sm font-medium mb-1">Status</label>
                             <select x-model="form.status" class="w-full rounded-lg border-gray-300">
                                 <option value="draft">Draft</option>
-                                <option value="published">Published</option>
+                                <option value="pending">Ajukan untuk Review Admin</option>
+                                <option value="published">Published (langsung tayang)</option>
                                 <option value="archived">Archived</option>
                             </select>
                         </div>
                     </div>
+                    @if ($course->status === 'draft' && $course->rejection_reason)
+                        <div class="mt-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg text-sm text-red-700 dark:text-red-400">
+                            <strong>Ditolak admin:</strong> {{ $course->rejection_reason }}
+                        </div>
+                    @elseif ($course->status === 'pending')
+                        <div class="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg text-sm text-yellow-700 dark:text-yellow-400">
+                            Kursus ini sedang menunggu review admin.
+                        </div>
+                    @endif
                     <div class="flex items-center space-x-4 mt-3">
                         <label class="flex items-center">
                             <input type="checkbox" x-model="form.is_featured" class="rounded">

@@ -64,6 +64,16 @@
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
             <h3 class="text-lg font-semibold mb-4">Pengiriman Tugas</h3>
 
+            @if ($submission && $submission->status === 'returned')
+                <div class="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4 mb-4">
+                    <p class="font-semibold text-orange-800 dark:text-orange-400">Tugas Dikembalikan untuk Direvisi</p>
+                    @if ($submission->feedback)
+                        <p class="text-sm text-orange-700 dark:text-orange-500 mt-2">{{ $submission->feedback }}</p>
+                    @endif
+                    <p class="text-xs text-orange-600 dark:text-orange-500 mt-2">Silakan revisi dan kirim ulang tugas Anda di bawah ini.</p>
+                </div>
+            @endif
+
             @if ($isGraded)
                 <!-- Hasil Penilaian -->
                 <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 mb-4">

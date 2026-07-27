@@ -33,7 +33,12 @@
                             Gratis
                         @endif
                     </div>
-                    @if ($isEnrolled)
+                    @if ($isEnrolled && $enrollment->payment_status !== 'paid')
+                        <a href="{{ route('student.courses.show', $course->slug) }}"
+                            class="mt-3 block w-full text-center bg-yellow-400 text-yellow-900 py-2 rounded-lg font-semibold hover:bg-yellow-300">
+                            Menunggu Pembayaran
+                        </a>
+                    @elseif ($isEnrolled)
                         <a href="{{ route('student.courses.show', $course->slug) }}"
                             class="mt-3 block w-full text-center bg-white text-primary py-2 rounded-lg font-semibold hover:bg-gray-100">
                             Lanjutkan Belajar
@@ -41,12 +46,32 @@
                     @else
                         <form action="{{ route('student.courses.enroll', $course->slug) }}" method="POST">
                             @csrf
+                            @if ($course->final_price > 0)
+                                <input type="text" name="coupon_code" value="{{ old('coupon_code') }}" placeholder="Kode kupon (opsional)"
+                                    class="mt-3 w-full rounded-lg text-sm text-gray-800 border-0">
+                            @endif
                             <button type="submit"
                                 class="mt-3 w-full bg-white text-primary py-2 rounded-lg font-semibold hover:bg-gray-100">
                                 Daftar Sekarang
                             </button>
                         </form>
                     @endif
+
+                    @auth
+                        @if (auth()->user()->hasRole('student'))
+                            <form action="{{ route('student.wishlist.toggle', $course) }}" method="POST" class="mt-2">
+                                @csrf
+                                <button type="submit"
+                                    class="w-full py-2 rounded-lg font-semibold text-sm border border-white/40 text-white hover:bg-white/10 transition flex items-center justify-center gap-1">
+                                    <svg class="w-4 h-4" fill="{{ $isWishlisted ? 'currentColor' : 'none' }}" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                    </svg>
+                                    {{ $isWishlisted ? 'Hapus dari Wishlist' : 'Simpan ke Wishlist' }}
+                                </button>
+                            </form>
+                        @endif
+                    @endauth
                 </div>
             </div>
         </div>
