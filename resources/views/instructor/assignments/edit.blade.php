@@ -76,6 +76,26 @@
             </div>
         </div>
 
+        <div class="bg-white dark:bg-gray-800 shadow-sm rounded-xl p-6">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h3 class="font-semibold text-gray-800 dark:text-white">Rubrik Penilaian (Opsional)</h3>
+                    <p class="text-xs text-gray-400 mt-1">Jika diisi, penilaian tugas akan dihitung berdasarkan kriteria di bawah ini alih-alih skor tunggal.</p>
+                </div>
+                <button type="button" onclick="addRubricRow()" class="text-sm text-primary">+ Tambah Kriteria</button>
+            </div>
+            <div id="rubric-rows" class="space-y-3">
+                @foreach ($assignment->rubricItems as $item)
+                    <div class="rubric-row flex gap-2 items-start">
+                        <input type="text" class="rubric-criteria flex-1 rounded-lg border-gray-300 text-sm" placeholder="Kriteria" value="{{ $item->criteria }}">
+                        <input type="text" class="rubric-description flex-1 rounded-lg border-gray-300 text-sm" placeholder="Deskripsi (opsional)" value="{{ $item->description }}">
+                        <input type="number" class="rubric-max-points w-24 rounded-lg border-gray-300 text-sm" placeholder="Poin" min="1" value="{{ $item->max_points }}">
+                        <button type="button" onclick="this.closest('.rubric-row').remove()" class="text-red-500 px-2">Hapus</button>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+
         <div class="flex justify-end space-x-3">
             <a href="{{ route('instructor.assignments.index') }}" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">Batal</a>
             <button type="submit" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition">Simpan Perubahan</button>
@@ -83,8 +103,40 @@
     </form>
 </div>
 
+<template id="rubric-row-template">
+    <div class="rubric-row flex gap-2 items-start">
+        <input type="text" class="rubric-criteria flex-1 rounded-lg border-gray-300 text-sm" placeholder="Kriteria (mis. Kerapian Kode)">
+        <input type="text" class="rubric-description flex-1 rounded-lg border-gray-300 text-sm" placeholder="Deskripsi (opsional)">
+        <input type="number" class="rubric-max-points w-24 rounded-lg border-gray-300 text-sm" placeholder="Poin" min="1">
+        <button type="button" onclick="this.closest('.rubric-row').remove()" class="text-red-500 px-2">Hapus</button>
+    </div>
+</template>
+
 @push('scripts')
 <script>
+    function addRubricRow() {
+        const template = document.getElementById('rubric-row-template');
+        const clone = template.content.cloneNode(true);
+        document.getElementById('rubric-rows').appendChild(clone);
+    }
+
+    document.querySelector('form').addEventListener('submit', function () {
+        document.querySelectorAll('#rubric-rows .rubric-row').forEach((row, idx) => {
+            const criteria = row.querySelector('.rubric-criteria').value;
+            const description = row.querySelector('.rubric-description').value;
+            const maxPoints = row.querySelector('.rubric-max-points').value;
+            if (!criteria || !maxPoints) return;
+
+            ['criteria', 'description', 'max_points'].forEach((field) => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = `rubric[${idx}][${field}]`;
+                input.value = field === 'criteria' ? criteria : (field === 'description' ? description : maxPoints);
+                this.appendChild(input);
+            });
+        });
+    });
+
     document.getElementById('course_id').addEventListener('change', function() {
         const courseId = this.value;
         const lessonSelect = document.getElementById('lesson_id');

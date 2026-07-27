@@ -51,6 +51,14 @@ class CourseController extends Controller
             'categories.*' => 'exists:categories,id',
             'tags' => 'nullable|array',
             'tags.*' => 'exists:tags,id',
+            'requirements' => 'nullable|array',
+            'requirements.*' => 'nullable|string|max:255',
+            'learning_objectives' => 'nullable|array',
+            'learning_objectives.*' => 'nullable|string|max:255',
+            'target_audience' => 'nullable|array',
+            'target_audience.*' => 'nullable|string|max:255',
+            'prerequisites' => 'nullable|array',
+            'prerequisites.*' => 'nullable|string|max:255',
         ]);
 
         try {
@@ -79,10 +87,19 @@ class CourseController extends Controller
 
             DB::commit();
 
+            if ($request->wantsJson()) {
+                return response()->json(['success' => true, 'message' => 'Kursus berhasil dibuat.']);
+            }
+
             return redirect()->route('instructor.courses.index')
                 ->with('success', 'Kursus berhasil dibuat.');
         } catch (\Exception $e) {
             DB::rollBack();
+
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Gagal membuat kursus: ' . $e->getMessage()], 422);
+            }
+
             return back()->with('error', 'Gagal membuat kursus: ' . $e->getMessage())->withInput();
         }
     }
@@ -126,6 +143,14 @@ class CourseController extends Controller
             'categories.*' => 'exists:categories,id',
             'tags' => 'nullable|array',
             'tags.*' => 'exists:tags,id',
+            'requirements' => 'nullable|array',
+            'requirements.*' => 'nullable|string|max:255',
+            'learning_objectives' => 'nullable|array',
+            'learning_objectives.*' => 'nullable|string|max:255',
+            'target_audience' => 'nullable|array',
+            'target_audience.*' => 'nullable|string|max:255',
+            'prerequisites' => 'nullable|array',
+            'prerequisites.*' => 'nullable|string|max:255',
         ]);
 
         try {
@@ -162,10 +187,19 @@ class CourseController extends Controller
 
             DB::commit();
 
+            if ($request->wantsJson()) {
+                return response()->json(['success' => true, 'message' => 'Kursus berhasil diperbarui.']);
+            }
+
             return redirect()->route('instructor.courses.index')
                 ->with('success', 'Kursus berhasil diperbarui.');
         } catch (\Exception $e) {
             DB::rollBack();
+
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Gagal memperbarui kursus: ' . $e->getMessage()], 422);
+            }
+
             return back()->with('error', 'Gagal memperbarui kursus: ' . $e->getMessage())->withInput();
         }
     }
@@ -192,5 +226,101 @@ class CourseController extends Controller
             DB::rollBack();
             return back()->with('error', 'Gagal menghapus kursus.');
         }
+    }
+
+    /**
+     * Duplikasi kursus beserta section & lesson-nya sebagai draft baru.
+     * Tidak menyalin quiz, assignment, atau lesson resource — hanya struktur materi.
+     */
+    public function duplicate(Course $course)
+    {
+        if ($course->instructor_id !== auth()->id()) {
+            abort(403);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $newCourse = $course->replicate();
+            $newCourse->title = $course->title . ' (Copy)';
+            $newCourse->slug = \Illuminate\Support\Str::slug($newCourse->title) . '-' . uniqid();
+            $newCourse->status = 'draft';
+            $newCourse->total_students = 0;
+            $newCourse->average_rating = 0;
+            $newCourse->rating_count = 0;
+            $newCourse->reviews_count = 0;
+            $newCourse->enrolled_count = 0;
+            $newCourse->wishlist_count = 0;
+            $newCourse->published_at = null;
+            $newCourse->save();
+
+            $newCourse->categories()->sync($course->categories->pluck('id'));
+            $newCourse->tags()->sync($course->tags->pluck('id'));
+            foreach ($course->tags as $tag) {
+                $tag->increment('usage_count');
+            }
+
+            foreach ($course->sections()->orderBy('order')->get() as $section) {
+                $newSection = $section->replicate();
+                $newSection->course_id = $newCourse->id;
+                $newSection->save();
+
+                foreach ($section->lessons()->orderBy('order')->get() as $lesson) {
+                    $newLesson = $lesson->replicate();
+                    $newLesson->section_id = $newSection->id;
+                    $newLesson->save();
+                }
+            }
+
+            DB::commit();
+
+            return redirect()->route('instructor.courses.edit', $newCourse)
+                ->with('success', 'Kursus berhasil diduplikasi sebagai draft. Materi (section & lesson) ikut disalin.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Gagal menduplikasi kursus: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Preview kursus sebagaimana akan dilihat calon siswa, termasuk saat masih draft.
+     */
+    public function preview(Course $course)
+    {
+        if ($course->instructor_id !== auth()->id()) {
+            abort(403);
+        }
+
+        $course->load([
+            'instructor',
+            'categories',
+            'sections' => fn ($q) => $q->orderBy('order'),
+            'sections.lessons' => fn ($q) => $q->orderBy('order'),
+        ]);
+
+        $isEnrolled = false;
+        $enrollment = null;
+        $isWishlisted = false;
+        $averageRating = $course->reviews()->approved()->avg('rating') ?? 0;
+        $ratingCount = $course->reviews()->approved()->count();
+        $recentReviews = $course->reviews()->approved()->latest()->limit(5)->get();
+        $otherCourses = Course::where('instructor_id', $course->instructor_id)
+            ->where('id', '!=', $course->id)
+            ->where('status', 'published')
+            ->limit(3)
+            ->get();
+        $previewMode = true;
+
+        return view('courses.show', compact(
+            'course',
+            'isEnrolled',
+            'enrollment',
+            'isWishlisted',
+            'averageRating',
+            'ratingCount',
+            'recentReviews',
+            'otherCourses',
+            'previewMode'
+        ));
     }
 }

@@ -120,6 +120,61 @@
                     </div>
                 </div>
 
+                <!-- Landing Page Kursus -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Landing Page Kursus</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Yang Akan Dipelajari (Learning Objectives)</label>
+                            <div x-data="{ items: form.learning_objectives }">
+                                <template x-for="(item, idx) in items" :key="idx">
+                                    <div class="flex mb-2">
+                                        <input type="text" x-model="items[idx]" class="flex-1 rounded-lg border-gray-300">
+                                        <button type="button" @click="items.splice(idx,1)" class="ml-2 text-red-500">Hapus</button>
+                                    </div>
+                                </template>
+                                <button type="button" @click="items.push('')" class="text-primary text-sm">+ Tambah Poin</button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Persyaratan (Requirements)</label>
+                            <div x-data="{ items: form.requirements }">
+                                <template x-for="(item, idx) in items" :key="idx">
+                                    <div class="flex mb-2">
+                                        <input type="text" x-model="items[idx]" class="flex-1 rounded-lg border-gray-300">
+                                        <button type="button" @click="items.splice(idx,1)" class="ml-2 text-red-500">Hapus</button>
+                                    </div>
+                                </template>
+                                <button type="button" @click="items.push('')" class="text-primary text-sm">+ Tambah Persyaratan</button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Target Audience</label>
+                            <div x-data="{ items: form.target_audience }">
+                                <template x-for="(item, idx) in items" :key="idx">
+                                    <div class="flex mb-2">
+                                        <input type="text" x-model="items[idx]" class="flex-1 rounded-lg border-gray-300">
+                                        <button type="button" @click="items.splice(idx,1)" class="ml-2 text-red-500">Hapus</button>
+                                    </div>
+                                </template>
+                                <button type="button" @click="items.push('')" class="text-primary text-sm">+ Tambah Target</button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Prasyarat Kursus (Prerequisites)</label>
+                            <div x-data="{ items: form.prerequisites }">
+                                <template x-for="(item, idx) in items" :key="idx">
+                                    <div class="flex mb-2">
+                                        <input type="text" x-model="items[idx]" class="flex-1 rounded-lg border-gray-300">
+                                        <button type="button" @click="items.splice(idx,1)" class="ml-2 text-red-500">Hapus</button>
+                                    </div>
+                                </template>
+                                <button type="button" @click="items.push('')" class="text-primary text-sm">+ Tambah Prasyarat</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Kategori & Tag -->
                 <div>
                     <h3 class="text-lg font-semibold mb-4">Kategori & Tag</h3>
@@ -180,7 +235,11 @@
                         is_featured: false,
                         has_certificate: false,
                         categories: [],
-                        tags: []
+                        tags: [],
+                        learning_objectives: [],
+                        requirements: [],
+                        target_audience: [],
+                        prerequisites: []
                     },
                     errors: {},
                     loading: false,

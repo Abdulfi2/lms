@@ -109,6 +109,9 @@
                                 </span>
                             </div>
                             <h3 class="font-semibold text-gray-800 dark:text-white mt-2">{{ $course->title }}</h3>
+                            @if ($course->instructor)
+                                <p class="text-xs text-gray-500 mt-1">{{ $course->instructor->name }}</p>
+                            @endif
                             <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
                                 {{ Str::limit($course->short_description, 70) }}</p>
                             <div class="mt-3 flex justify-between items-center">

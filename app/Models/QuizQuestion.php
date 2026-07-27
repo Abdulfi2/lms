@@ -34,4 +34,9 @@ class QuizQuestion extends Model
     {
         return $this->hasMany(QuizOption::class)->orderBy('order');
     }
+
+    public function answers(): HasMany
+    {
+        return $this->hasMany(QuizAnswer::class, 'question_id');
+    }
 }

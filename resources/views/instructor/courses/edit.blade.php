@@ -130,6 +130,61 @@
                     </div>
                 </div>
 
+                <!-- Landing Page Kursus -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Landing Page Kursus</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Yang Akan Dipelajari (Learning Objectives)</label>
+                            <div x-data="{ items: form.learning_objectives }">
+                                <template x-for="(item, idx) in items" :key="idx">
+                                    <div class="flex mb-2">
+                                        <input type="text" x-model="items[idx]" class="flex-1 rounded-lg border-gray-300">
+                                        <button type="button" @click="items.splice(idx,1)" class="ml-2 text-red-500">Hapus</button>
+                                    </div>
+                                </template>
+                                <button type="button" @click="items.push('')" class="text-primary text-sm">+ Tambah Poin</button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Persyaratan (Requirements)</label>
+                            <div x-data="{ items: form.requirements }">
+                                <template x-for="(item, idx) in items" :key="idx">
+                                    <div class="flex mb-2">
+                                        <input type="text" x-model="items[idx]" class="flex-1 rounded-lg border-gray-300">
+                                        <button type="button" @click="items.splice(idx,1)" class="ml-2 text-red-500">Hapus</button>
+                                    </div>
+                                </template>
+                                <button type="button" @click="items.push('')" class="text-primary text-sm">+ Tambah Persyaratan</button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Target Audience</label>
+                            <div x-data="{ items: form.target_audience }">
+                                <template x-for="(item, idx) in items" :key="idx">
+                                    <div class="flex mb-2">
+                                        <input type="text" x-model="items[idx]" class="flex-1 rounded-lg border-gray-300">
+                                        <button type="button" @click="items.splice(idx,1)" class="ml-2 text-red-500">Hapus</button>
+                                    </div>
+                                </template>
+                                <button type="button" @click="items.push('')" class="text-primary text-sm">+ Tambah Target</button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Prasyarat Kursus (Prerequisites)</label>
+                            <div x-data="{ items: form.prerequisites }">
+                                <template x-for="(item, idx) in items" :key="idx">
+                                    <div class="flex mb-2">
+                                        <input type="text" x-model="items[idx]" class="flex-1 rounded-lg border-gray-300">
+                                        <button type="button" @click="items.splice(idx,1)" class="ml-2 text-red-500">Hapus</button>
+                                    </div>
+                                </template>
+                                <button type="button" @click="items.push('')" class="text-primary text-sm">+ Tambah Prasyarat</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Kategori & Tag -->
                 <div>
                     <h3 class="text-lg font-semibold mb-4">Kategori & Tag</h3>
@@ -190,13 +245,65 @@
                         is_featured: {{ $course->is_featured ? 'true' : 'false' }},
                         has_certificate: {{ $course->has_certificate ? 'true' : 'false' }},
                         categories: @json($selectedCategories),
-                        tags: @json($selectedTags)
+                        tags: @json($selectedTags),
+                        learning_objectives: @json($course->learning_objectives ?? []),
+                        requirements: @json($course->requirements ?? []),
+                        target_audience: @json($course->target_audience ?? []),
+                        prerequisites: @json($course->prerequisites ?? [])
                     },
                     errors: {},
                     loading: false,
                     thumbnailPreview: '{{ $course->thumbnail ? Storage::url($course->thumbnail) : '' }}',
 
-                    // ... method handleThumbnail, submitForm (dengan URL update)
+                    init() {},
+
+                    handleThumbnail(e) {
+                        const file = e.target.files[0];
+                        if (file) {
+                            this.form.thumbnail = file;
+                            this.thumbnailPreview = URL.createObjectURL(file);
+                        }
+                    },
+
+                    submitForm() {
+                        this.loading = true;
+                        this.errors = {};
+                        const formData = new FormData();
+                        formData.append('_method', 'PUT');
+                        for (let key in this.form) {
+                            if (key === 'thumbnail' && this.form.thumbnail instanceof File) {
+                                formData.append('thumbnail', this.form.thumbnail);
+                            } else if (Array.isArray(this.form[key])) {
+                                this.form[key].forEach((val, idx) => formData.append(`${key}[${idx}]`, val));
+                            } else if (this.form[key] !== null && this.form[key] !== undefined) {
+                                formData.append(key, this.form[key]);
+                            }
+                        }
+
+                        fetch('{{ route('instructor.courses.update', $course) }}', {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                    'Accept': 'application/json'
+                                },
+                                body: formData
+                            })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.success) {
+                                    window.toast.success(data.message);
+                                    window.location.href = '{{ route('instructor.courses.index') }}';
+                                } else {
+                                    if (data.errors) this.errors = data.errors;
+                                    else window.toast.error(data.message);
+                                    this.loading = false;
+                                }
+                            })
+                            .catch(() => {
+                                window.toast.error('Terjadi kesalahan');
+                                this.loading = false;
+                            });
+                    }
                 }
             }
         </script>

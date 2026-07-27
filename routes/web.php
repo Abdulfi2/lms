@@ -21,6 +21,8 @@ use App\Http\Controllers\MailController;
 use App\Http\Controllers\PublicEventController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\InstructorProfileController;
+use App\Http\Controllers\Instructor\PublicProfileController as InstructorPublicProfileController;
 use App\Http\Controllers\CourseController as PublicCourseController;
 use App\Http\Controllers\UserSettingController;
 use App\Http\Controllers\Admin\ArticleController as AdminArticleController;
@@ -41,6 +43,7 @@ use App\Http\Controllers\Instructor\CourseController as InstructorCourseControll
 use App\Http\Controllers\Instructor\QuizController;
 use App\Http\Controllers\Instructor\SectionController as InstructorSectionController;
 use App\Http\Controllers\Instructor\LessonController as InstructorLessonController;
+use App\Http\Controllers\Instructor\LessonResourceController;
 use App\Http\Controllers\Instructor\AssignmentController as InstructorAssignmentController;
 use App\Http\Controllers\Instructor\StudentController;
 use App\Http\Controllers\Instructor\SubmissionController;
@@ -91,6 +94,8 @@ Route::get('/certificate/verify/{code}', [CertificateController::class, 'verify'
 
 Route::get('/contact', [ContactController::class, 'create'])->name('contact.create');
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
+
+Route::get('/instructors/{instructor}', [InstructorProfileController::class, 'show'])->name('instructors.show');
 
 Route::view('/about', 'public.about')->name('about');
 Route::view('/faq', 'public.faq')->name('faq');
@@ -242,6 +247,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/payouts/{instructor}', [AdminPayoutController::class, 'show'])->name('payouts.show');
         Route::post('/payouts/{instructor}', [AdminPayoutController::class, 'store'])->name('payouts.store');
         Route::delete('/payouts/entry/{payout}', [AdminPayoutController::class, 'destroy'])->name('payouts.destroy');
+        Route::patch('/payouts/entry/{payout}/approve', [AdminPayoutController::class, 'approve'])->name('payouts.approve');
+        Route::patch('/payouts/entry/{payout}/reject', [AdminPayoutController::class, 'reject'])->name('payouts.reject');
 
         // Moderasi Laporan Forum
         Route::get('/post-reports', [AdminPostReportController::class, 'index'])->name('post-reports.index');
@@ -292,28 +299,50 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/dashboard', [InstructorDashboardController::class, 'index'])->name('dashboard');
         Route::get('/analytics', [InstructorAnalyticsController::class, 'index'])->name('analytics');
         Route::get('/earnings', [InstructorEarningsController::class, 'index'])->name('earnings.index');
-        Route::resource('courses', InstructorCourseController::class);
+        Route::post('/payout-requests', [\App\Http\Controllers\Instructor\PayoutController::class, 'store'])->name('payout-requests.store');
+
+        Route::get('/announcements', [\App\Http\Controllers\Instructor\NotificationController::class, 'index'])->name('announcements.index');
+        Route::get('/announcements/create', [\App\Http\Controllers\Instructor\NotificationController::class, 'create'])->name('announcements.create');
+        Route::post('/announcements', [\App\Http\Controllers\Instructor\NotificationController::class, 'store'])->name('announcements.store');
+
+        Route::get('/certificates', [\App\Http\Controllers\Instructor\CertificateController::class, 'index'])->name('certificates.index');
+        Route::get('/certificates/export', [\App\Http\Controllers\Instructor\CertificateController::class, 'export'])->name('certificates.export');
+
+        Route::get('/coupons', [\App\Http\Controllers\Instructor\CouponController::class, 'index'])->name('coupons.index');
+        Route::resource('courses', InstructorCourseController::class)->except(['show']);
+        Route::post('courses/{course}/duplicate', [InstructorCourseController::class, 'duplicate'])->name('courses.duplicate');
+        Route::get('courses/{course}/preview', [InstructorCourseController::class, 'preview'])->name('courses.preview');
         Route::resource('assignments', InstructorAssignmentController::class)->except(['show']);
 
         Route::prefix('courses/{course}')->name('courses.')->group(function () {
-            Route::resource('sections', InstructorSectionController::class);
+            Route::resource('sections', InstructorSectionController::class)->except(['show']);
             Route::post('sections/update-order', [InstructorSectionController::class, 'updateOrder'])->name('sections.update-order');
 
             // Lesson Management (nested di dalam section)
             Route::prefix('sections/{section}')->name('sections.')->group(function () {
-                Route::resource('lessons', InstructorLessonController::class);
+                Route::resource('lessons', InstructorLessonController::class)->except(['show']);
                 Route::post('lessons/update-order', [InstructorLessonController::class, 'updateOrder'])->name('lessons.update-order');
+
+                // Lesson Resources (materi tambahan/lampiran)
+                Route::prefix('lessons/{lesson}')->name('lessons.')->group(function () {
+                    Route::resource('resources', LessonResourceController::class)->except(['show']);
+                    Route::post('resources/update-order', [LessonResourceController::class, 'updateOrder'])->name('resources.update-order');
+                });
             });
 
             // Quiz Management (nested di dalam course)
-            Route::resource('quizzes', QuizController::class);
+            Route::resource('quizzes', QuizController::class)->except(['show']);
+            Route::get('quizzes/{quiz}/analytics', [QuizController::class, 'analytics'])->name('quizzes.analytics');
             Route::post('quizzes/{quiz}/questions', [QuizController::class, 'storeQuestion'])->name('quizzes.questions.store');
             Route::put('quizzes/{quiz}/questions/{question}', [QuizController::class, 'updateQuestion'])->name('quizzes.questions.update');
             Route::delete('quizzes/{quiz}/questions/{question}', [QuizController::class, 'deleteQuestion'])->name('quizzes.questions.destroy');
         });
 
+        Route::get('/public-profile', [InstructorPublicProfileController::class, 'edit'])->name('public-profile.edit');
+        Route::put('/public-profile', [InstructorPublicProfileController::class, 'update'])->name('public-profile.update');
+
         Route::get('/students', [StudentController::class, 'index'])->name('students.index');
-        Route::get('/students/{user}/progress', [StudentController::class, 'progress'])->name('students.progress');
+        Route::get('/students/{user}/courses/{course}/progress', [StudentController::class, 'studentCourseProgress'])->name('students.course.progress');
 
         // Submission & Grading Management
         Route::get('/submissions', [SubmissionController::class, 'index'])->name('submissions.index');
@@ -350,6 +379,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Lessons
         Route::get('/courses/{course}/lessons/{lesson}', [StudentLessonController::class, 'show'])->name('lessons.show');
         Route::post('/lessons/{lesson}/complete', [StudentLessonController::class, 'complete'])->name('lessons.complete');
+
+        // Lesson Resources (download materi tambahan)
+        Route::get('/courses/{course}/sections/{section}/lessons/{lesson}/resources/{resource}/download', [LessonResourceController::class, 'download'])->name('resources.download');
 
         // Certificate
         Route::get('/certificates', [CertificateController::class, 'index'])->name('certificates.index');

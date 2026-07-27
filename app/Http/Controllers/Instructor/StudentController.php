@@ -48,22 +48,6 @@ class StudentController extends Controller
     }
 
     /**
-     * Menampilkan semua kursus yang diikuti oleh seorang siswa (di bawah instructor ini).
-     */
-    public function studentCourses(User $user)
-    {
-        $instructorId = auth()->id();
-        $courseIds = Course::where('instructor_id', $instructorId)->pluck('id');
-
-        $enrollments = Enrollment::with('course')
-            ->where('user_id', $user->id)
-            ->whereIn('course_id', $courseIds)
-            ->get();
-
-        return view('instructor.students.courses', compact('user', 'enrollments'));
-    }
-
-    /**
      * Menampilkan progress detail siswa pada suatu kursus.
      */
     public function studentCourseProgress(User $user, Course $course)

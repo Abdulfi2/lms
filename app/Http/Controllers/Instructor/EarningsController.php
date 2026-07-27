@@ -52,11 +52,13 @@ class EarningsController extends Controller
             ->latest()
             ->paginate(10);
 
-        // 5. Payout — saldo yang sudah dicairkan admin
-        $totalPaidOut = Payout::where('instructor_id', $instructorId)->sum('amount');
-        $outstandingBalance = $totalEarnings - $totalPaidOut;
-        $lastPayout = Payout::where('instructor_id', $instructorId)->latest('paid_at')->first();
-        $payouts = Payout::where('instructor_id', $instructorId)->latest('paid_at')->limit(10)->get();
+        // 5. Payout — saldo yang sudah dicairkan admin, dan permintaan yang sedang diproses
+        $totalPaidOut = Payout::where('instructor_id', $instructorId)->where('status', 'paid')->sum('amount');
+        $totalRequestPending = Payout::where('instructor_id', $instructorId)->where('status', 'pending')->sum('amount');
+        $outstandingBalance = $totalEarnings - $totalPaidOut - $totalRequestPending;
+        $hasPendingRequest = $totalRequestPending > 0;
+        $lastPayout = Payout::where('instructor_id', $instructorId)->where('status', 'paid')->latest('paid_at')->first();
+        $payouts = Payout::where('instructor_id', $instructorId)->latest('created_at')->limit(10)->get();
 
         return view('instructor.earnings.index', compact(
             'totalEarnings',
@@ -64,6 +66,8 @@ class EarningsController extends Controller
             'monthlyEarnings',
             'transactions',
             'totalPaidOut',
+            'totalRequestPending',
+            'hasPendingRequest',
             'outstandingBalance',
             'lastPayout',
             'payouts'

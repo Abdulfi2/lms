@@ -55,9 +55,26 @@
         </div>
     </div>
 
-    <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center justify-between">
-        <p class="text-sm text-gray-600 dark:text-gray-300">Saldo belum dicairkan</p>
-        <p class="text-lg font-bold {{ $outstandingBalance > 0 ? 'text-yellow-600' : 'text-gray-900 dark:text-white' }}">Rp {{ number_format($outstandingBalance, 0, ',', '.') }}</p>
+    <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+        <div class="flex items-center justify-between">
+            <p class="text-sm text-gray-600 dark:text-gray-300">Saldo belum dicairkan</p>
+            <p class="text-lg font-bold {{ $outstandingBalance > 0 ? 'text-yellow-600' : 'text-gray-900 dark:text-white' }}">Rp {{ number_format($outstandingBalance, 0, ',', '.') }}</p>
+        </div>
+
+        @if ($hasPendingRequest)
+            <div class="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg text-sm text-yellow-700 dark:text-yellow-400">
+                Anda memiliki permintaan payout sebesar Rp {{ number_format($totalRequestPending, 0, ',', '.') }} yang sedang menunggu review admin.
+            </div>
+        @elseif ($outstandingBalance > 0)
+            <form method="POST" action="{{ route('instructor.payout-requests.store') }}" class="mt-3 flex flex-wrap gap-2 items-start">
+                @csrf
+                <input type="number" name="amount" step="1" max="{{ $outstandingBalance }}" value="{{ old('amount', $outstandingBalance) }}" required
+                    class="w-40 rounded-lg border-gray-300 text-sm">
+                <input type="text" name="method" placeholder="Metode (mis. Transfer BCA 1234567890)" maxlength="255"
+                    class="flex-1 min-w-[200px] rounded-lg border-gray-300 text-sm">
+                <button type="submit" class="px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-secondary">Ajukan Pencairan</button>
+            </form>
+        @endif
     </div>
 
     <!-- Monthly Chart -->
@@ -139,21 +156,29 @@
                 <tr class="bg-gray-50 dark:bg-gray-700/50">
                     <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">Tanggal</th>
                     <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">Metode / Referensi</th>
-                    <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">Catatan</th>
+                    <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">Status</th>
                     <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase text-right">Jumlah</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                 @forelse($payouts as $payout)
                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition">
-                    <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{{ $payout->paid_at->format('d M Y') }}</td>
+                    <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{{ $payout->paid_at?->format('d M Y') ?? $payout->created_at->format('d M Y') }}</td>
                     <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
                         {{ $payout->method ?? '-' }}
                         @if ($payout->reference)
                             <div class="text-[10px] text-gray-400">Ref: {{ $payout->reference }}</div>
                         @endif
                     </td>
-                    <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{{ $payout->note ?? '-' }}</td>
+                    <td class="px-6 py-4">
+                        @if ($payout->status === 'paid')
+                            <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Cair</span>
+                        @elseif ($payout->status === 'rejected')
+                            <span class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800" title="{{ $payout->note }}">Ditolak</span>
+                        @else
+                            <span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">Menunggu</span>
+                        @endif
+                    </td>
                     <td class="px-6 py-4 text-right text-sm font-bold text-gray-900 dark:text-white">Rp {{ number_format($payout->amount, 0, ',', '.') }}</td>
                 </tr>
                 @empty

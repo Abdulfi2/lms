@@ -47,7 +47,7 @@
                                 <td class="px-6 py-4 text-right">
                                     <div class="flex justify-end space-x-2">
                                         <a href="{{ route('instructor.courses.quizzes.index', $course) }}"
-                                            cclass="p-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                                            class="p-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
                                             title="Quizzes">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 inline"
                                                 viewBox="0 0 24 24">
@@ -71,6 +71,26 @@
                                                     d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                             </svg>
                                         </a>
+                                        <a href="{{ route('instructor.courses.preview', $course) }}" target="_blank"
+                                            class="text-gray-500 hover:text-gray-700" title="Preview">
+                                            <svg class="w-5 h-5 inline" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            </svg>
+                                        </a>
+                                        <form action="{{ route('instructor.courses.duplicate', $course) }}" method="POST"
+                                            class="inline-block" onsubmit="return confirm('Duplikasi kursus ini beserta section & lesson-nya sebagai draft baru?')">
+                                            @csrf
+                                            <button type="submit" class="text-indigo-600 hover:text-indigo-800" title="Duplikasi">
+                                                <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                                </svg>
+                                            </button>
+                                        </form>
                                         <form action="{{ route('instructor.courses.destroy', $course) }}" method="POST"
                                             class="inline-block" onsubmit="return confirm('Yakin hapus kursus ini?')">
                                             @csrf @method('DELETE')

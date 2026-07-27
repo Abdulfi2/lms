@@ -53,13 +53,40 @@
                 @csrf
                 @method('PUT')
                 
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Skor (Maks: {{ $submission->assignment->max_score }})</label>
-                    <input type="number" name="score" value="{{ old('score', $submission->score) }}" 
-                        class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 focus:ring-primary focus:border-primary"
-                        max="{{ $submission->assignment->max_score }}" min="0" required>
-                    @error('score') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-                </div>
+                @php $rubricItems = $submission->assignment->rubricItems; @endphp
+                @if ($rubricItems->count() > 0)
+                    @php $rubricScores = old('rubric_scores', $submission->rubric_scores ?? []); @endphp
+                    <div class="mb-4 space-y-3">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Rubrik Penilaian</label>
+                        @foreach ($rubricItems as $item)
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="flex-1">
+                                    <p class="text-sm text-gray-700 dark:text-gray-300">{{ $item->criteria }}</p>
+                                    @if ($item->description)
+                                        <p class="text-xs text-gray-400">{{ $item->description }}</p>
+                                    @endif
+                                </div>
+                                <input type="number" name="rubric_scores[{{ $item->id }}]" class="rubric-score-input w-20 rounded-lg border-gray-300 text-sm"
+                                    data-max="{{ $item->max_points }}" min="0" max="{{ $item->max_points }}"
+                                    value="{{ $rubricScores[$item->id] ?? 0 }}" required>
+                                <span class="text-xs text-gray-400">/ {{ $item->max_points }}</span>
+                            </div>
+                        @endforeach
+                    </div>
+                    <div class="mb-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg flex justify-between items-center">
+                        <span class="text-sm font-medium">Total Skor</span>
+                        <span id="rubric-total" class="text-lg font-bold text-primary">0</span>
+                    </div>
+                    <input type="hidden" name="score" id="rubric-score-hidden" value="{{ old('score', $submission->score) }}">
+                @else
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Skor (Maks: {{ $submission->assignment->max_score }})</label>
+                        <input type="number" name="score" value="{{ old('score', $submission->score) }}"
+                            class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 focus:ring-primary focus:border-primary"
+                            max="{{ $submission->assignment->max_score }}" min="0" required>
+                        @error('score') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    </div>
+                @endif
                 
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Umpan Balik (Feedback)</label>
@@ -100,4 +127,31 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+    function recalcRubricTotal() {
+        const inputs = document.querySelectorAll('.rubric-score-input');
+        if (inputs.length === 0) return;
+
+        let total = 0;
+        inputs.forEach((input) => {
+            const max = parseInt(input.dataset.max, 10) || 0;
+            let val = parseInt(input.value, 10) || 0;
+            if (val > max) val = max;
+            if (val < 0) val = 0;
+            input.value = val;
+            total += val;
+        });
+
+        document.getElementById('rubric-total').textContent = total;
+        document.getElementById('rubric-score-hidden').value = total;
+    }
+
+    document.querySelectorAll('.rubric-score-input').forEach((input) => {
+        input.addEventListener('input', recalcRubricTotal);
+    });
+    recalcRubricTotal();
+</script>
+@endpush
 @endsection

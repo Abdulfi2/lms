@@ -78,12 +78,15 @@ class SubmissionController extends Controller
             'score' => 'required|integer|min:0|max:' . $submission->assignment->max_score,
             'feedback' => 'nullable|string',
             'status' => 'required|in:graded,returned',
+            'rubric_scores' => 'nullable|array',
+            'rubric_scores.*' => 'nullable|integer|min:0',
         ]);
 
         $submission->update([
             'score' => $request->score,
             'feedback' => $request->feedback,
             'status' => $request->status,
+            'rubric_scores' => $request->input('rubric_scores'),
             'graded_at' => now(),
             'graded_by' => Auth::id(),
         ]);

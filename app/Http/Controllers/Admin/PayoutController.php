@@ -28,8 +28,15 @@ class PayoutController extends Controller
             ->selectSub(function ($query) {
                 $query->from('payouts')
                     ->whereColumn('payouts.instructor_id', 'users.id')
-                    ->selectRaw('COALESCE(SUM(payouts.amount), 0)');
+                    ->where('status', 'paid')
+                    ->selectRaw('COALESCE(SUM(amount), 0)');
             }, 'total_paid_out')
+            ->selectSub(function ($query) {
+                $query->from('payouts')
+                    ->whereColumn('payouts.instructor_id', 'users.id')
+                    ->where('status', 'pending')
+                    ->selectRaw('COALESCE(SUM(amount), 0)');
+            }, 'total_pending')
             ->orderByDesc('total_earnings')
             ->paginate(15);
 
@@ -44,15 +51,19 @@ class PayoutController extends Controller
         abort_unless($instructor->hasRole('instructor'), 404);
 
         $totalEarnings = $this->totalEarnings($instructor);
-        $totalPaidOut = Payout::where('instructor_id', $instructor->id)->sum('amount');
-        $outstanding = $totalEarnings - $totalPaidOut;
+        $totalPaidOut = Payout::where('instructor_id', $instructor->id)->paid()->sum('amount');
+        $totalPending = Payout::where('instructor_id', $instructor->id)->pending()->sum('amount');
+        $outstanding = $totalEarnings - $totalPaidOut - $totalPending;
+
+        $pendingRequests = Payout::where('instructor_id', $instructor->id)->pending()->latest()->get();
 
         $payouts = Payout::where('instructor_id', $instructor->id)
+            ->whereIn('status', ['paid', 'rejected'])
             ->with('processedBy')
-            ->latest('paid_at')
+            ->latest('updated_at')
             ->paginate(10);
 
-        return view('admin.payouts.show', compact('instructor', 'totalEarnings', 'totalPaidOut', 'outstanding', 'payouts'));
+        return view('admin.payouts.show', compact('instructor', 'totalEarnings', 'totalPaidOut', 'totalPending', 'outstanding', 'pendingRequests', 'payouts'));
     }
 
     /**
@@ -71,7 +82,7 @@ class PayoutController extends Controller
             'note' => 'nullable|string|max:1000',
         ]);
 
-        $outstanding = $this->totalEarnings($instructor) - Payout::where('instructor_id', $instructor->id)->sum('amount');
+        $outstanding = $this->outstandingBalance($instructor);
 
         if ($validated['amount'] > $outstanding) {
             return back()->withErrors(['amount' => 'Jumlah payout melebihi saldo tertunda instruktur ini (Rp ' . number_format($outstanding, 0, ',', '.') . ').'])->withInput();
@@ -80,6 +91,7 @@ class PayoutController extends Controller
         Payout::create([
             'instructor_id' => $instructor->id,
             'processed_by' => auth()->id(),
+            'status' => 'paid',
             'amount' => $validated['amount'],
             'period_start' => $validated['period_start'] ?? null,
             'period_end' => $validated['period_end'] ?? null,
@@ -90,6 +102,49 @@ class PayoutController extends Controller
         ]);
 
         return back()->with('success', 'Payout berhasil dicatat. Saldo instruktur diperbarui.');
+    }
+
+    /**
+     * Setujui permintaan payout dari instruktur — tandai sudah dicairkan.
+     */
+    public function approve(Request $request, Payout $payout)
+    {
+        abort_unless($payout->status === 'pending', 422);
+
+        $request->validate([
+            'method' => 'nullable|string|max:255',
+            'reference' => 'nullable|string|max:255',
+        ]);
+
+        $payout->update([
+            'status' => 'paid',
+            'processed_by' => auth()->id(),
+            'method' => $request->input('method') ?? $payout->method,
+            'reference' => $request->input('reference') ?? $payout->reference,
+            'paid_at' => now(),
+        ]);
+
+        return back()->with('success', 'Permintaan payout disetujui dan dicairkan.');
+    }
+
+    /**
+     * Tolak permintaan payout dari instruktur.
+     */
+    public function reject(Request $request, Payout $payout)
+    {
+        abort_unless($payout->status === 'pending', 422);
+
+        $request->validate([
+            'note' => 'required|string|max:1000',
+        ]);
+
+        $payout->update([
+            'status' => 'rejected',
+            'processed_by' => auth()->id(),
+            'note' => $request->input('note'),
+        ]);
+
+        return back()->with('success', 'Permintaan payout ditolak.');
     }
 
     /**
@@ -108,5 +163,14 @@ class PayoutController extends Controller
         return \App\Models\Payment::whereHas('enrollment.course', function ($q) use ($instructor) {
             $q->where('instructor_id', $instructor->id);
         })->where('status', 'completed')->sum(\Illuminate\Support\Facades\DB::raw('amount - COALESCE(refund_amount, 0)'));
+    }
+
+    private function outstandingBalance(User $instructor)
+    {
+        $paidOrPending = Payout::where('instructor_id', $instructor->id)
+            ->whereIn('status', ['paid', 'pending'])
+            ->sum('amount');
+
+        return $this->totalEarnings($instructor) - $paidOrPending;
     }
 }

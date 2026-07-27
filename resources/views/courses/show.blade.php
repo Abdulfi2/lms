@@ -6,6 +6,13 @@
 
 @section('content')
     <div class="max-w-6xl mx-auto space-y-6">
+        @if ($previewMode ?? false)
+            <div class="bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 text-yellow-800 dark:text-yellow-300 rounded-lg px-4 py-3 text-sm flex items-center justify-between">
+                <span>Mode Preview — begini tampilan kursus ini bagi calon siswa. Pendaftaran dinonaktifkan pada mode ini.</span>
+                <span class="px-2 py-1 bg-yellow-200 dark:bg-yellow-800 rounded-full text-xs font-semibold uppercase">{{ $course->status }}</span>
+            </div>
+        @endif
+
         <!-- Hero Section -->
         <div class="bg-gradient-to-r from-primary to-secondary rounded-xl p-6 text-white">
             <div class="flex flex-col md:flex-row justify-between gap-4">
@@ -33,7 +40,11 @@
                             Gratis
                         @endif
                     </div>
-                    @if ($isEnrolled && $enrollment->payment_status !== 'paid')
+                    @if ($previewMode ?? false)
+                        <div class="mt-3 w-full text-center bg-white/20 text-white py-2 rounded-lg font-semibold cursor-not-allowed">
+                            Daftar Sekarang
+                        </div>
+                    @elseif ($isEnrolled && $enrollment->payment_status !== 'paid')
                         <a href="{{ route('student.courses.show', $course->slug) }}"
                             class="mt-3 block w-full text-center bg-yellow-400 text-yellow-900 py-2 rounded-lg font-semibold hover:bg-yellow-300">
                             Menunggu Pembayaran
@@ -57,6 +68,7 @@
                         </form>
                     @endif
 
+                    @if (!($previewMode ?? false))
                     @auth
                         @if (auth()->user()->hasRole('student'))
                             <form action="{{ route('student.wishlist.toggle', $course) }}" method="POST" class="mt-2">
@@ -72,6 +84,7 @@
                             </form>
                         @endif
                     @endauth
+                    @endif
                 </div>
             </div>
         </div>
@@ -143,6 +156,24 @@
 
             <!-- Sidebar: Info, Review, Lainnya -->
             <div class="space-y-6">
+                @if ($course->instructor)
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4">
+                        <h3 class="font-semibold mb-3">Instruktur</h3>
+                        <div class="flex items-center space-x-3">
+                            <img src="{{ $course->instructor->avatar_url }}" class="w-10 h-10 rounded-full object-cover">
+                            <div>
+                                @if (optional($course->instructor->profile)->is_public)
+                                    <a href="{{ route('instructors.show', $course->instructor) }}" class="font-medium text-gray-800 dark:text-white hover:text-primary">
+                                        {{ $course->instructor->name }}
+                                    </a>
+                                @else
+                                    <span class="font-medium text-gray-800 dark:text-white">{{ $course->instructor->name }}</span>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4">
                     <h3 class="font-semibold mb-2">Rating</h3>
                     <div class="flex items-center space-x-2">
