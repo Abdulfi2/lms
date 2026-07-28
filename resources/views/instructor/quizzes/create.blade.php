@@ -81,7 +81,7 @@
                             Slug (URL)
                         </label>
                         <input type="text" x-model="form.slug"
-                            class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 bg-gray-50 dark:bg-gray-800"
+                            class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 bg-gray-50"
                             placeholder="otomatis-dari-judul">
                         <p class="text-xs text-gray-500 mt-1">Biarkan kosong untuk auto-generate dari judul.</p>
                     </div>
