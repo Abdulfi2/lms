@@ -333,6 +333,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             // Quiz Management (nested di dalam course)
             Route::resource('quizzes', QuizController::class)->except(['show']);
             Route::get('quizzes/{quiz}/analytics', [QuizController::class, 'analytics'])->name('quizzes.analytics');
+            Route::patch('quizzes/{quiz}/toggle-publish', [QuizController::class, 'togglePublish'])->name('quizzes.toggle-publish');
+            Route::get('quizzes/{quiz}/grading', [QuizController::class, 'grading'])->name('quizzes.grading');
+            Route::get('quizzes/{quiz}/attempts/{attempt}/grade', [QuizController::class, 'gradeAttempt'])->name('quizzes.attempts.grade');
+            Route::post('quizzes/{quiz}/attempts/{attempt}/grade', [QuizController::class, 'storeGrade'])->name('quizzes.attempts.store-grade');
             Route::post('quizzes/{quiz}/questions', [QuizController::class, 'storeQuestion'])->name('quizzes.questions.store');
             Route::put('quizzes/{quiz}/questions/{question}', [QuizController::class, 'updateQuestion'])->name('quizzes.questions.update');
             Route::delete('quizzes/{quiz}/questions/{question}', [QuizController::class, 'deleteQuestion'])->name('quizzes.questions.destroy');
@@ -364,6 +368,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/threads/{thread}/lock', [InstructorForumController::class, 'toggleLock'])->name('thread.lock');
             Route::post('/threads/{thread}/pin', [InstructorForumController::class, 'togglePin'])->name('thread.pin');
             Route::delete('/threads/{thread}/posts/{post}', [InstructorForumController::class, 'deletePost'])->name('thread.post.delete');
+            Route::delete('/threads/{thread}', [InstructorForumController::class, 'destroyThread'])->name('thread.destroy');
         });
     });
 
@@ -447,6 +452,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/achievements', [AchievementController::class, 'index'])->name('achievements.index');
         Route::get('/achievements/{achievement}', [AchievementController::class, 'show'])->name('achievements.show');
         Route::get('/leaderboard', [AchievementController::class, 'leaderboard'])->name('leaderboard');
+        Route::get('/courses/{course}/leaderboard', [AchievementController::class, 'courseLeaderboard'])->name('courses.leaderboard');
         Route::get('/badges', [AchievementController::class, 'badges'])->name('badges');
 
         Route::post('/lessons/{lesson}/track-time', [StudentLessonController::class, 'trackTime'])->name('lessons.track');

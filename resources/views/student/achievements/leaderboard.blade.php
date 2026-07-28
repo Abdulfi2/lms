@@ -6,6 +6,32 @@
 
 @section('content')
     <div class="max-w-3xl mx-auto space-y-6">
+        <!-- Period Tabs -->
+        <div class="flex gap-2">
+            <a href="{{ route('student.leaderboard') }}"
+                class="px-4 py-2 rounded-lg text-sm font-medium {{ $period === 'all' ? 'bg-primary text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border dark:border-gray-700' }}">
+                Sepanjang Waktu
+            </a>
+            <a href="{{ route('student.leaderboard', ['period' => 'weekly']) }}"
+                class="px-4 py-2 rounded-lg text-sm font-medium {{ $period === 'weekly' ? 'bg-primary text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border dark:border-gray-700' }}">
+                Minggu Ini
+            </a>
+        </div>
+
+        @if ($enrolledCourses->isNotEmpty())
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4">
+                <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Peringkat per Kursus</p>
+                <div class="flex flex-wrap gap-2">
+                    @foreach ($enrolledCourses as $course)
+                        <a href="{{ route('student.courses.leaderboard', $course) }}"
+                            class="px-3 py-1.5 rounded-full text-xs border dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                            {{ $course->title }}
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
         <!-- User Rank Card -->
         @if ($userRank)
             <div class="bg-gradient-to-r from-primary to-secondary rounded-xl p-4 text-white">
@@ -25,6 +51,11 @@
 
         <!-- Leaderboard List -->
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
+            @if ($leaderboard->isEmpty())
+                <div class="p-8 text-center text-gray-500">
+                    Belum ada aktivitas poin {{ $period === 'weekly' ? 'minggu ini' : '' }}.
+                </div>
+            @endif
             <div class="divide-y dark:divide-gray-700">
                 @foreach ($leaderboard as $item)
                     <div

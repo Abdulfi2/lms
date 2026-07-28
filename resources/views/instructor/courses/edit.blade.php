@@ -3,112 +3,286 @@
 @section('title', 'Edit Kursus')
 @section('page-title', 'Edit Kursus')
 
+@push('styles')
+    <link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet">
+@endpush
+
 @section('content')
-    <div x-data="courseForm()" x-init="init()"
-        class="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
-        <form @submit.prevent="submitForm" enctype="multipart/form-data">
+    <div x-data="courseForm()" x-init="init()" class="max-w-4xl mx-auto">
+        <form @submit.prevent="submitForm" enctype="multipart/form-data" class="space-y-6">
             @csrf
             @method('PUT')
 
-            <div class="space-y-6">
-                <!-- Informasi Dasar -->
-                <div>
-                    <h3 class="text-lg font-semibold mb-4">Informasi Dasar</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Judul Kursus <span
-                                    class="text-red-500">*</span></label>
-                            <input type="text" x-model="form.title" required class="w-full rounded-lg border-gray-300">
-                            <p x-show="errors.title" class="text-red-500 text-xs mt-1" x-text="errors.title"></p>
+            <!-- Progress Steps -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 overflow-x-auto">
+                <div class="flex items-center justify-between min-w-max gap-1">
+                    <template x-for="s in 4" :key="s">
+                        <div class="flex items-center">
+                            <button type="button" @click="step = s" class="flex items-center group">
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold shrink-0"
+                                    :class="step === s ? 'bg-primary text-white' : 'bg-gray-200 text-gray-500'">
+                                    <span x-text="s"></span>
+                                </div>
+                                <span class="ml-2 text-sm font-medium whitespace-nowrap"
+                                    :class="step === s ? 'text-gray-800 dark:text-white' : 'text-gray-400'"
+                                    x-text="stepLabels[s - 1]"></span>
+                            </button>
+                            <div class="w-8 md:w-12 h-0.5 bg-gray-300 mx-2" x-show="s < 4"></div>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Slug (biarkan kosong)</label>
-                            <input type="text" x-model="form.slug" class="w-full rounded-lg border-gray-300">
-                        </div>
-                        <div class="md:col-span-2">
-                            <label class="block text-sm font-medium mb-1">Short Description</label>
-                            <textarea x-model="form.short_description" rows="2" class="w-full rounded-lg border-gray-300"></textarea>
-                        </div>
-                        <div class="md:col-span-2">
-                            <label class="block text-sm font-medium mb-1">Deskripsi Lengkap <span
-                                    class="text-red-500">*</span></label>
-                            <textarea x-model="form.description" rows="5" class="w-full rounded-lg border-gray-300"></textarea>
-                            <p x-show="errors.description" class="text-red-500 text-xs mt-1" x-text="errors.description">
-                            </p>
-                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Step 1: Info Dasar -->
+            <div x-show="step === 1" x-transition.duration.300
+                class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 space-y-6">
+                <div class="flex items-center space-x-3 mb-2">
+                    <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
                     </div>
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-white">Info Dasar Kursus</h3>
                 </div>
 
-                <!-- Thumbnail -->
                 <div>
-                    <label class="block text-sm font-medium mb-1">Thumbnail</label>
+                    <label class="block text-sm font-medium mb-1">Judul Kursus <span class="text-red-500">*</span></label>
+                    <input type="text" x-model="form.title" required
+                        class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700">
+                    <p x-show="errors.title" class="text-red-500 text-xs mt-1" x-text="errors.title"></p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">Alamat Halaman Kursus (Slug)</label>
+                    <input type="text" x-model="form.slug"
+                        class="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800">
+                    <p class="text-xs text-gray-500 mt-1">Ini akan jadi bagian alamat website kursus Anda.</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">Ringkasan Singkat</label>
+                    <textarea x-model="form.short_description" rows="2" maxlength="255"
+                        class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">Deskripsi Lengkap <span class="text-red-500">*</span></label>
+                    <div id="quill-description" class="bg-white dark:bg-gray-900 rounded-b-lg" style="min-height: 180px;"></div>
+                    <p class="text-xs text-gray-500 mt-1">Gunakan tombol format di atas untuk membuat huruf tebal, daftar poin, dll — seperti mengetik di Word.</p>
+                    <p x-show="errors.description" class="text-red-500 text-xs mt-1" x-text="errors.description"></p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">Gambar Sampul (Thumbnail)</label>
                     <input type="file" @change="handleThumbnail" accept="image/*" class="w-full">
+                    <p class="text-xs text-gray-500 mt-1">Kosongkan jika tidak ingin mengganti gambar saat ini.</p>
                     <template x-if="thumbnailPreview">
-                        <img :src="thumbnailPreview" class="mt-2 h-20 rounded object-cover">
+                        <img :src="thumbnailPreview" class="mt-2 h-24 rounded object-cover">
                     </template>
                 </div>
 
-                <!-- Harga & Diskon -->
+                <div class="flex justify-end pt-2">
+                    <button type="button" @click="step = 2" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-secondary">
+                        Selanjutnya →
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 2: Harga -->
+            <div x-show="step === 2" x-transition.duration.300
+                class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 space-y-6">
+                <div class="flex items-center space-x-3 mb-2">
+                    <div class="w-10 h-10 rounded-full bg-yellow-100 dark:bg-yellow-900 text-yellow-600 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-white">Harga Kursus</h3>
+                </div>
+
                 <div>
-                    <h3 class="text-lg font-semibold mb-4">Harga & Diskon</h3>
+                    <label class="block text-sm font-medium mb-1">Harga (Rp) <span class="text-red-500">*</span></label>
+                    <input type="number" x-model="form.price" step="1000" min="0"
+                        class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700">
+                    <p class="text-xs text-gray-500 mt-1">Isi <strong>0</strong> jika kursus ini gratis.</p>
+                    <p x-show="errors.price" class="text-red-500 text-xs mt-1" x-text="errors.price"></p>
+                </div>
+
+                <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 space-y-4">
+                    <h4 class="font-medium text-gray-800 dark:text-white">Diskon (Opsional)</h4>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Harga Setelah Diskon</label>
+                        <input type="number" x-model="form.sale_price" step="1000" min="0"
+                            class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700">
+                    </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium mb-1">Harga (Rp) <span
-                                    class="text-red-500">*</span></label>
-                            <input type="number" x-model="form.price" step="1000"
-                                class="w-full rounded-lg border-gray-300">
-                            <p x-show="errors.price" class="text-red-500 text-xs mt-1" x-text="errors.price"></p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Harga Diskon</label>
-                            <input type="number" x-model="form.sale_price" step="1000"
-                                class="w-full rounded-lg border-gray-300">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Periode Diskon Mulai</label>
+                            <label class="block text-sm font-medium mb-1">Diskon Mulai</label>
                             <input type="datetime-local" x-model="form.sale_starts_at"
-                                class="w-full rounded-lg border-gray-300">
+                                class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium mb-1">Periode Diskon Berakhir</label>
+                            <label class="block text-sm font-medium mb-1">Diskon Berakhir</label>
                             <input type="datetime-local" x-model="form.sale_ends_at"
-                                class="w-full rounded-lg border-gray-300">
+                                class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700">
                         </div>
                     </div>
                 </div>
 
-                <!-- Level & Status -->
-                <div>
-                    <h3 class="text-lg font-semibold mb-4">Level & Status</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Level</label>
-                            <select x-model="form.level" class="w-full rounded-lg border-gray-300">
-                                <option value="beginner">Beginner</option>
-                                <option value="intermediate">Intermediate</option>
-                                <option value="advanced">Advanced</option>
-                                <option value="all_levels">All Levels</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Bahasa</label>
-                            <input type="text" x-model="form.language" placeholder="id"
-                                class="w-full rounded-lg border-gray-300">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Durasi (jam)</label>
-                            <input type="number" x-model="form.duration_total" class="w-full rounded-lg border-gray-300">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Status</label>
-                            <select x-model="form.status" class="w-full rounded-lg border-gray-300">
-                                <option value="draft">Draft</option>
-                                <option value="pending">Ajukan untuk Review Admin</option>
-                                <option value="published">Published (langsung tayang)</option>
-                                <option value="archived">Archived</option>
-                            </select>
+                <div class="flex justify-between pt-2">
+                    <button type="button" @click="step = 1" class="px-6 py-2 border rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">← Sebelumnya</button>
+                    <button type="button" @click="step = 3" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-secondary">Selanjutnya →</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Detail & Materi Promosi (Opsional) -->
+            <div x-show="step === 3" x-transition.duration.300
+                class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 space-y-6">
+                <div class="flex items-center space-x-3 mb-2">
+                    <div class="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-600 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-800 dark:text-white">Detail & Materi Promosi</h3>
+                        <p class="text-xs text-gray-500">Opsional — bisa dilewati dan diisi belakangan.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Tingkat Kesulitan</label>
+                        <select x-model="form.level" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700">
+                            <option value="beginner">Pemula</option>
+                            <option value="intermediate">Menengah</option>
+                            <option value="advanced">Mahir</option>
+                            <option value="all_levels">Semua Level</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Bahasa Pengantar</label>
+                        <input type="text" x-model="form.language" placeholder="id"
+                            class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Perkiraan Durasi (jam)</label>
+                        <input type="number" x-model="form.duration_total" min="0"
+                            class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700">
+                    </div>
+                </div>
+
+                <div class="space-y-5 pt-2 border-t dark:border-gray-700">
+                    <p class="text-sm text-gray-500">Bagian di bawah ini akan tampil di halaman promosi kursus Anda untuk meyakinkan calon siswa.</p>
+
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Yang Akan Dipelajari Siswa</label>
+                        <div x-data="{ items: form.learning_objectives }">
+                            <template x-for="(item, idx) in items" :key="idx">
+                                <div class="flex mb-2">
+                                    <input type="text" x-model="items[idx]"
+                                        class="flex-1 rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700">
+                                    <button type="button" @click="items.splice(idx,1)" class="ml-2 text-red-500">Hapus</button>
+                                </div>
+                            </template>
+                            <button type="button" @click="items.push('')" class="text-primary text-sm">+ Tambah Poin</button>
                         </div>
                     </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Yang Perlu Disiapkan Siswa</label>
+                        <div x-data="{ items: form.requirements }">
+                            <template x-for="(item, idx) in items" :key="idx">
+                                <div class="flex mb-2">
+                                    <input type="text" x-model="items[idx]"
+                                        class="flex-1 rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700">
+                                    <button type="button" @click="items.splice(idx,1)" class="ml-2 text-red-500">Hapus</button>
+                                </div>
+                            </template>
+                            <button type="button" @click="items.push('')" class="text-primary text-sm">+ Tambah</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Kursus Ini Cocok Untuk</label>
+                        <div x-data="{ items: form.target_audience }">
+                            <template x-for="(item, idx) in items" :key="idx">
+                                <div class="flex mb-2">
+                                    <input type="text" x-model="items[idx]"
+                                        class="flex-1 rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700">
+                                    <button type="button" @click="items.splice(idx,1)" class="ml-2 text-red-500">Hapus</button>
+                                </div>
+                            </template>
+                            <button type="button" @click="items.push('')" class="text-primary text-sm">+ Tambah</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Kursus yang Perlu Diselesaikan Dulu (jika ada)</label>
+                        <div x-data="{ items: form.prerequisites }">
+                            <template x-for="(item, idx) in items" :key="idx">
+                                <div class="flex mb-2">
+                                    <input type="text" x-model="items[idx]"
+                                        class="flex-1 rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700">
+                                    <button type="button" @click="items.splice(idx,1)" class="ml-2 text-red-500">Hapus</button>
+                                </div>
+                            </template>
+                            <button type="button" @click="items.push('')" class="text-primary text-sm">+ Tambah</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between pt-2">
+                    <button type="button" @click="step = 2" class="px-6 py-2 border rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">← Sebelumnya</button>
+                    <button type="button" @click="step = 4" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-secondary">Selanjutnya →</button>
+                </div>
+            </div>
+
+            <!-- Step 4: Kategori & Publikasikan -->
+            <div x-show="step === 4" x-transition.duration.300
+                class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 space-y-6">
+                <div class="flex items-center space-x-3 mb-2">
+                    <div class="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900 text-green-600 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-white">Kategori & Publikasikan</h3>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-2">Kategori</label>
+                    <div class="flex flex-wrap gap-2">
+                        @foreach ($categories as $cat)
+                            <label class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border cursor-pointer text-sm"
+                                :class="form.categories.includes('{{ $cat->id }}') || form.categories.includes({{ $cat->id }}) ? 'bg-primary/10 border-primary text-primary' : 'border-gray-300 dark:border-gray-600'">
+                                <input type="checkbox" value="{{ $cat->id }}" x-model="form.categories" class="rounded">
+                                {{ $cat->name }}
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">Tag</label>
+                    <div class="flex flex-wrap gap-2">
+                        @foreach ($tags as $tag)
+                            <label class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border cursor-pointer text-sm"
+                                :class="form.tags.includes('{{ $tag->id }}') || form.tags.includes({{ $tag->id }}) ? 'bg-primary/10 border-primary text-primary' : 'border-gray-300 dark:border-gray-600'">
+                                <input type="checkbox" value="{{ $tag->id }}" x-model="form.tags" class="rounded">
+                                {{ $tag->name }}
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">Status Kursus</label>
+                    <select x-model="form.status" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700">
+                        <option value="draft">Simpan sebagai Draft (belum tayang, hanya Anda yang bisa lihat)</option>
+                        <option value="pending">Ajukan ke Admin untuk Ditinjau (akan tayang setelah disetujui)</option>
+                        <option value="published">Langsung Tayang (siswa bisa langsung mendaftar)</option>
+                        <option value="archived">Arsipkan (sembunyikan dari daftar kursus)</option>
+                    </select>
                     @if ($course->status === 'draft' && $course->rejection_reason)
                         <div class="mt-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg text-sm text-red-700 dark:text-red-400">
                             <strong>Ditolak admin:</strong> {{ $course->rejection_reason }}
@@ -118,121 +292,43 @@
                             Kursus ini sedang menunggu review admin.
                         </div>
                     @endif
-                    <div class="flex items-center space-x-4 mt-3">
-                        <label class="flex items-center">
-                            <input type="checkbox" x-model="form.is_featured" class="rounded">
-                            <span class="ml-2">Featured</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="checkbox" x-model="form.has_certificate" class="rounded">
-                            <span class="ml-2">Sertifikat</span>
-                        </label>
-                    </div>
                 </div>
 
-                <!-- Landing Page Kursus -->
-                <div>
-                    <h3 class="text-lg font-semibold mb-4">Landing Page Kursus</h3>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Yang Akan Dipelajari (Learning Objectives)</label>
-                            <div x-data="{ items: form.learning_objectives }">
-                                <template x-for="(item, idx) in items" :key="idx">
-                                    <div class="flex mb-2">
-                                        <input type="text" x-model="items[idx]" class="flex-1 rounded-lg border-gray-300">
-                                        <button type="button" @click="items.splice(idx,1)" class="ml-2 text-red-500">Hapus</button>
-                                    </div>
-                                </template>
-                                <button type="button" @click="items.push('')" class="text-primary text-sm">+ Tambah Poin</button>
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Persyaratan (Requirements)</label>
-                            <div x-data="{ items: form.requirements }">
-                                <template x-for="(item, idx) in items" :key="idx">
-                                    <div class="flex mb-2">
-                                        <input type="text" x-model="items[idx]" class="flex-1 rounded-lg border-gray-300">
-                                        <button type="button" @click="items.splice(idx,1)" class="ml-2 text-red-500">Hapus</button>
-                                    </div>
-                                </template>
-                                <button type="button" @click="items.push('')" class="text-primary text-sm">+ Tambah Persyaratan</button>
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Target Audience</label>
-                            <div x-data="{ items: form.target_audience }">
-                                <template x-for="(item, idx) in items" :key="idx">
-                                    <div class="flex mb-2">
-                                        <input type="text" x-model="items[idx]" class="flex-1 rounded-lg border-gray-300">
-                                        <button type="button" @click="items.splice(idx,1)" class="ml-2 text-red-500">Hapus</button>
-                                    </div>
-                                </template>
-                                <button type="button" @click="items.push('')" class="text-primary text-sm">+ Tambah Target</button>
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Prasyarat Kursus (Prerequisites)</label>
-                            <div x-data="{ items: form.prerequisites }">
-                                <template x-for="(item, idx) in items" :key="idx">
-                                    <div class="flex mb-2">
-                                        <input type="text" x-model="items[idx]" class="flex-1 rounded-lg border-gray-300">
-                                        <button type="button" @click="items.splice(idx,1)" class="ml-2 text-red-500">Hapus</button>
-                                    </div>
-                                </template>
-                                <button type="button" @click="items.push('')" class="text-primary text-sm">+ Tambah Prasyarat</button>
-                            </div>
-                        </div>
-                    </div>
+                <div class="flex items-center space-x-6">
+                    <label class="flex items-center">
+                        <input type="checkbox" x-model="form.is_featured" class="rounded">
+                        <span class="ml-2 text-sm">Tampilkan di kursus unggulan</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="checkbox" x-model="form.has_certificate" class="rounded">
+                        <span class="ml-2 text-sm">Beri sertifikat setelah selesai</span>
+                    </label>
                 </div>
 
-                <!-- Kategori & Tag -->
-                <div>
-                    <h3 class="text-lg font-semibold mb-4">Kategori & Tag</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Kategori</label>
-                            <select x-model="form.categories" multiple class="w-full rounded-lg border-gray-300"
-                                size="5">
-                                @foreach ($categories as $cat)
-                                    <option value="{{ $cat->id }}">{{ $cat->name }}</option>
-                                @endforeach
-                            </select>
-                            <p class="text-xs text-gray-500 mt-1">Tekan Ctrl untuk pilih lebih dari satu</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Tag</label>
-                            <select x-model="form.tags" multiple class="w-full rounded-lg border-gray-300"
-                                size="5">
-                                @foreach ($tags as $tag)
-                                    <option value="{{ $tag->id }}">{{ $tag->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
+                <div class="flex justify-between pt-2">
+                    <button type="button" @click="step = 3" class="px-6 py-2 border rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">← Sebelumnya</button>
+                    <button type="submit" :disabled="loading"
+                        class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50">
+                        <span x-show="!loading">Simpan Perubahan</span>
+                        <span x-show="loading">Menyimpan...</span>
+                    </button>
                 </div>
-            </div>
-
-            <div class="mt-6 flex justify-end space-x-3">
-                <a href="{{ route('instructor.courses.index') }}"
-                    class="px-4 py-2 border rounded-lg hover:bg-gray-100">Batal</a>
-                <button type="submit" :disabled="loading"
-                    class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary disabled:opacity-50">
-                    <span x-show="!loading">Simpan Kursus</span>
-                    <span x-show="loading">Menyimpan...</span>
-                </button>
             </div>
         </form>
     </div>
 
     @push('scripts')
+        <script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
         <script>
             function courseForm() {
                 return {
+                    step: 1,
+                    stepLabels: ['Info Dasar', 'Harga', 'Detail', 'Publikasikan'],
                     form: {
-                        title: '{{ addslashes($course->title) }}',
-                        slug: '{{ $course->slug }}',
-                        short_description: '{{ addslashes($course->short_description) }}',
-                        description: `{!! addslashes($course->description) !!}`,
+                        title: @json($course->title),
+                        slug: @json($course->slug),
+                        short_description: @json($course->short_description ?? ''),
+                        description: @json($course->description),
                         thumbnail: null,
                         price: '{{ $course->price }}',
                         sale_price: '{{ $course->sale_price }}',
@@ -253,9 +349,30 @@
                     },
                     errors: {},
                     loading: false,
+                    quill: null,
                     thumbnailPreview: '{{ $course->thumbnail ? Storage::url($course->thumbnail) : '' }}',
 
-                    init() {},
+                    init() {
+                        this.$nextTick(() => this.initQuill());
+                    },
+
+                    initQuill() {
+                        this.quill = new Quill('#quill-description', {
+                            theme: 'snow',
+                            placeholder: 'Jelaskan kursus ini secara lengkap: apa yang dipelajari, untuk siapa, dll.',
+                            modules: {
+                                toolbar: [
+                                    ['bold', 'italic', 'underline'],
+                                    [{ list: 'ordered' }, { list: 'bullet' }],
+                                    ['link'],
+                                    ['clean']
+                                ]
+                            }
+                        });
+                        if (this.form.description) {
+                            this.quill.root.innerHTML = this.form.description;
+                        }
+                    },
 
                     handleThumbnail(e) {
                         const file = e.target.files[0];
@@ -265,7 +382,34 @@
                         }
                     },
 
+                    validateBeforeSubmit() {
+                        this.errors = {};
+                        this.form.description = this.quill.root.innerHTML;
+
+                        if (!this.form.title.trim()) {
+                            this.errors.title = 'Judul kursus wajib diisi.';
+                            this.step = 1;
+                            return false;
+                        }
+                        if (this.quill.getText().trim().length === 0) {
+                            this.errors.description = 'Deskripsi lengkap wajib diisi.';
+                            this.step = 1;
+                            return false;
+                        }
+                        if (this.form.price === '' || this.form.price === null || this.form.price < 0) {
+                            this.errors.price = 'Harga wajib diisi (isi 0 jika gratis).';
+                            this.step = 2;
+                            return false;
+                        }
+                        return true;
+                    },
+
                     submitForm() {
+                        if (!this.validateBeforeSubmit()) {
+                            window.toast.error('Ada bagian yang belum lengkap, silakan periksa kembali.');
+                            return;
+                        }
+
                         this.loading = true;
                         this.errors = {};
                         const formData = new FormData();
@@ -294,8 +438,13 @@
                                     window.toast.success(data.message);
                                     window.location.href = '{{ route('instructor.courses.index') }}';
                                 } else {
-                                    if (data.errors) this.errors = data.errors;
-                                    else window.toast.error(data.message);
+                                    if (data.errors) {
+                                        this.errors = data.errors;
+                                        if (data.errors.title || data.errors.description) this.step = 1;
+                                        else if (data.errors.price) this.step = 2;
+                                    } else {
+                                        window.toast.error(data.message);
+                                    }
                                     this.loading = false;
                                 }
                             })

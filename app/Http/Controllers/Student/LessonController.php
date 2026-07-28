@@ -267,7 +267,13 @@ class LessonController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            DB::rollBack();
+            // DB::beginTransaction() hanya terjadi di pertengahan method ini, dan sudah di-commit
+            // sebelum blok gamifikasi/sertifikat berjalan — exception dari kode sebelum begin atau
+            // setelah commit tidak punya transaksi aktif untuk di-rollback ("There is no active
+            // transaction"), yang tadinya menutupi pesan error asli di atas.
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
 
             Log::error('Lesson completion error: ' . $e->getMessage(), [
                 'lesson_id' => $lesson->id,

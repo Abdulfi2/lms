@@ -231,6 +231,13 @@ class QuizController extends Controller
         }
 
         if ($attempt->status !== 'in_progress') {
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'redirect' => route('student.quizzes.result', $attempt),
+                ]);
+            }
+
             return redirect()->route('student.quizzes.result', $attempt)
                 ->with('warning', 'Quiz ini sudah diselesaikan sebelumnya.');
         }
@@ -259,6 +266,14 @@ class QuizController extends Controller
         $attempt = QuizAttempt::whereKey($attempt->id)->lockForUpdate()->first();
         if ($attempt->status !== 'in_progress') {
             DB::rollBack();
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'redirect' => route('student.quizzes.result', $attempt),
+                ]);
+            }
+
             return redirect()->route('student.quizzes.result', $attempt)
                 ->with('warning', 'Quiz ini sudah diselesaikan sebelumnya.');
         }
@@ -336,6 +351,14 @@ class QuizController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Quiz submit failed: ' . $e->getMessage());
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal menyimpan jawaban quiz. Silakan coba lagi.',
+                ], 500);
+            }
+
             return back()->with('error', 'Gagal menyimpan jawaban quiz. Silakan coba lagi.');
         }
 
@@ -365,6 +388,14 @@ class QuizController extends Controller
             ? "🎉 Selamat! Anda lulus quiz dengan nilai {$percentage}%."
             : "📚 Nilai Anda {$percentage}%. Perlu {$quiz->passing_score}% untuk lulus. Silakan pelajari lagi materinya.";
 
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'redirect' => route('student.quizzes.result', $attempt),
+            ]);
+        }
+
         return redirect()->route('student.quizzes.result', $attempt)
             ->with('success', $message);
     }
@@ -380,13 +411,21 @@ class QuizController extends Controller
 
         $attempt->load(['quiz', 'answers.question.options']);
 
-        $questions = $attempt->quiz->questions()->with('options')->get();
+        $questions = $attempt->quiz->questions()->with('options')->orderBy('order')->get();
         $answers = $attempt->answers->keyBy('question_id');
         $correctCount = $attempt->answers->where('is_correct', true)->count();
         $totalQuestions = $questions->count();
         $score = $attempt->percentage ?? 0;
 
-        return view('student.quizzes.result', compact('attempt', 'questions', 'answers', 'correctCount', 'totalQuestions', 'score'));
+        $attemptCount = QuizAttempt::where('quiz_id', $attempt->quiz_id)
+            ->where('user_id', $attempt->user_id)
+            ->count();
+
+        $hasPendingEssayGrading = $attempt->answers->contains(
+            fn ($answer) => $answer->question->type === 'essay' && $answer->graded_at === null
+        );
+
+        return view('student.quizzes.result', compact('attempt', 'questions', 'answers', 'correctCount', 'totalQuestions', 'score', 'attemptCount', 'hasPendingEssayGrading'));
     }
 
     /**

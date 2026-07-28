@@ -13,8 +13,12 @@
                     <h1 class="text-2xl font-bold text-gray-800 dark:text-white">{{ $assignment->title }}</h1>
                     <div class="flex items-center space-x-4 mt-2">
                         <span class="text-sm text-gray-500">
-                            <i class="far fa-calendar-alt mr-1"></i> Deadline:
-                            {{ \Carbon\Carbon::parse($assignment->due_date)->format('d M Y, H:i') }}
+                            <i class="far fa-calendar-alt mr-1"></i>
+                            @if ($assignment->due_date)
+                                Deadline: {{ $assignment->due_date->format('d M Y, H:i') }}
+                            @else
+                                Tidak ada deadline
+                            @endif
                         </span>
                         <span class="text-sm text-gray-500">
                             <i class="fas fa-star mr-1"></i> Maksimal Nilai: {{ $assignment->max_score }}
@@ -40,9 +44,9 @@
             </div>
 
             @if ($assignment->instructions)
-                <div class="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div class="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg prose max-w-none dark:prose-invert">
                     <h4 class="font-semibold text-gray-800 dark:text-white">Instruksi Pengerjaan</h4>
-                    {!! nl2br(e($assignment->instructions)) !!}
+                    {!! $assignment->instructions !!}
                 </div>
             @endif
 
@@ -89,6 +93,9 @@
                                 {{ round(($submission->score / $assignment->max_score) * 100) }}%</p>
                         </div>
                     </div>
+                    @if ($submission->submission_count > 1)
+                        <p class="text-xs text-gray-500 mt-2">Dinilai dari pengiriman ke-{{ $submission->submission_count }}.</p>
+                    @endif
                 </div>
 
                 @if ($submission->feedback)
@@ -118,6 +125,9 @@
                 <div class="mb-4">
                     <p><strong>Tanggal kirim:</strong>
                         {{ \Carbon\Carbon::parse($submission->submitted_at)->format('d M Y, H:i') }}</p>
+                    @if ($submission->submission_count > 1)
+                        <p class="text-xs text-gray-500 mt-1">Ini pengiriman ke-{{ $submission->submission_count }} (sudah dikirim ulang {{ $submission->submission_count - 1 }}x).</p>
+                    @endif
                     @if ($submission->is_late)
                         <p class="text-red-600">⚠️ Tugas dikirim terlambat</p>
                     @endif

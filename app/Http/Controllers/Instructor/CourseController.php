@@ -88,7 +88,11 @@ class CourseController extends Controller
             DB::commit();
 
             if ($request->wantsJson()) {
-                return response()->json(['success' => true, 'message' => 'Kursus berhasil dibuat.']);
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Kursus berhasil dibuat.',
+                    'course_id' => $course->id,
+                ]);
             }
 
             return redirect()->route('instructor.courses.index')

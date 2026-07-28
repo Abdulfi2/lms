@@ -30,6 +30,16 @@
         @endif
     </a>
 
+    <!-- Browse Courses -->
+    <a href="{{ route('courses.index') }}" @click="mobileSidebarOpen = false"
+        class="flex items-center px-4 py-3 rounded-lg transition-all duration-200 {{ request()->routeIs('courses.index') ? 'bg-primary text-white' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }}">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
+        </svg>
+        <span class="ml-3 text-sm font-medium">@lang('sidebar.browse_courses')</span>
+    </a>
+
     <!-- Wishlist -->
     <a href="{{ route('student.wishlist.index') }}" @click="mobileSidebarOpen = false"
         class="flex items-center px-4 py-3 rounded-lg transition-all duration-200 {{ request()->routeIs('student.wishlist.*') ? 'bg-primary text-white' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }}">

@@ -87,6 +87,8 @@
                         <span class="bg-white/20 px-2 py-1 rounded-full text-xs">{{ ucfirst($course->level) }}</span>
                         <span class="bg-white/20 px-2 py-1 rounded-full text-xs">{{ $course->duration_total }} jam</span>
                         <span class="bg-white/20 px-2 py-1 rounded-full text-xs">{{ $course->total_lessons }} lessons</span>
+                        <a href="{{ route('student.courses.leaderboard', $course) }}"
+                            class="bg-white/20 px-2 py-1 rounded-full text-xs hover:bg-white/30">🏆 Peringkat Kelas</a>
                     </div>
                 </div>
                 <div class="bg-white/10 rounded-lg p-3 text-center min-w-[150px]">
@@ -109,16 +111,25 @@
                     </div>
                     <div class="divide-y dark:divide-gray-700">
                         @foreach ($sections as $section)
+                            @php $progress = $sectionProgress[$section->id] ?? ['total' => 0, 'completed' => 0, 'percentage' => 0]; @endphp
                             <div x-data="{ open: {{ $loop->first ? 'true' : 'false' }} }">
                                 <button @click="open = !open"
                                     class="w-full flex justify-between items-center p-4 hover:bg-gray-50 dark:hover:bg-gray-700 text-left">
-                                    <div>
+                                    <div class="flex-1 min-w-0 mr-3">
                                         <span
                                             class="font-medium text-gray-800 dark:text-white">{{ $section->title }}</span>
                                         <span class="text-xs text-gray-500 ml-2">{{ $section->lessons->count() }}
                                             lessons</span>
+                                        @if ($progress['total'] > 0)
+                                            <div class="flex items-center gap-2 mt-1.5">
+                                                <div class="flex-1 max-w-[160px] bg-gray-200 dark:bg-gray-600 rounded-full h-1.5">
+                                                    <div class="bg-primary h-1.5 rounded-full" style="width: {{ $progress['percentage'] }}%"></div>
+                                                </div>
+                                                <span class="text-xs text-gray-400 shrink-0">{{ $progress['completed'] }}/{{ $progress['total'] }} selesai</span>
+                                            </div>
+                                        @endif
                                     </div>
-                                    <svg class="w-5 h-5 text-gray-500 transition-transform" :class="{ 'rotate-180': open }"
+                                    <svg class="w-5 h-5 text-gray-500 transition-transform shrink-0" :class="{ 'rotate-180': open }"
                                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M19 9l-7 7-7-7"></path>
@@ -356,6 +367,7 @@
                 return {
                     startTime: null,
                     lessonId: {{ $currentLesson->id ?? 'null' }},
+                    certificatePending: {{ $isCourseCompleted && !$certificate ? 'true' : 'false' }},
                     init() {
                         if (this.lessonId && this.lessonId !== 'null') {
                             this.startTime = Date.now();
@@ -370,6 +382,31 @@
                                 }
                             });
                         }
+
+                        if (this.certificatePending) {
+                            this.pollCertificate();
+                        }
+                    },
+                    // Sertifikat digenerate secara async (job) setelah lesson terakhir selesai —
+                    // poll beberapa kali supaya banner otomatis update begitu sertifikat siap,
+                    // tanpa siswa harus refresh manual.
+                    pollCertificate(attempt = 0) {
+                        if (attempt >= 12) return; // ~1 menit (12 x 5 detik), lalu berhenti otomatis
+
+                        setTimeout(() => {
+                            fetch('{{ route('student.certificates.check', $course->slug) }}', {
+                                    headers: { 'Accept': 'application/json' }
+                                })
+                                .then(res => res.json())
+                                .then(data => {
+                                    if (data.available) {
+                                        window.location.reload();
+                                    } else {
+                                        this.pollCertificate(attempt + 1);
+                                    }
+                                })
+                                .catch(() => this.pollCertificate(attempt + 1));
+                        }, 5000);
                     }
                 }
             }

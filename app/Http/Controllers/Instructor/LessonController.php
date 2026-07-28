@@ -74,6 +74,9 @@ class LessonController extends Controller
             $data = $request->except(['attachment']);
             $data['order'] = $maxOrder + 1;
             $data['is_free_preview'] = $request->has('is_free_preview');
+            if ($request->filled('video_url')) {
+                $data['video_url'] = Lesson::normalizeVideoUrl($data['video_url']);
+            }
 
             if ($request->hasFile('attachment')) {
                 $path = $request->file('attachment')->store('lessons/attachments', 'public');
@@ -136,6 +139,9 @@ class LessonController extends Controller
 
             $data = $request->except(['attachment', '_method', '_token']);
             $data['is_free_preview'] = $request->has('is_free_preview');
+            if ($request->filled('video_url')) {
+                $data['video_url'] = Lesson::normalizeVideoUrl($data['video_url']);
+            }
 
             if ($request->hasFile('attachment')) {
                 if ($lesson->attachment && Storage::disk('public')->exists($lesson->attachment)) {
@@ -161,7 +167,7 @@ class LessonController extends Controller
     /**
      * Delete a lesson.
      */
-    public function destroy(Course $course, Section $section, Lesson $lesson)
+    public function destroy(Request $request, Course $course, Section $section, Lesson $lesson)
     {
         if ($course->instructor_id !== auth()->id()) {
             abort(403);
@@ -178,9 +184,16 @@ class LessonController extends Controller
             $lesson->delete();
             DB::commit();
 
+            if ($request->wantsJson()) {
+                return response()->json(['success' => true, 'message' => 'Lesson berhasil dihapus.']);
+            }
+
             return redirect()->route('instructor.courses.sections.lessons.index', [$course, $section])
                 ->with('success', 'Lesson berhasil dihapus.');
         } catch (\Exception $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Gagal menghapus lesson.'], 500);
+            }
             return back()->with('error', 'Gagal menghapus lesson.');
         }
     }

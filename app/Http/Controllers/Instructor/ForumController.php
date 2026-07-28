@@ -193,4 +193,29 @@ class ForumController extends Controller
 
         return back()->with('success', 'Post berhasil dihapus.');
     }
+
+    /**
+     * Hapus thread yang melanggar aturan (moderasi instruktur). Post di dalamnya
+     * ikut terhapus otomatis lewat cascade delete di level database.
+     */
+    public function destroyThread(Course $course, Forum $forum, Thread $thread)
+    {
+        $this->authorizeCourse($course);
+
+        if ($thread->forum_id !== $forum->id || $forum->course_id !== $course->id) {
+            abort(404);
+        }
+
+        $postCount = $thread->posts()->count();
+
+        $thread->delete();
+
+        $forum->decrement('thread_count');
+        if ($postCount > 0) {
+            $forum->decrement('post_count', $postCount);
+        }
+
+        return redirect()->route('instructor.forums.show', [$course, $forum])
+            ->with('success', 'Thread berhasil dihapus.');
+    }
 }

@@ -211,13 +211,23 @@ class LessonResourceController extends Controller
      */
     public function download(Course $course, Section $section, Lesson $lesson, LessonResource $resource)
     {
-        // Cek apakah user terdaftar di course
-        $isEnrolled = \App\Models\Enrollment::where('user_id', auth()->id())
-            ->where('course_id', $course->id)
-            ->exists();
+        // Admin & instruktur pemilik kursus selalu boleh mengunduh.
+        $isPrivileged = auth()->user()->hasRole('admin')
+            || ($course->instructor_id === auth()->id() && auth()->user()->hasRole('instructor'));
 
-        if (!$isEnrolled && !auth()->user()->hasRole('admin') && !auth()->user()->hasRole('instructor')) {
-            abort(403, 'Anda harus terdaftar di kursus ini untuk mendownload resource.');
+        if (!$isPrivileged) {
+            // Samakan aturan akses dengan Student\LessonController::show() — enrollment harus aktif
+            // DAN lunas. Sebelumnya di sini hanya dicek "punya baris enrollment" tanpa cek payment_status,
+            // sehingga siswa yang belum bayar kursus berbayar tetap bisa mengunduh materinya langsung.
+            $isEnrolled = \App\Models\Enrollment::where('user_id', auth()->id())
+                ->where('course_id', $course->id)
+                ->whereIn('status', ['active', 'completed'])
+                ->where('payment_status', 'paid')
+                ->exists();
+
+            if (!$isEnrolled) {
+                abort(403, 'Anda harus terdaftar dan menyelesaikan pembayaran kursus ini untuk mendownload resource.');
+            }
         }
 
         // Increment download count

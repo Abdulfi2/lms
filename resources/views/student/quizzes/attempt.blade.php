@@ -170,7 +170,7 @@
                                     },
                                     body: JSON.stringify({
                                         answers: this.answers,
-                                        time_spent: {{ $remainingTime ? $quiz->time_limit * 60 - this . timeLeft : 0 }}
+                                        time_spent: {{ $remainingTime ? $quiz->time_limit * 60 : 0 }} - this.timeLeft
                                     })
                                 })
                                 .then(res => res.json())

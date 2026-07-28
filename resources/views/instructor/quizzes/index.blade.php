@@ -77,6 +77,16 @@
                                     Attempts: {{ $quiz->total_attempts ?? 0 }}
                                 </div>
                                 <div class="flex space-x-2">
+                                    @if ($quiz->pending_essay_count > 0)
+                                        <a href="{{ route('instructor.courses.quizzes.grading', [$course, $quiz]) }}"
+                                            class="relative text-orange-600 hover:text-orange-800" title="Nilai Soal Essay">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            <span class="absolute -top-2 -right-2 bg-orange-600 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">{{ $quiz->pending_essay_count }}</span>
+                                        </a>
+                                    @endif
                                     <a href="{{ route('instructor.courses.quizzes.analytics', [$course, $quiz]) }}"
                                         class="text-purple-600 hover:text-purple-800" title="Analitik">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -107,7 +117,7 @@
                                             @endif
                                         </svg>
                                     </button>
-                                    <button @click="confirmDelete({{ $quiz->id }}, '{{ addslashes($quiz->title) }}')"
+                                    <button @click="confirmDelete({{ $quiz->id }}, @json($quiz->title))"
                                         class="text-red-600 hover:text-red-800" title="Hapus">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

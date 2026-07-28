@@ -10,6 +10,7 @@ use App\Models\Badge;
 use App\Models\Achievement;
 use App\Models\UserBadge;
 use App\Models\UserAchievement;
+use App\Models\PointActivity;
 use Illuminate\Support\Facades\DB;
 
 class GamificationService
@@ -226,8 +227,34 @@ class GamificationService
     /**
      * Get leaderboard.
      */
-    public static function getLeaderboard($limit = 50)
+    public static function getLeaderboard($limit = 50, $period = 'all')
     {
+        if ($period === 'weekly') {
+            return PointActivity::where('created_at', '>=', now()->subDays(7))
+                ->selectRaw('user_id, SUM(points) as total_points')
+                ->groupBy('user_id')
+                ->orderByDesc('total_points')
+                ->limit($limit)
+                ->get()
+                ->map(function ($item, $index) {
+                    $user = User::find($item->user_id);
+                    if (!$user) {
+                        return null;
+                    }
+                    return [
+                        'rank' => $index + 1,
+                        'user_id' => $item->user_id,
+                        'user_name' => $user->name,
+                        'avatar' => $user->avatar_url,
+                        'total_points' => (int) $item->total_points,
+                        'current_level' => optional(UserPoint::where('user_id', $item->user_id)->first())->current_level ?? 1,
+                        'badges_count' => UserBadge::where('user_id', $item->user_id)->count(),
+                    ];
+                })
+                ->filter()
+                ->values();
+        }
+
         return UserPoint::with('user')
             ->orderBy('total_points', 'desc')
             ->limit($limit)
@@ -242,6 +269,43 @@ class GamificationService
                     'current_level' => $item->current_level,
                     'badges_count' => UserBadge::where('user_id', $item->user_id)->count(),
                 ];
+            });
+    }
+
+    /**
+     * Peringkat siswa dalam SATU kursus tertentu, berdasarkan progress penyelesaian
+     * dan rata-rata nilai quiz di kursus itu — bukan poin gamifikasi global (poin
+     * tidak dilacak per-kursus), supaya tetap benar-benar mencerminkan kompetisi
+     * di kelas tersebut.
+     */
+    public static function getCourseLeaderboard($courseId, $limit = 50)
+    {
+        $quizIds = \App\Models\Quiz::where('course_id', $courseId)->pluck('id');
+
+        return \App\Models\Enrollment::with('user')
+            ->where('course_id', $courseId)
+            ->whereIn('status', ['active', 'completed'])
+            ->get()
+            ->map(function ($enrollment) use ($quizIds) {
+                $avgQuizScore = $quizIds->isEmpty() ? null : \App\Models\QuizAttempt::where('user_id', $enrollment->user_id)
+                    ->whereIn('quiz_id', $quizIds)
+                    ->where('status', 'completed')
+                    ->avg('percentage');
+
+                return [
+                    'user_id' => $enrollment->user_id,
+                    'user_name' => $enrollment->user->name,
+                    'avatar' => $enrollment->user->avatar_url,
+                    'progress' => round($enrollment->progress ?? 0),
+                    'avg_quiz_score' => $avgQuizScore !== null ? round($avgQuizScore) : null,
+                ];
+            })
+            ->sortByDesc(fn ($item) => $item['progress'] * 1000 + ($item['avg_quiz_score'] ?? 0))
+            ->take($limit)
+            ->values()
+            ->map(function ($item, $index) {
+                $item['rank'] = $index + 1;
+                return $item;
             });
     }
 

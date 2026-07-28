@@ -127,7 +127,7 @@ class Assignment extends Model
      */
     public function isOverdue()
     {
-        return $this->due_date < now();
+        return $this->due_date !== null && $this->due_date < now();
     }
 
     /**

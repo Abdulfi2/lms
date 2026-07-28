@@ -10,6 +10,30 @@ class Lesson extends Model
 {
     use SoftDeletes;
 
+    /**
+     * Ubah berbagai bentuk link YouTube (watch, share pendek, shorts, atau embed) jadi
+     * format embed baku, supaya instruktur tidak perlu tahu istilah teknis "link embed"
+     * saat menempel URL video — cukup salin link apa saja dari YouTube.
+     */
+    public static function normalizeVideoUrl(string $url): string
+    {
+        $patterns = [
+            '/youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/',
+            '/youtu\.be\/([a-zA-Z0-9_-]+)/',
+            '/youtube\.com\/shorts\/([a-zA-Z0-9_-]+)/',
+            '/youtube\.com\/embed\/([a-zA-Z0-9_-]+)/',
+        ];
+
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $url, $matches)) {
+                return 'https://www.youtube.com/embed/' . $matches[1];
+            }
+        }
+
+        // Bukan link YouTube yang dikenali (mis. Vimeo) — simpan apa adanya.
+        return $url;
+    }
+
     protected $fillable = [
         'section_id',
         'title',

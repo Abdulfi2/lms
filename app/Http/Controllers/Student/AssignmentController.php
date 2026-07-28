@@ -39,7 +39,9 @@ class AssignmentController extends Controller
             if ($request->status == 'pending') {
                 $query->whereDoesntHave('submissions', function ($q) use ($user) {
                     $q->where('student_id', $user->id);
-                })->where('due_date', '>', now());
+                })->where(function ($q) {
+                    $q->where('due_date', '>', now())->orWhereNull('due_date');
+                });
             } elseif ($request->status == 'submitted') {
                 $query->whereHas('submissions', function ($q) use ($user) {
                     $q->where('student_id', $user->id)->where('status', 'submitted');
@@ -101,7 +103,7 @@ class AssignmentController extends Controller
             ->where('student_id', auth()->id())
             ->first();
 
-        $isLate = $assignment->due_date < now() && !$submission;
+        $isLate = $assignment->due_date !== null && $assignment->due_date < now() && !$submission;
         $canSubmit = !$submission || in_array($submission->status, ['draft', 'submitted', 'returned']);
         $isGraded = $submission && $submission->status === 'graded';
 
@@ -154,7 +156,7 @@ class AssignmentController extends Controller
             'attachment' => 'nullable|file|max:10240|mimes:pdf,doc,docx,zip,jpg,png',
         ]);
 
-        $isLate = $assignment->due_date < now();
+        $isLate = $assignment->due_date !== null && $assignment->due_date < now();
 
         // Tegakkan aturan telat di server, bukan hanya lewat atribut `disabled` di tombol HTML.
         if ($isLate && !$assignment->allow_late_submission) {
@@ -175,16 +177,19 @@ class AssignmentController extends Controller
 
             $daysLate = $isLate ? now()->diffInDays($assignment->due_date) : 0;
 
-            $submission = Submission::updateOrCreate(
-                ['assignment_id' => $assignment->id, 'student_id' => auth()->id()],
-                [
-                    'content' => $request->input('content'),
-                    'status' => 'submitted',
-                    'submitted_at' => now(),
-                    'is_late' => $isLate,
-                    'submission_count' => DB::raw('submission_count + 1'),
-                ]
-            );
+            // Bukan updateOrCreate() dengan DB::raw('submission_count + 1') — pada INSERT (submission
+            // pertama) itu menghasilkan referensi kolom yang belum ada baris nilainya sama sekali,
+            // sehingga query gagal (Unknown column 'submission_count') setiap kali baris belum ada.
+            $submission = Submission::firstOrNew([
+                'assignment_id' => $assignment->id,
+                'student_id' => auth()->id(),
+            ]);
+            $submission->content = $request->input('content');
+            $submission->status = 'submitted';
+            $submission->submitted_at = now();
+            $submission->is_late = $isLate;
+            $submission->submission_count = ($submission->submission_count ?? 0) + 1;
+            $submission->save();
 
             if ($request->hasFile('attachment')) {
                 // Hapus file lama jika ada
@@ -198,6 +203,16 @@ class AssignmentController extends Controller
             }
 
             DB::commit();
+
+            // Poin gamifikasi hanya diberikan sekali di pengiriman pertama, supaya
+            // kirim ulang (revisi) tidak bisa dipakai untuk numpuk poin.
+            if ($submission->submission_count === 1) {
+                try {
+                    \App\Services\GamificationService::assignmentSubmitted(auth()->user());
+                } catch (\Exception $e) {
+                    \Log::warning('Gamification error: ' . $e->getMessage());
+                }
+            }
 
             $message = $isLate
                 ? 'Tugas berhasil dikirim (terlambat ' . $daysLate . ' hari).'

@@ -5,10 +5,14 @@ namespace App\Http\Controllers\Instructor;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\Quiz;
+use App\Models\QuizAnswer;
+use App\Models\QuizAttempt;
 use App\Models\QuizQuestion;
 use App\Models\QuizOption;
+use App\Services\GamificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class QuizController extends Controller
 {
@@ -17,6 +21,17 @@ class QuizController extends Controller
         if ($course->instructor_id !== auth()->id())
             abort(403);
         $quizzes = $course->quizzes()->orderBy('created_at')->paginate(10);
+
+        foreach ($quizzes as $quiz) {
+            $quiz->pending_essay_count = QuizAttempt::where('quiz_id', $quiz->id)
+                ->where('status', 'completed')
+                ->whereHas('answers', function ($q) {
+                    $q->whereHas('question', fn ($qq) => $qq->where('type', 'essay'))
+                        ->whereNull('graded_at');
+                })
+                ->count();
+        }
+
         return view('instructor.quizzes.index', compact('course', 'quizzes'));
     }
 
@@ -56,6 +71,123 @@ class QuizController extends Controller
         })->sortBy('correct_rate');
 
         return view('instructor.quizzes.analytics', compact('course', 'quiz', 'questions', 'totalAttempts'));
+    }
+
+    /**
+     * Daftar attempt yang punya jawaban essay yang belum dinilai instruktur.
+     */
+    public function grading(Course $course, Quiz $quiz)
+    {
+        if ($course->instructor_id !== auth()->id())
+            abort(403);
+        $this->authorizeQuiz($course, $quiz);
+
+        $attempts = QuizAttempt::where('quiz_id', $quiz->id)
+            ->where('status', 'completed')
+            ->whereHas('answers', function ($q) {
+                $q->whereHas('question', fn ($qq) => $qq->where('type', 'essay'))
+                    ->whereNull('graded_at');
+            })
+            ->with('user')
+            ->orderBy('completed_at')
+            ->get();
+
+        $gradedCount = QuizAttempt::where('quiz_id', $quiz->id)
+            ->where('status', 'completed')
+            ->whereHas('answers', fn ($q) => $q->whereHas('question', fn ($qq) => $qq->where('type', 'essay')))
+            ->whereDoesntHave('answers', function ($q) {
+                $q->whereHas('question', fn ($qq) => $qq->where('type', 'essay'))
+                    ->whereNull('graded_at');
+            })
+            ->count();
+
+        return view('instructor.quizzes.grading', compact('course', 'quiz', 'attempts', 'gradedCount'));
+    }
+
+    /**
+     * Form penilaian manual soal essay untuk satu attempt.
+     */
+    public function gradeAttempt(Course $course, Quiz $quiz, QuizAttempt $attempt)
+    {
+        if ($course->instructor_id !== auth()->id())
+            abort(403);
+        $this->authorizeQuiz($course, $quiz);
+        abort_unless($attempt->quiz_id === $quiz->id, 404);
+
+        $attempt->load(['user', 'answers.question']);
+        $essayAnswers = $attempt->answers->filter(fn ($a) => $a->question->type === 'essay');
+
+        return view('instructor.quizzes.grade-attempt', compact('course', 'quiz', 'attempt', 'essayAnswers'));
+    }
+
+    /**
+     * Simpan penilaian soal essay, lalu hitung ulang skor total attempt.
+     */
+    public function storeGrade(Request $request, Course $course, Quiz $quiz, QuizAttempt $attempt)
+    {
+        if ($course->instructor_id !== auth()->id())
+            abort(403);
+        $this->authorizeQuiz($course, $quiz);
+        abort_unless($attempt->quiz_id === $quiz->id, 404);
+
+        $request->validate([
+            'grades' => 'required|array',
+            'grades.*.points_earned' => 'required|integer|min:0',
+            'grades.*.feedback' => 'nullable|string',
+        ]);
+
+        $wasPassed = $attempt->is_passed;
+        $isPassed = $wasPassed;
+
+        DB::beginTransaction();
+        try {
+            foreach ($request->grades as $answerId => $data) {
+                $answer = QuizAnswer::where('id', $answerId)->where('attempt_id', $attempt->id)->first();
+                if (!$answer || $answer->question->type !== 'essay') {
+                    continue;
+                }
+
+                $points = min((int) $data['points_earned'], $answer->question->points);
+
+                $answer->update([
+                    'points_earned' => $points,
+                    'feedback' => $data['feedback'] ?? null,
+                    'graded_at' => now(),
+                ]);
+            }
+
+            // Hitung ulang skor total dari SEMUA jawaban (bukan cuma essay), supaya
+            // konsisten dengan cara submit() menghitung skor pertama kali.
+            $totalPoints = $quiz->questions()->sum('points');
+            $earnedPoints = $attempt->answers()->sum('points_earned');
+            $percentage = $totalPoints > 0 ? round(($earnedPoints / $totalPoints) * 100, 2) : 0;
+            $isPassed = $percentage >= $quiz->passing_score;
+
+            $attempt->update([
+                'score' => $earnedPoints,
+                'percentage' => $percentage,
+                'is_passed' => $isPassed,
+            ]);
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Quiz grading failed: ' . $e->getMessage());
+            return back()->with('error', 'Gagal menyimpan penilaian.');
+        }
+
+        // Jika attempt baru lulus SETELAH dinilai (sebelumnya belum lulus karena
+        // menunggu poin essay), beri poin gamifikasi sekarang juga.
+        if (!$wasPassed && $isPassed) {
+            try {
+                GamificationService::quizPassed($attempt->user, $quiz->id, $attempt->percentage);
+            } catch (\Exception $e) {
+                Log::warning('Gamification error: ' . $e->getMessage());
+            }
+        }
+
+        return redirect()->route('instructor.courses.quizzes.grading', [$course, $quiz])
+            ->with('success', 'Penilaian soal essay berhasil disimpan.');
     }
 
     public function create(Course $course)
@@ -113,14 +245,34 @@ class QuizController extends Controller
         return back()->with('success', 'Quiz updated.');
     }
 
-    public function destroy(Course $course, Quiz $quiz)
+    public function destroy(Request $request, Course $course, Quiz $quiz)
     {
         if ($course->instructor_id !== auth()->id())
             abort(403);
         $this->authorizeQuiz($course, $quiz);
 
         $quiz->delete();
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Quiz berhasil dihapus.']);
+        }
+
         return redirect()->route('instructor.courses.quizzes.index', $course)->with('success', 'Quiz deleted.');
+    }
+
+    public function togglePublish(Request $request, Course $course, Quiz $quiz)
+    {
+        if ($course->instructor_id !== auth()->id()) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+        $this->authorizeQuiz($course, $quiz);
+
+        $quiz->update(['is_published' => $request->boolean('is_published')]);
+
+        return response()->json([
+            'success' => true,
+            'message' => $quiz->is_published ? 'Quiz berhasil dipublikasikan.' : 'Quiz diubah menjadi draft.',
+        ]);
     }
 
     // Question management

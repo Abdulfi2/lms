@@ -44,7 +44,7 @@
                         </svg>
                         <p class="text-green-800 dark:text-green-400 font-medium">Anda sudah mendapatkan prestasi ini!</p>
                         <p class="text-sm text-green-700 dark:text-green-300">Didapat pada
-                            {{ \Carbon\Carbon::parse($isEarned->earned_at)->format('d F Y') }}</p>
+                            {{ \Carbon\Carbon::parse($userAchievement->earned_at)->format('d F Y') }}</p>
                     </div>
                 @endif
 

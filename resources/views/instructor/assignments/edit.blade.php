@@ -4,9 +4,13 @@
 @section('page-title', 'Edit Tugas')
 @section('page-subtitle', 'Perbarui detail tugas untuk siswa Anda.')
 
+@push('styles')
+    <link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet">
+@endpush
+
 @section('content')
 <div class="max-w-4xl mx-auto">
-    <form action="{{ route('instructor.assignments.update', $assignment->id) }}" method="POST" class="space-y-6">
+    <form action="{{ route('instructor.assignments.update', $assignment->id) }}" method="POST" class="space-y-6" id="assignment-form">
         @csrf
         @method('PUT')
         
@@ -45,7 +49,9 @@
 
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Instruksi Detail</label>
-                    <textarea name="instructions" rows="6" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 focus:ring-primary focus:border-primary transition">{{ old('instructions', $assignment->instructions) }}</textarea>
+                    <div id="quill-instructions" class="bg-white dark:bg-gray-900 rounded-b-lg" style="min-height: 150px;"></div>
+                    <textarea name="instructions" id="instructions-hidden" class="hidden">{{ old('instructions', $assignment->instructions) }}</textarea>
+                    <p class="mt-1 text-xs text-gray-400">Berikan langkah-langkah detail pengerjaan, bisa pakai daftar bernomor/bullet.</p>
                 </div>
 
                 <div>
@@ -113,7 +119,28 @@
 </template>
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
 <script>
+    const instructionsQuill = new Quill('#quill-instructions', {
+        theme: 'snow',
+        placeholder: 'Berikan langkah-langkah detail pengerjaan...',
+        modules: {
+            toolbar: [
+                ['bold', 'italic', 'underline'],
+                [{ list: 'ordered' }, { list: 'bullet' }],
+                ['link'],
+                ['clean']
+            ]
+        }
+    });
+    const instructionsHidden = document.getElementById('instructions-hidden');
+    if (instructionsHidden.value) {
+        instructionsQuill.root.innerHTML = instructionsHidden.value;
+    }
+    document.getElementById('assignment-form').addEventListener('submit', function () {
+        instructionsHidden.value = instructionsQuill.root.innerHTML;
+    });
+
     function addRubricRow() {
         const template = document.getElementById('rubric-row-template');
         const clone = template.content.cloneNode(true);

@@ -45,6 +45,15 @@
                             {{ $thread->is_locked ? 'Buka Kunci' : 'Kunci Thread' }}
                         </button>
                     </form>
+                    <form action="{{ route('instructor.forums.thread.destroy', [$course, $forum, $thread]) }}" method="POST"
+                        onsubmit="return confirm('Hapus thread ini beserta semua balasannya? Tindakan ini tidak bisa dibatalkan.')">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit"
+                            class="px-3 py-1.5 text-xs rounded-lg border border-red-300 text-red-600 hover:bg-red-50">
+                            Hapus Thread
+                        </button>
+                    </form>
                 </div>
             </div>
 

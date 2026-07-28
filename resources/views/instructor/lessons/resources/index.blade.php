@@ -6,6 +6,10 @@
 
 @section('content')
 <div class="space-y-6">
+    <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-sm text-blue-700 dark:text-blue-400">
+        Materi Tambahan berbeda dari "Lampiran Utama" di halaman Edit Lesson — di sini Anda bisa mengunggah <strong>lebih dari satu file</strong> pendukung (contoh: modul PDF, file latihan, dll) untuk lesson ini.
+    </div>
+
     <div class="flex justify-between items-center">
         <a href="{{ route('instructor.courses.sections.lessons.index', [$course, $section]) }}"
             class="px-4 py-2 border rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">&larr; Kembali ke Lesson</a>

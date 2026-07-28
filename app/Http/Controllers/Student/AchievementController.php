@@ -88,9 +88,10 @@ class AchievementController extends Controller
         $user = auth()->user();
 
         // Cek apakah achievement sudah didapat
-        $isEarned = UserAchievement::where('user_id', $user->id)
+        $userAchievement = UserAchievement::where('user_id', $user->id)
             ->where('achievement_id', $achievement->id)
-            ->exists();
+            ->first();
+        $isEarned = (bool) $userAchievement;
 
         // Data user yang sudah mendapatkan achievement ini
         $recentEarners = UserAchievement::where('achievement_id', $achievement->id)
@@ -107,6 +108,7 @@ class AchievementController extends Controller
         return view('student.achievements.show', compact(
             'achievement',
             'isEarned',
+            'userAchievement',
             'recentEarners',
             'totalEarners',
             'progress'
@@ -119,7 +121,8 @@ class AchievementController extends Controller
     public function leaderboard(Request $request)
     {
         $limit = $request->input('limit', 50);
-        $leaderboard = GamificationService::getLeaderboard($limit);
+        $period = $request->input('period', 'all') === 'weekly' ? 'weekly' : 'all';
+        $leaderboard = GamificationService::getLeaderboard($limit, $period);
 
         $userRank = $leaderboard->search(function ($item) {
             return $item['user_id'] === auth()->id();
@@ -127,7 +130,39 @@ class AchievementController extends Controller
 
         $userRank = $userRank !== false ? $userRank + 1 : null;
 
-        return view('student.achievements.leaderboard', compact('leaderboard', 'userRank'));
+        // Kursus yang diikuti siswa, untuk pintasan ke peringkat kelas per-kursus.
+        $enrolledCourses = auth()->user()->enrollments()
+            ->whereIn('status', ['active', 'completed'])
+            ->with('course')
+            ->get()
+            ->pluck('course')
+            ->filter();
+
+        return view('student.achievements.leaderboard', compact('leaderboard', 'userRank', 'period', 'enrolledCourses'));
+    }
+
+    /**
+     * Peringkat kelas untuk satu kursus tertentu (progress + rata-rata nilai quiz).
+     */
+    public function courseLeaderboard(\App\Models\Course $course)
+    {
+        $isEnrolled = auth()->user()->enrollments()
+            ->where('course_id', $course->id)
+            ->whereIn('status', ['active', 'completed'])
+            ->exists();
+
+        if (!$isEnrolled) {
+            abort(403, 'Anda tidak terdaftar di kursus ini.');
+        }
+
+        $leaderboard = GamificationService::getCourseLeaderboard($course->id);
+
+        $userRank = $leaderboard->search(function ($item) {
+            return $item['user_id'] === auth()->id();
+        });
+        $userRank = $userRank !== false ? $userRank + 1 : null;
+
+        return view('student.achievements.course-leaderboard', compact('course', 'leaderboard', 'userRank'));
     }
 
     /**

@@ -57,6 +57,7 @@ class GenerateCertificateJob implements ShouldQueue
             $certificateNumber = 'CERT-' . strtoupper(uniqid()) . '-' . $user->id . '-' . $course->id;
             $verificationCode = md5($certificateNumber . $user->email . now());
             $verificationUrl = url('/certificate/verify/' . $verificationCode);
+            $expiresAt = now()->addYears(2);
 
             // ========== GENERATE QR CODE (v5.x) ==========
             $qrCode = Builder::create()
@@ -81,6 +82,7 @@ class GenerateCertificateJob implements ShouldQueue
                 'qr_code' => $qrCodeBase64,
                 'sections' => $course->sections,
                 'total_hours' => $course->duration_total ?? 45,
+                'expires_at' => $expiresAt->format('d F Y'),
             ];
 
             // Generate PDF
@@ -102,6 +104,7 @@ class GenerateCertificateJob implements ShouldQueue
                 'url' => Storage::url($filename),
                 'file_path' => $filename,
                 'issued_at' => now(),
+                'expires_at' => $expiresAt,
                 'is_verified' => true,
                 'verification_code' => $verificationCode,
             ]);

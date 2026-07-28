@@ -124,7 +124,7 @@ class SectionController extends Controller
     /**
      * Delete a section.
      */
-    public function destroy(Course $course, Section $section)
+    public function destroy(Request $request, Course $course, Section $section)
     {
         if ($course->instructor_id !== auth()->id()) {
             abort(403, 'Unauthorized action.');
@@ -138,9 +138,16 @@ class SectionController extends Controller
             $section->delete();
             DB::commit();
 
+            if ($request->wantsJson()) {
+                return response()->json(['success' => true, 'message' => 'Section berhasil dihapus.']);
+            }
+
             return redirect()->route('instructor.courses.sections.index', $course)
                 ->with('success', 'Section berhasil dihapus.');
         } catch (\Exception $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Gagal menghapus section.'], 500);
+            }
             return back()->with('error', 'Gagal menghapus section.');
         }
     }

@@ -133,6 +133,9 @@
             <div class="footer-left">
                 <div style="font-size:12px;">Diterbitkan pada</div>
                 <div><b>{{ $issued_at }}</b></div>
+                @if (!empty($expires_at))
+                    <div style="font-size:10px; margin-top:2px;">Berlaku hingga {{ $expires_at }}</div>
+                @endif
             </div>
 
             <div class="footer-right">

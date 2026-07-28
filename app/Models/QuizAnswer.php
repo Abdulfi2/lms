@@ -19,12 +19,14 @@ class QuizAnswer extends Model
         'answer_text',
         'is_correct',
         'points_earned',
-        'feedback'
+        'feedback',
+        'graded_at',
     ];
 
     protected $casts = [
         'is_correct' => 'boolean',
         'points_earned' => 'integer',
+        'graded_at' => 'datetime',
     ];
 
     public function attempt(): BelongsTo

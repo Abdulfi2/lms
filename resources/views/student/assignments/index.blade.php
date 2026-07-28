@@ -63,7 +63,7 @@
                             <div class="text-right">
                                 @php
                                     $submission = $assignment->submissions->first();
-                                    $isOverdue = !$submission && $assignment->due_date < now();
+                                    $isOverdue = !$submission && $assignment->due_date !== null && $assignment->due_date < now();
                                     $status = $submission ? $submission->status : 'pending';
                                 @endphp
 
@@ -82,7 +82,11 @@
 
                                 <p class="text-xs text-gray-500 mt-1">
                                     <i class="far fa-calendar-alt mr-1"></i>
-                                    Deadline: {{ \Carbon\Carbon::parse($assignment->due_date)->format('d M Y, H:i') }}
+                                    @if ($assignment->due_date)
+                                        Deadline: {{ $assignment->due_date->format('d M Y, H:i') }}
+                                    @else
+                                        Tidak ada deadline
+                                    @endif
                                 </p>
                             </div>
                         </div>

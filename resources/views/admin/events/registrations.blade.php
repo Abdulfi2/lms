@@ -58,6 +58,7 @@
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase">Nama</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase">Kontak</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase">Tanggal Daftar</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase">Bukti Bayar</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase">Status</th>
                     </tr>
                 </thead>
@@ -69,6 +70,16 @@
                             <td class="px-4 py-3 text-xs text-gray-500">{{ $reg->email }}<br>{{ $reg->phone }}</td>
                             <td class="px-4 py-3 text-xs text-gray-500">{{ $reg->created_at->format('d/m/Y H:i') }}</td>
                             <td class="px-4 py-3">
+                                @if ($reg->payment_proof)
+                                    <a href="{{ Storage::url($reg->payment_proof) }}" target="_blank" class="inline-block">
+                                        <img src="{{ Storage::url($reg->payment_proof) }}" alt="Bukti pembayaran"
+                                            class="w-12 h-12 object-cover rounded border border-gray-200 dark:border-gray-600 hover:opacity-80">
+                                    </a>
+                                @else
+                                    <span class="text-xs text-gray-400">-</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3">
                                 <select onchange="updateStatus({{ $reg->id }}, this.value)"
                                     class="rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-xs">
                                     @foreach (['pending', 'confirmed', 'attended', 'cancelled'] as $s)
@@ -79,7 +90,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-4 py-12 text-center text-gray-500">Belum ada pendaftar.</td>
+                            <td colspan="6" class="px-4 py-12 text-center text-gray-500">Belum ada pendaftar.</td>
                         </tr>
                     @endforelse
                 </tbody>

@@ -134,6 +134,12 @@ class ForumController extends Controller
 
             DB::commit();
 
+            try {
+                \App\Services\GamificationService::forumPostCreated(auth()->user());
+            } catch (\Exception $e) {
+                \Log::warning('Gamification error: ' . $e->getMessage());
+            }
+
             return redirect()->route('student.forums.thread.show', [$course, $forum, $thread])
                 ->with('success', 'Thread berhasil dibuat.');
         } catch (\Exception $e) {
@@ -222,6 +228,12 @@ class ForumController extends Controller
             $forum->increment('post_count');
 
             DB::commit();
+
+            try {
+                \App\Services\GamificationService::forumPostCreated(auth()->user());
+            } catch (\Exception $e) {
+                \Log::warning('Gamification error: ' . $e->getMessage());
+            }
 
             return redirect()->route('student.forums.thread.show', [$course, $forum, $thread])
                 ->with('success', 'Reply berhasil dikirim.');
