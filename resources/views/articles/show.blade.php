@@ -27,7 +27,7 @@
                 <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">{{ $article->title }}</h1>
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-3">
-                        <img src="{{ $article->author->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode($article->author->name) . '&background=769826&color=white' }}"
+                        <img src="{{ $article->author->avatar_url }}"
                             class="w-10 h-10 rounded-full">
                         <div>
                             <p class="font-medium text-gray-900 dark:text-white">{{ $article->author->name }}</p>

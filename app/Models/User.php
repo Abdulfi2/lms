@@ -129,7 +129,11 @@ class User extends Authenticatable
     // Accessor untuk avatar URL
     public function getAvatarUrlAttribute()
     {
-        return $this->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&background=769826&color=white';
+        if ($this->avatar) {
+            return asset('storage/' . $this->avatar);
+        }
+
+        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&background=769826&color=white';
     }
 
     // Accessor untuk email verified status

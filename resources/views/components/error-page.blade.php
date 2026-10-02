@@ -48,7 +48,7 @@
         <!-- Header -->
         <header class="px-6 py-5 flex items-center justify-between">
             <a href="{{ route('home') }}" class="flex items-center space-x-2">
-                <x-application-logo class="w-9 h-9 fill-current text-primary" />
+                <x-application-logo class="w-9 h-9" />
                 <span class="font-bold text-gray-800 dark:text-white">{{ config('app.name', 'LMS') }}</span>
             </a>
             <button @click="darkMode = !darkMode"

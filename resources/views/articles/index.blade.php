@@ -59,7 +59,7 @@
                                     {{ $article->excerpt ?: Str::limit(strip_tags($article->content), 120) }}</p>
                                 <div class="flex justify-between items-center">
                                     <div class="flex items-center gap-2 text-sm text-gray-500">
-                                        <img src="{{ $article->author->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode($article->author->name) }}"
+                                        <img src="{{ $article->author->avatar_url }}"
                                             class="w-6 h-6 rounded-full">
                                         <span>{{ $article->author->name }}</span>
                                     </div>

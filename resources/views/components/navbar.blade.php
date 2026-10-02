@@ -165,7 +165,7 @@
                 <div class="relative" x-data="{ open: false }">
                     <button @click="open = !open"
                         class="flex items-center space-x-2 focus:outline-none p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-                        <img src="{{ Auth::user()->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) . '&background=769826&color=white' }}"
+                        <img src="{{ Auth::user()->avatar_url }}"
                             alt="{{ Auth::user()->name }}" class="w-8 h-8 rounded-full object-cover">
                         <span
                             class="hidden md:inline text-sm font-medium text-gray-700 dark:text-gray-300">{{ Auth::user()->name }}</span>
