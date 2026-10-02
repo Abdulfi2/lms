@@ -1,0 +1,5 @@
+[02-Oct-2026 04:20:32 UTC] PHP Warning:  require(/home/appzs1/lms_zs/vendor/autoload.php): Failed to open stream: No such file or directory in /home/appzs1/lms_zs/artisan on line 18
+[02-Oct-2026 04:20:32 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/appzs1/lms_zs/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /home/appzs1/lms_zs/artisan:18
+Stack trace:
+#0 {main}
+  thrown in /home/appzs1/lms_zs/artisan on line 18
