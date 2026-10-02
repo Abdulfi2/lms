@@ -9,7 +9,7 @@
                     </div>
                     <span
                         class="font-bold text-xl bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent hidden sm:inline">
-                        {{ config('app.name', 'LMS') }}
+                        {{ config('app.name', 'ZS Academy') }}
                     </span>
                 </a>
             </div>

@@ -7,6 +7,7 @@ use App\Models\Course;
 use App\Models\Category;
 use App\Models\Tag;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -31,7 +32,7 @@ class CourseController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'title' => 'required|string|max:255',
             'slug' => 'nullable|string|unique:courses,slug',
             'short_description' => 'nullable|string|max:255',
@@ -64,9 +65,13 @@ class CourseController extends Controller
         try {
             DB::beginTransaction();
 
-            $data = $request->except(['thumbnail', 'categories', 'tags']);
+            $data = Arr::except($validated, ['thumbnail', 'categories', 'tags']);
             $data['instructor_id'] = auth()->id();
             $data['slug'] = $request->slug ?: \Illuminate\Support\Str::slug($request->title) . '-' . uniqid();
+            // Input datetime-local yang dikosongkan mengirim '' (bukan absen), dan '' bukan
+            // nilai DATETIME yang valid di MySQL — normalisasi ke null di sini.
+            $data['sale_starts_at'] = $data['sale_starts_at'] ?: null;
+            $data['sale_ends_at'] = $data['sale_ends_at'] ?: null;
 
             if ($request->hasFile('thumbnail')) {
                 $path = $request->file('thumbnail')->store('courses/thumbnails', 'public');
@@ -127,7 +132,7 @@ class CourseController extends Controller
             abort(403);
         }
 
-        $request->validate([
+        $validated = $request->validate([
             'title' => 'required|string|max:255',
             'slug' => ['nullable', 'string', Rule::unique('courses')->ignore($course->id)],
             'short_description' => 'nullable|string|max:255',
@@ -160,8 +165,12 @@ class CourseController extends Controller
         try {
             DB::beginTransaction();
 
-            $data = $request->except(['thumbnail', 'categories', 'tags']);
+            $data = Arr::except($validated, ['thumbnail', 'categories', 'tags']);
             $data['slug'] = $request->slug ?: \Illuminate\Support\Str::slug($request->title) . '-' . $course->id;
+            // Input datetime-local yang dikosongkan mengirim '' (bukan absen), dan '' bukan
+            // nilai DATETIME yang valid di MySQL — normalisasi ke null di sini.
+            $data['sale_starts_at'] = $data['sale_starts_at'] ?: null;
+            $data['sale_ends_at'] = $data['sale_ends_at'] ?: null;
 
             if ($request->hasFile('thumbnail')) {
                 if ($course->thumbnail && Storage::disk('public')->exists($course->thumbnail)) {
@@ -182,10 +191,10 @@ class CourseController extends Controller
             $toRemove = array_diff($oldTags, $newTags);
             $toAdd = array_diff($newTags, $oldTags);
             foreach ($toRemove as $tagId) {
-                \App\Models\Tag::where('id', $tagId)->decrement('usage_count');
+                Tag::where('id', $tagId)->decrement('usage_count');
             }
             foreach ($toAdd as $tagId) {
-                \App\Models\Tag::where('id', $tagId)->increment('usage_count');
+                Tag::where('id', $tagId)->increment('usage_count');
             }
             $course->tags()->sync($newTags);
 
@@ -298,8 +307,8 @@ class CourseController extends Controller
         $course->load([
             'instructor',
             'categories',
-            'sections' => fn ($q) => $q->orderBy('order'),
-            'sections.lessons' => fn ($q) => $q->orderBy('order'),
+            'sections' => fn($q) => $q->orderBy('order'),
+            'sections.lessons' => fn($q) => $q->orderBy('order'),
         ]);
 
         $isEnrolled = false;

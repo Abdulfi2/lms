@@ -4,6 +4,15 @@
 @section('page-title', 'Edit Section')
 @section('page-subtitle', 'Kursus: ' . $course->title)
 
+@section('breadcrumb')
+    <x-breadcrumb :items="[
+        ['label' => 'Kursus', 'url' => route('admin.courses.index')],
+        ['label' => $course->title, 'url' => route('admin.courses.edit', $course)],
+        ['label' => 'Sections', 'url' => route('admin.sections.index', $course)],
+        ['label' => $section->title, 'url' => null],
+    ]" />
+@endsection
+
 @section('content')
     <div class="max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
         <form method="POST" action="{{ route('admin.sections.update', [$course, $section]) }}">

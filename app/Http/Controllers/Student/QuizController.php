@@ -379,8 +379,9 @@ class QuizController extends Controller
             'passed' => $isPassed
         ]);
 
-        // Update lesson progress if this quiz is part of a lesson
-        if ($quiz->lesson_id) {
+        // Lesson baru ditandai selesai kalau quiz-nya memang post-test lesson tsb DAN siswa
+        // lulus — pretest/practice/final tidak menyelesaikan lesson, dan gagal post-test pun tidak.
+        if ($quiz->lesson_id && $quiz->quiz_type === 'posttest' && $isPassed) {
             $this->updateLessonProgress($user, $quiz);
         }
 

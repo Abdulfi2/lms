@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Article;
 use App\Models\ArticleCategory;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -36,7 +37,7 @@ class ArticleController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'title' => 'required|string|max:255',
             'category_id' => 'nullable|exists:article_categories,id',
             'excerpt' => 'nullable|string',
@@ -46,8 +47,11 @@ class ArticleController extends Controller
             'published_at' => 'nullable|date',
         ]);
 
-        $data = $request->except('featured_image');
+        $data = Arr::except($validated, 'featured_image');
         $data['user_id'] = auth()->id();
+        // Input datetime yang dikosongkan mengirim '' (bukan absen), dan '' bukan nilai
+        // DATETIME yang valid di MySQL — normalisasi ke null di sini.
+        $data['published_at'] = $data['published_at'] ?: null;
 
         if ($request->hasFile('featured_image')) {
             $path = $request->file('featured_image')->store('articles', 'public');
@@ -72,7 +76,7 @@ class ArticleController extends Controller
 
     public function update(Request $request, Article $article)
     {
-        $request->validate([
+        $validated = $request->validate([
             'title' => 'required|string|max:255',
             'category_id' => 'nullable|exists:article_categories,id',
             'excerpt' => 'nullable|string',
@@ -82,7 +86,10 @@ class ArticleController extends Controller
             'published_at' => 'nullable|date',
         ]);
 
-        $data = $request->except('featured_image');
+        $data = Arr::except($validated, 'featured_image');
+        // Input datetime yang dikosongkan mengirim '' (bukan absen), dan '' bukan nilai
+        // DATETIME yang valid di MySQL — normalisasi ke null di sini.
+        $data['published_at'] = $data['published_at'] ?: null;
 
         if ($request->hasFile('featured_image')) {
             if ($article->featured_image && Storage::disk('public')->exists($article->featured_image)) {

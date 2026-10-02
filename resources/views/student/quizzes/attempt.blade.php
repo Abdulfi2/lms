@@ -94,7 +94,7 @@
                     class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition">
                     Selanjutnya →
                 </button>
-                <button @click="submitQuiz" x-show="currentQuestion === questions.length - 1" :disabled="submitting"
+                <button @click="submitQuiz()" x-show="currentQuestion === questions.length - 1" :disabled="submitting"
                     class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition">
                     <span x-show="!submitting">Submit Quiz</span>
                     <span x-show="submitting">Menyimpan...</span>
@@ -130,7 +130,8 @@
                         this.timer = setInterval(() => {
                             if (this.timeLeft <= 1) {
                                 clearInterval(this.timer);
-                                this.submitQuiz();
+                                // Waktu habis: submit otomatis tanpa dialog konfirmasi.
+                                this.submitQuiz(true);
                             } else {
                                 this.timeLeft--;
                             }
@@ -155,39 +156,49 @@
                         }
                     },
 
-                    submitQuiz() {
+                    async submitQuiz(skipConfirm = false) {
                         if (this.submitting) return;
-                        if (confirm('Apakah Anda yakin ingin mengumpulkan quiz? Jawaban tidak dapat diubah lagi.')) {
-                            this.submitting = true;
-                            if (this.timer) clearInterval(this.timer);
 
-                            fetch('{{ route('student.quizzes.submit', $attempt) }}', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                        'Accept': 'application/json'
-                                    },
-                                    body: JSON.stringify({
-                                        answers: this.answers,
-                                        time_spent: {{ $remainingTime ? $quiz->time_limit * 60 : 0 }} - this.timeLeft
-                                    })
-                                })
-                                .then(res => res.json())
-                                .then(data => {
-                                    if (data.success) {
-                                        window.location.href = data.redirect ||
-                                            '{{ route('student.quizzes.result', $attempt) }}';
-                                    } else {
-                                        window.toast.error(data.message);
-                                        this.submitting = false;
-                                    }
-                                })
-                                .catch(() => {
-                                    window.toast.error('Terjadi kesalahan');
-                                    this.submitting = false;
-                                });
+                        if (!skipConfirm) {
+                            const ok = await window.confirmDialog(
+                                'Apakah Anda yakin ingin mengumpulkan quiz? Jawaban tidak dapat diubah lagi.', {
+                                    title: 'Kumpulkan Quiz?',
+                                    confirmText: 'Ya, Kumpulkan',
+                                    cancelText: 'Batal',
+                                }
+                            );
+                            if (!ok) return;
                         }
+
+                        this.submitting = true;
+                        if (this.timer) clearInterval(this.timer);
+
+                        fetch('{{ route('student.quizzes.submit', $attempt) }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    answers: this.answers,
+                                    time_spent: {{ $remainingTime ? $quiz->time_limit * 60 : 0 }} - this.timeLeft
+                                })
+                            })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.success) {
+                                    window.location.href = data.redirect ||
+                                        '{{ route('student.quizzes.result', $attempt) }}';
+                                } else {
+                                    window.toast.error(data.message);
+                                    this.submitting = false;
+                                }
+                            })
+                            .catch(() => {
+                                window.toast.error('Terjadi kesalahan');
+                                this.submitting = false;
+                            });
                     }
                 }
             }

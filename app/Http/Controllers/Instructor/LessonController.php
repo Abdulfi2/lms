@@ -8,6 +8,7 @@ use App\Models\Course;
 use App\Models\Section;
 use App\Models\Lesson;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -55,7 +56,7 @@ class LessonController extends Controller
             abort(404);
         }
 
-        $request->validate([
+        $validated = $request->validate([
             'title' => 'required|string|max:255',
             'type' => 'required|in:video,article,quiz,assignment,live,discussion',
             'content' => 'nullable|string',
@@ -71,7 +72,7 @@ class LessonController extends Controller
             DB::beginTransaction();
 
             $maxOrder = $section->lessons()->max('order') ?? 0;
-            $data = $request->except(['attachment']);
+            $data = Arr::except($validated, ['attachment']);
             $data['order'] = $maxOrder + 1;
             $data['is_free_preview'] = $request->has('is_free_preview');
             if ($request->filled('video_url')) {
@@ -122,7 +123,7 @@ class LessonController extends Controller
             abort(404);
         }
 
-        $request->validate([
+        $validated = $request->validate([
             'title' => 'required|string|max:255',
             'type' => 'required|in:video,article,quiz,assignment,live,discussion',
             'content' => 'nullable|string',
@@ -137,7 +138,7 @@ class LessonController extends Controller
         try {
             DB::beginTransaction();
 
-            $data = $request->except(['attachment', '_method', '_token']);
+            $data = Arr::except($validated, ['attachment']);
             $data['is_free_preview'] = $request->has('is_free_preview');
             if ($request->filled('video_url')) {
                 $data['video_url'] = Lesson::normalizeVideoUrl($data['video_url']);

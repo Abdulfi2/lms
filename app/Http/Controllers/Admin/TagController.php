@@ -63,7 +63,7 @@ class TagController extends Controller
                 'slug' => $request->slug ?: \Illuminate\Support\Str::slug($request->name),
                 'description' => $request->description,
                 'color' => $request->color,
-                'is_active' => $request->has('is_active'),
+                'is_active' => $request->boolean('is_active'),
             ]);
 
             DB::commit();
@@ -124,7 +124,7 @@ class TagController extends Controller
                 'slug' => $request->slug ?: \Illuminate\Support\Str::slug($request->name),
                 'description' => $request->description,
                 'color' => $request->color,
-                'is_active' => $request->has('is_active'),
+                'is_active' => $request->boolean('is_active'),
             ]);
 
             DB::commit();

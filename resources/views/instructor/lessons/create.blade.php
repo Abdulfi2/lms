@@ -4,6 +4,16 @@
 @section('page-title', 'Tambah Lesson Baru')
 @section('page-subtitle', 'Section: ' . $section->title)
 
+@section('breadcrumb')
+    <x-breadcrumb :items="[
+        ['label' => 'Kursus Saya', 'url' => route('instructor.courses.index')],
+        ['label' => $course->title, 'url' => route('instructor.courses.edit', $course)],
+        ['label' => 'Sections', 'url' => route('instructor.courses.sections.index', $course)],
+        ['label' => $section->title, 'url' => route('instructor.courses.sections.lessons.index', [$course, $section])],
+        ['label' => 'Tambah Lesson', 'url' => null],
+    ]" />
+@endsection
+
 @push('styles')
     <link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet">
 @endpush

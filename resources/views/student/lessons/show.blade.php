@@ -4,6 +4,15 @@
 @section('page-title', $lesson->title)
 @section('page-subtitle', $course->title)
 
+@section('breadcrumb')
+    <x-breadcrumb :items="[
+        ['label' => 'Kursus Saya', 'url' => route('student.my-courses')],
+        ['label' => $course->title, 'url' => route('student.courses.show', $course->slug)],
+        ['label' => $lesson->section->title, 'dropdown' => $sectionLessonsForBreadcrumb],
+        ['label' => $lesson->title, 'url' => null],
+    ]" />
+@endsection
+
 @section('content')
     <div x-data="lessonPlayer()" x-init="init()" class="max-w-5xl mx-auto">
 
@@ -59,6 +68,27 @@
             <!-- Lesson Content -->
             <div class="lg:col-span-2 space-y-6">
 
+                @if ($contentLocked)
+                    <!-- Pre-Test Gate: materi disembunyikan sampai pre-test dikerjakan -->
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8 text-center">
+                        <div class="w-16 h-16 mx-auto rounded-full bg-purple-100 dark:bg-purple-900 text-purple-600 flex items-center justify-center mb-4">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                        </div>
+                        <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-1">Kerjakan Pre-Test Dulu</h2>
+                        <p class="text-gray-600 dark:text-gray-400 font-medium">{{ $pretest->title }}</p>
+                        <p class="text-sm text-gray-500 mt-2 mb-6 max-w-md mx-auto">
+                            Selesaikan pre-test ini untuk membuka materi lesson "{{ $lesson->title }}".
+                            {{ $pretest->questions_count }} soal.
+                        </p>
+                        <a href="{{ route('student.quizzes.show', $pretest) }}"
+                            class="inline-block px-6 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition font-medium">
+                            Mulai Pre-Test
+                        </a>
+                    </div>
+                @else
                 <!-- Lesson Type Badge -->
                 <div class="flex items-center space-x-2">
                     @if ($lesson->type == 'video')
@@ -111,6 +141,18 @@
                     </div>
                 </div>
 
+                @if ($pretest && $pretestAttempt)
+                    <div class="flex items-center gap-2 text-sm text-gray-500 -mt-2">
+                        <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        Pre-Test sudah dikerjakan ({{ round($pretestAttempt->percentage) }}%) —
+                        <a href="{{ route('student.quizzes.show', $pretest) }}" class="text-primary hover:underline">lihat hasil</a>
+                    </div>
+                @endif
+
                 <!-- Lesson Resources -->
                 @if ($resources->count() > 0)
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
@@ -151,60 +193,109 @@
                     </div>
                 @endif
 
-                <!-- Complete Button -->
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
-                    <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
-                        <div>
-                            <div class="flex items-center space-x-2">
-                                @if ($isCompleted)
-                                    <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    <span class="text-green-600 font-semibold">Lesson Selesai!</span>
-                                @else
-                                    <svg class="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    <span class="text-gray-600">Tandai sebagai selesai</span>
-                                @endif
+                @if ($posttest)
+                    <!-- Post-Test Card: menggantikan tombol "Tandai Selesai" manual -->
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+                        <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                            <div>
+                                <div class="flex items-center space-x-2">
+                                    @if ($posttestPassed)
+                                        <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <span class="text-green-600 font-semibold">Lesson Selesai! (Post-Test Lulus)</span>
+                                    @else
+                                        <svg class="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <span class="text-gray-600">Kerjakan post-test untuk menyelesaikan lesson</span>
+                                    @endif
+                                </div>
+                                <p class="text-sm text-gray-500 mt-1">
+                                    {{ $posttest->title }} — {{ $posttest->questions_count }} soal, minimal {{ $posttest->passing_score }}% untuk lulus.
+                                    @if ($posttestAttempt && !$posttestPassed)
+                                        Percobaan terakhir: {{ round($posttestAttempt->percentage) }}%.
+                                    @endif
+                                    Dapatkan <span class="font-semibold text-yellow-500">{{ $lesson->points }} poin</span> setelah lulus.
+                                </p>
                             </div>
-                            <p class="text-sm text-gray-500 mt-1">Dapatkan <span
-                                    class="font-semibold text-yellow-500">{{ $lesson->points }} poin</span> setelah
-                                menyelesaikan lesson ini</p>
-                        </div>
 
-                        @if (!$isCompleted)
-                            <button @click="completeLesson" :disabled="completing"
-                                class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition flex items-center space-x-2">
-                                <span x-show="!completing">✓ Tandai Selesai</span>
-                                <span x-show="completing" class="flex items-center">
-                                    <svg class="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg"
-                                        fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10"
-                                            stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor"
-                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                                        </path>
+                            @if ($posttestPassed)
+                                <div class="px-6 py-2 bg-green-100 text-green-700 rounded-lg flex items-center space-x-2 shrink-0">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd"
+                                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                            clip-rule="evenodd" />
                                     </svg>
-                                    Memproses...
-                                </span>
-                            </button>
-                        @else
-                            <div class="px-6 py-2 bg-green-100 text-green-700 rounded-lg flex items-center space-x-2">
-                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd"
-                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                        clip-rule="evenodd" />
-                                </svg>
-                                <span>Selesai</span>
-                            </div>
-                        @endif
+                                    <span>Selesai</span>
+                                </div>
+                            @else
+                                <a href="{{ route('student.quizzes.show', $posttest) }}"
+                                    class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition font-medium shrink-0 whitespace-nowrap">
+                                    {{ $posttestAttempt ? 'Coba Lagi Post-Test' : 'Kerjakan Post-Test' }}
+                                </a>
+                            @endif
+                        </div>
                     </div>
-                </div>
+                @else
+                    <!-- Complete Button (manual, lesson tanpa post-test) -->
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+                        <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                            <div>
+                                <div class="flex items-center space-x-2">
+                                    @if ($isCompleted)
+                                        <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <span class="text-green-600 font-semibold">Lesson Selesai!</span>
+                                    @else
+                                        <svg class="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <span class="text-gray-600">Tandai sebagai selesai</span>
+                                    @endif
+                                </div>
+                                <p class="text-sm text-gray-500 mt-1">Dapatkan <span
+                                        class="font-semibold text-yellow-500">{{ $lesson->points }} poin</span> setelah
+                                    menyelesaikan lesson ini</p>
+                            </div>
+
+                            @if (!$isCompleted)
+                                <button @click="completeLesson" :disabled="completing"
+                                    class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition flex items-center space-x-2">
+                                    <span x-show="!completing">✓ Tandai Selesai</span>
+                                    <span x-show="completing" class="flex items-center">
+                                        <svg class="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg"
+                                            fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10"
+                                                stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor"
+                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                            </path>
+                                        </svg>
+                                        Memproses...
+                                    </span>
+                                </button>
+                            @else
+                                <div class="px-6 py-2 bg-green-100 text-green-700 rounded-lg flex items-center space-x-2">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd"
+                                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                    <span>Selesai</span>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                @endif
+                @endif
             </div>
 
             <!-- Sidebar Navigation -->

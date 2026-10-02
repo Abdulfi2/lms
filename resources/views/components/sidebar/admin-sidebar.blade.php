@@ -107,73 +107,68 @@
     ];
 @endphp
 
-<aside x-show="sidebarOpen" x-transition.duration.300
-    class="fixed lg:static inset-y-0 left-0 w-64 bg-white dark:bg-gray-800 shadow-lg transform transition-all duration-300 overflow-y-auto"
-    :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0 lg:w-20'">
-
-    <div class="p-4">
-        <!-- Profile Header -->
-        <div class="p-4 border-b dark:border-gray-700">
-            <div class="flex items-center space-x-3">
-                <img src="{{ Auth::user()->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) . '&background=3B82F6&color=white' }}"
-                    alt="{{ Auth::user()->name }}" class="w-10 h-10 rounded-full object-cover">
-                <div>
-                    <p class="text-sm font-semibold text-gray-800 dark:text-white">{{ Auth::user()->name }}</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ Auth::user()->hasRole('admin') ? 'Administrator' : 'Event Manager' }}</p>
-                </div>
+<div class="h-full bg-white dark:bg-gray-800 shadow-lg flex flex-col overflow-y-auto">
+    <!-- User Info Section -->
+    <div class="p-4 border-b dark:border-gray-700">
+        <div class="flex items-center space-x-3">
+            <img src="{{ Auth::user()->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) . '&background=3B82F6&color=white' }}"
+                alt="{{ Auth::user()->name }}" class="w-10 h-10 rounded-full object-cover">
+            <div x-show="sidebarOpen">
+                <p class="text-sm font-semibold text-gray-800 dark:text-white">{{ Auth::user()->name }}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">{{ Auth::user()->hasRole('admin') ? 'Administrator' : 'Event Manager' }}</p>
             </div>
         </div>
-
-        <!-- Navigation -->
-        <nav class="space-y-1 mt-4">
-            @foreach ($menuItems as $item)
-                @if (isset($item['submenu']))
-                    <!-- Menu dengan submenu (dropdown) -->
-                    <div x-data="{ open: false }">
-                        <button @click="open = !open"
-                            class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition group">
-                            <div class="flex items-center">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    {!! $item['icon'] !!}
-                                </svg>
-                                <span x-show="sidebarOpen" class="ml-3 text-sm">{{ $item['label'] }}</span>
-                            </div>
-                            <svg x-show="sidebarOpen" class="w-4 h-4 transition-transform"
-                                :class="{ 'rotate-180': open }" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </button>
-
-                        <div x-show="sidebarOpen && open" x-collapse class="ml-6 mt-1 space-y-1">
-                            @foreach ($item['submenu'] as $sub)
-                                @php
-                                    $subIsHash = ($sub['route'] ?? '') === '#';
-                                    $subHref = $subIsHash ? '#' : route($sub['route'], [], false);
-                                @endphp
-                                <a href="{{ $subHref }}"
-                                    class="flex items-center px-3 py-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm {{ !$subIsHash && request()->routeIs($sub['route']) ? 'bg-gray-100 dark:bg-gray-700 text-blue-600 dark:text-blue-400' : '' }}">
-                                    <span>{{ $sub['label'] }}</span>
-                                </a>
-                            @endforeach
-                        </div>
-                    </div>
-                @else
-                    <!-- Menu single link -->
-                    @php
-                        $isHash = ($item['route'] ?? '') === '#';
-                        $href = $isHash ? '#' : route($item['route'], [], false);
-                    @endphp
-                    <a href="{{ $href }}"
-                        class="flex items-center px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition group {{ !$isHash && request()->routeIs($item['route']) ? 'bg-gray-100 dark:bg-gray-700 text-blue-600 dark:text-blue-400' : '' }}">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            {!! $item['icon'] !!}
-                        </svg>
-                        <span x-show="sidebarOpen" class="ml-3 text-sm">{{ $item['label'] }}</span>
-                    </a>
-                @endif
-            @endforeach
-        </nav>
     </div>
-</aside>
+
+    <!-- Navigation -->
+    <nav class="flex-1 p-3 space-y-1">
+        @foreach ($menuItems as $item)
+            @if (isset($item['submenu']))
+                <!-- Menu dengan submenu (dropdown) -->
+                <div x-data="{ open: {{ collect($item['submenu'])->contains(fn ($sub) => ($sub['route'] ?? '') !== '#' && request()->routeIs($sub['route'])) ? 'true' : 'false' }} }">
+                    <button @click="open = !open"
+                        class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all duration-200 group text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                {!! $item['icon'] !!}
+                            </svg>
+                            <span x-show="sidebarOpen" class="ml-3 text-sm whitespace-nowrap">{{ $item['label'] }}</span>
+                        </div>
+                        <svg x-show="sidebarOpen" class="w-4 h-4 shrink-0 transition-transform"
+                            :class="{ 'rotate-180': open }" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+
+                    <div x-show="sidebarOpen && open" x-collapse class="mt-1 ml-6 space-y-1">
+                        @foreach ($item['submenu'] as $sub)
+                            @php
+                                $subIsHash = ($sub['route'] ?? '') === '#';
+                                $subHref = $subIsHash ? '#' : route($sub['route'], [], false);
+                            @endphp
+                            <a href="{{ $subHref }}"
+                                class="flex items-center px-3 py-2 rounded-lg text-sm transition-all duration-200 {{ !$subIsHash && request()->routeIs($sub['route']) ? 'bg-primary/10 text-primary font-medium' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700' }}">
+                                <span class="whitespace-nowrap">{{ $sub['label'] }}</span>
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+            @else
+                <!-- Menu single link -->
+                @php
+                    $isHash = ($item['route'] ?? '') === '#';
+                    $href = $isHash ? '#' : route($item['route'], [], false);
+                @endphp
+                <a href="{{ $href }}"
+                    class="flex items-center px-3 py-2.5 rounded-lg transition-all duration-200 group {{ !$isHash && request()->routeIs($item['route']) ? 'bg-primary text-white' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }}">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        {!! $item['icon'] !!}
+                    </svg>
+                    <span x-show="sidebarOpen" class="ml-3 text-sm whitespace-nowrap">{{ $item['label'] }}</span>
+                </a>
+            @endif
+        @endforeach
+    </nav>
+</div>

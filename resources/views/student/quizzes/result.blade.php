@@ -97,7 +97,7 @@
                         <div class="mt-3">
                             <p class="text-xs text-gray-400 mb-1">Jawaban Anda</p>
                             <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">
-                                {{ $answer->answer_text ?? '(Tidak dijawab)' }}
+                                {{ optional($answer)->answer_text ?? '(Tidak dijawab)' }}
                             </div>
                             @if ($answer && $answer->graded_at && $answer->feedback)
                                 <p class="text-xs text-gray-400 mt-2 mb-1">Catatan Instruktur</p>

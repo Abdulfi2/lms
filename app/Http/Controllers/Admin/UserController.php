@@ -81,8 +81,8 @@ class UserController extends Controller
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
                 'default_role' => $request->role,
-                'is_active' => $request->has('is_active'),
-                'email_verified_at' => $request->has('email_verified') ? now() : null,
+                'is_active' => $request->boolean('is_active'),
+                'email_verified_at' => $request->boolean('email_verified') ? now() : null,
             ]);
 
             // Assign role
@@ -97,8 +97,10 @@ class UserController extends Controller
                 'last_name' => $request->last_name ?? '',
                 'nickname' => $request->nickname,
                 'phone' => $request->phone,
-                'gender' => $request->gender,
-                'birth_date' => $request->birth_date,
+                // Form JS selalu mengirim string kosong untuk field yang tidak diisi (bukan
+                // absen) — '' bukan nilai ENUM/DATE yang valid di MySQL, jadi normalisasi ke null.
+                'gender' => $request->gender ?: null,
+                'birth_date' => $request->birth_date ?: null,
                 'addresses' => $request->addresses ? json_encode($request->addresses) : null,
                 'is_active' => true,
                 'approval_status' => 'approved',
@@ -115,7 +117,10 @@ class UserController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Failed to create user: ' . $e->getMessage());
-            return back()->with('error', 'Gagal menambahkan user: ' . $e->getMessage())->withInput();
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menambahkan user: ' . $e->getMessage()
+            ], 500);
         }
     }
 
@@ -155,7 +160,7 @@ class UserController extends Controller
                 ], 422);
             }
 
-            if (!$request->has('is_active')) {
+            if (!$request->boolean('is_active')) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Anda tidak dapat menonaktifkan akun Anda sendiri.'
@@ -170,7 +175,7 @@ class UserController extends Controller
             $userData = [
                 'name' => $request->name,
                 'email' => $request->email,
-                'is_active' => $request->has('is_active'),
+                'is_active' => $request->boolean('is_active'),
                 'default_role' => $request->role,
             ];
 
@@ -180,9 +185,9 @@ class UserController extends Controller
             }
 
             // Update email verification status
-            if ($request->has('email_verified') && !$user->hasVerifiedEmail()) {
+            if ($request->boolean('email_verified') && !$user->hasVerifiedEmail()) {
                 $userData['email_verified_at'] = now();
-            } elseif (!$request->has('email_verified') && $user->hasVerifiedEmail()) {
+            } elseif (!$request->boolean('email_verified') && $user->hasVerifiedEmail()) {
                 $userData['email_verified_at'] = null;
             }
 
@@ -198,8 +203,10 @@ class UserController extends Controller
                 'last_name' => $request->last_name ?? '',
                 'nickname' => $request->nickname,
                 'phone' => $request->phone,
-                'gender' => $request->gender,
-                'birth_date' => $request->birth_date,
+                // Form JS selalu mengirim string kosong untuk field yang tidak diisi (bukan
+                // absen) — '' bukan nilai ENUM/DATE yang valid di MySQL, jadi normalisasi ke null.
+                'gender' => $request->gender ?: null,
+                'birth_date' => $request->birth_date ?: null,
                 'addresses' => $request->addresses ? json_encode($request->addresses) : null,
             ];
 
@@ -225,7 +232,10 @@ class UserController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Failed to update user: ' . $e->getMessage());
-            return back()->with('error', 'Gagal memperbarui user: ' . $e->getMessage())->withInput();
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui user: ' . $e->getMessage()
+            ], 500);
         }
     }
 

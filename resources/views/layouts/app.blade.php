@@ -93,7 +93,7 @@ window.addEventListener('resize', handleResize);"
         <div class="flex">
             <!-- Sidebar - Desktop -->
             <div x-show="sidebarOpen" x-transition.duration.300
-                class="hidden lg:block fixed lg:relative z-30 h-full sidebar-transition"
+                class="hidden lg:block lg:fixed lg:top-16 lg:left-0 lg:h-[calc(100vh-4rem)] z-30 sidebar-transition"
                 :class="sidebarOpen ? 'w-64' : 'w-20'">
                 @auth
                     @if (auth()->user()->hasRole('admin') || auth()->user()->hasRole('event_manager'))
@@ -107,21 +107,22 @@ window.addEventListener('resize', handleResize);"
             </div>
 
             <!-- Main Content -->
-            <main class="flex-1 min-h-screen transition-all duration-300 w-full">
+            <main class="flex-1 min-h-screen transition-all duration-300 w-full"
+                :class="sidebarOpen ? 'lg:ml-64' : 'lg:ml-20'">
                 <div class="p-4 md:p-6">
                     <div class="max-w-7xl mx-auto">
+                        <!-- Breadcrumb -->
+                        @hasSection('breadcrumb')
+                            <div class="mb-3">
+                                @yield('breadcrumb')
+                            </div>
+                        @endif
+
                         <!-- Page Header -->
                         <div class="mb-6">
                             <h1 class="text-2xl font-bold text-gray-800 dark:text-white">@yield('page-title', 'Dashboard')</h1>
                             <p class="text-gray-600 dark:text-gray-400">@yield('page-subtitle', 'Selamat datang kembali, ' . Auth::user()->name)</p>
                         </div>
-
-                        <!-- Breadcrumb -->
-                        @hasSection('breadcrumb')
-                            <div class="mb-4">
-                                @yield('breadcrumb')
-                            </div>
-                        @endif
 
                         <!-- Flash Messages -->
                         @if (session('success'))
@@ -244,6 +245,9 @@ window.addEventListener('resize', handleResize);"
 
     <!-- Toast Component -->
     <x-toast position="top-right" />
+
+    <!-- Confirm Dialog Component -->
+    <x-confirm-dialog />
 
     @stack('scripts')
 </body>

@@ -10,6 +10,7 @@ use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 
 class AssignmentController extends Controller
@@ -41,11 +42,28 @@ class AssignmentController extends Controller
     }
 
     /**
+     * Daftar lesson milik kursus (untuk dropdown "Materi" di form tugas).
+     */
+    public function lessonsForCourse(Course $course)
+    {
+        abort_if($course->instructor_id !== Auth::id(), 403);
+
+        $lessons = Lesson::whereHas('section', function ($q) use ($course) {
+                $q->where('course_id', $course->id);
+            })
+            ->orderBy('section_id')
+            ->orderBy('order')
+            ->get(['id', 'title']);
+
+        return response()->json($lessons);
+    }
+
+    /**
      * Simpan tugas baru ke database.
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'course_id' => 'required|exists:courses,id',
             'lesson_id' => 'nullable|exists:lessons,id',
             'title' => 'required|string|max:255',
@@ -63,17 +81,20 @@ class AssignmentController extends Controller
             'rubric.*.max_points' => 'required_with:rubric|integer|min:1',
         ]);
 
-        $course = Course::findOrFail($request->course_id);
+        $course = Course::findOrFail($validated['course_id']);
         if ($course->instructor_id !== Auth::id()) {
             abort(403);
         }
 
-        $data = $request->except('rubric');
+        $data = Arr::except($validated, 'rubric');
         $data['is_published'] = $request->has('is_published');
         $data['allow_late_submission'] = $request->has('allow_late_submission');
+        // Input datetime-local yang dikosongkan mengirim '' (bukan absen), dan '' bukan
+        // nilai DATETIME yang valid di MySQL — normalisasi ke null di sini.
+        $data['due_date'] = $data['due_date'] ?: null;
 
         $assignment = Assignment::create($data);
-        $this->syncRubric($assignment, $request->input('rubric', []));
+        $this->syncRubric($assignment, $validated['rubric'] ?? []);
 
         if ($assignment->is_published) {
             $students = User::whereHas('enrollments', function ($q) use ($course) {
@@ -115,7 +136,7 @@ class AssignmentController extends Controller
             abort(403);
         }
 
-        $request->validate([
+        $validated = $request->validate([
             'course_id' => 'required|exists:courses,id',
             'lesson_id' => 'nullable|exists:lessons,id',
             'title' => 'required|string|max:255',
@@ -133,12 +154,21 @@ class AssignmentController extends Controller
             'rubric.*.max_points' => 'required_with:rubric|integer|min:1',
         ]);
 
-        $data = $request->except('rubric');
+        // Cegah assignment dipindahkan ke course milik instruktur lain lewat course_id.
+        $targetCourse = Course::findOrFail($validated['course_id']);
+        if ($targetCourse->instructor_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $data = Arr::except($validated, 'rubric');
         $data['is_published'] = $request->has('is_published');
         $data['allow_late_submission'] = $request->has('allow_late_submission');
+        // Input datetime-local yang dikosongkan mengirim '' (bukan absen), dan '' bukan
+        // nilai DATETIME yang valid di MySQL — normalisasi ke null di sini.
+        $data['due_date'] = $data['due_date'] ?: null;
 
         $assignment->update($data);
-        $this->syncRubric($assignment, $request->input('rubric', []));
+        $this->syncRubric($assignment, $validated['rubric'] ?? []);
 
         return redirect()->route('instructor.assignments.index')
             ->with('success', 'Tugas berhasil diperbarui.');

@@ -194,7 +194,10 @@ class QuizController extends Controller
     {
         if ($course->instructor_id !== auth()->id())
             abort(403);
-        return view('instructor.quizzes.create', compact('course'));
+
+        $lessons = $this->quizLessonOptions($course);
+
+        return view('instructor.quizzes.create', compact('course', 'lessons'));
     }
 
     public function store(Request $request, Course $course)
@@ -202,18 +205,85 @@ class QuizController extends Controller
         if ($course->instructor_id !== auth()->id())
             abort(403);
 
-        $request->validate([
+        $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'quiz_type' => 'nullable|in:practice,pretest,posttest,final',
             'time_limit' => 'nullable|integer|min:0',
             'attempts_allowed' => 'nullable|integer|min:1',
             'passing_score' => 'nullable|integer|min:0|max:100',
             'randomize_questions' => 'nullable|boolean',
             'is_published' => 'nullable|boolean',
+            'lesson_id' => 'nullable|exists:lessons,id',
         ]);
 
-        $quiz = $course->quizzes()->create($request->all());
+        // Select kosong mengirim '' (bukan absen), dan '' bukan FK yang valid di MySQL.
+        $validated['lesson_id'] = $validated['lesson_id'] ?: null;
+        $validated['quiz_type'] = $validated['quiz_type'] ?: 'practice';
+
+        if ($validated['lesson_id']) {
+            $this->assertLessonQuizSlotAvailable($course, $validated['lesson_id'], $validated['quiz_type']);
+        }
+
+        DB::beginTransaction();
+        try {
+            $quiz = $course->quizzes()->create($validated);
+            $this->storeQuestionsBatch($quiz, $request->input('questions', []));
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Gagal membuat quiz beserta soal: ' . $e->getMessage());
+
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Gagal membuat quiz: ' . $e->getMessage()], 422);
+            }
+            return back()->with('error', 'Gagal membuat quiz: ' . $e->getMessage())->withInput();
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Quiz berhasil dibuat beserta ' . count($request->input('questions', [])) . ' soal.',
+                'quiz_id' => $quiz->id,
+            ]);
+        }
+
         return redirect()->route('instructor.courses.quizzes.edit', [$course, $quiz])->with('success', 'Quiz created. Add questions.');
+    }
+
+    /**
+     * Simpan sekumpulan soal (dari wizard "Buat Quiz" step 3) sekaligus untuk quiz yang baru dibuat.
+     * Bentuk tiap soal mengikuti format yang dikirim quizForm() di instructor/quizzes/create.blade.php:
+     * options berupa array teks, correct_option berupa index opsi yang benar (bukan per-opsi is_correct).
+     */
+    private function storeQuestionsBatch(Quiz $quiz, array $questions): void
+    {
+        foreach ($questions as $index => $q) {
+            $type = $q['type'] ?? 'multiple_choice';
+
+            $question = $quiz->questions()->create([
+                'question' => $q['question'] ?? '',
+                'type' => $type,
+                'points' => $q['points'] ?? 1,
+                'explanation' => $q['explanation'] ?? null,
+                'order' => $index + 1,
+            ]);
+
+            if ($type === 'multiple_choice') {
+                foreach (($q['options'] ?? []) as $optIndex => $optText) {
+                    $question->options()->create([
+                        'option_text' => $optText,
+                        'is_correct' => (int) $optIndex === (int) ($q['correct_option'] ?? -1),
+                        'order' => $optIndex + 1,
+                    ]);
+                }
+            } elseif ($type === 'true_false') {
+                $question->options()->createMany([
+                    ['option_text' => 'Benar', 'is_correct' => ($q['correct_answer'] ?? null) === 'true', 'order' => 1],
+                    ['option_text' => 'Salah', 'is_correct' => ($q['correct_answer'] ?? null) === 'false', 'order' => 2],
+                ]);
+            }
+        }
     }
 
     public function edit(Course $course, Quiz $quiz)
@@ -222,7 +292,10 @@ class QuizController extends Controller
             abort(403);
         $this->authorizeQuiz($course, $quiz);
         $quiz->load('questions.options');
-        return view('instructor.quizzes.edit', compact('course', 'quiz'));
+
+        $lessons = $this->quizLessonOptions($course);
+
+        return view('instructor.quizzes.edit', compact('course', 'quiz', 'lessons'));
     }
 
     public function update(Request $request, Course $course, Quiz $quiz)
@@ -231,18 +304,75 @@ class QuizController extends Controller
             abort(403);
         $this->authorizeQuiz($course, $quiz);
 
-        $request->validate([
+        $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'quiz_type' => 'nullable|in:practice,pretest,posttest,final',
             'time_limit' => 'nullable|integer|min:0',
             'attempts_allowed' => 'nullable|integer|min:1',
             'passing_score' => 'nullable|integer|min:0|max:100',
             'randomize_questions' => 'nullable|boolean',
             'is_published' => 'nullable|boolean',
+            'lesson_id' => 'nullable|exists:lessons,id',
         ]);
 
-        $quiz->update($request->all());
+        // Select kosong mengirim '' (bukan absen), dan '' bukan FK yang valid di MySQL.
+        $validated['lesson_id'] = $validated['lesson_id'] ?: null;
+        $validated['quiz_type'] = $validated['quiz_type'] ?: 'practice';
+
+        if ($validated['lesson_id']) {
+            $this->assertLessonQuizSlotAvailable($course, $validated['lesson_id'], $validated['quiz_type'], $quiz->id);
+        }
+
+        $quiz->update($validated);
         return back()->with('success', 'Quiz updated.');
+    }
+
+    /**
+     * Lesson bertipe "quiz" milik course ini yang bisa dipilih untuk dikaitkan ke quiz.
+     * Tiap lesson bisa punya kombinasi quiz_type-nya sendiri (mis. satu pretest + satu
+     * posttest) — info quiz_type yang sudah terpakai disertakan supaya instruktur tahu
+     * slot mana yang masih kosong, validasi akhir tetap di assertLessonQuizSlotAvailable().
+     */
+    private function quizLessonOptions(Course $course)
+    {
+        $lessons = \App\Models\Lesson::whereHas('section', fn ($q) => $q->where('course_id', $course->id))
+            ->where('type', 'quiz')
+            ->with('section')
+            ->get();
+
+        $existingTypes = Quiz::whereIn('lesson_id', $lessons->pluck('id'))
+            ->whereNotNull('lesson_id')
+            ->get(['lesson_id', 'quiz_type'])
+            ->groupBy('lesson_id')
+            ->map(fn ($group) => $group->pluck('quiz_type')->all());
+
+        return $lessons->map(function ($lesson) use ($existingTypes) {
+            $lesson->existing_quiz_types = $existingTypes->get($lesson->id, []);
+            return $lesson;
+        });
+    }
+
+    /**
+     * Cegah quiz dikaitkan ke lesson milik course lain (mis. lesson_id hasil tebakan/manipulasi),
+     * dan cegah satu lesson punya lebih dari satu quiz dengan quiz_type yang sama (mis. dua
+     * pretest) — relasi Lesson::pretest()/posttest() itu hasOne, jadi kalau dobel, yang
+     * kepilih di halaman lesson jadi tidak pasti.
+     */
+    private function assertLessonQuizSlotAvailable(Course $course, int $lessonId, string $quizType, ?int $excludeQuizId = null): void
+    {
+        $belongs = \App\Models\Lesson::whereKey($lessonId)
+            ->whereHas('section', fn ($q) => $q->where('course_id', $course->id))
+            ->exists();
+
+        abort_unless($belongs, 422, 'Lesson yang dipilih bukan bagian dari kursus ini.');
+
+        $alreadyTaken = Quiz::where('lesson_id', $lessonId)
+            ->where('quiz_type', $quizType)
+            ->when($excludeQuizId, fn ($q) => $q->where('id', '!=', $excludeQuizId))
+            ->exists();
+
+        abort_if($alreadyTaken, 422, "Lesson ini sudah punya quiz tipe \"{$quizType}\". Satu lesson maksimal satu quiz per tipe.");
     }
 
     public function destroy(Request $request, Course $course, Quiz $quiz)

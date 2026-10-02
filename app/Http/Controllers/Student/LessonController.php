@@ -7,6 +7,7 @@ use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\Enrollment;
 use App\Models\LessonCompletion;
+use App\Models\QuizAttempt;
 use App\Jobs\GenerateCertificateJob;
 use App\Models\UserPoint;
 use App\Services\GamificationService;
@@ -65,6 +66,57 @@ class LessonController extends Controller
         // Get user progress
         $userPoint = UserPoint::firstOrCreate(['user_id' => auth()->id()]);
 
+        // Pretest & posttest yang dikaitkan ke lesson ini (kalau lesson bertipe "quiz" dan
+        // sudah dihubungkan lewat form instruktur, dibedakan lewat quiz_type).
+        // - Pretest: wajib dikerjakan dulu sebelum konten materi lesson terbuka.
+        // - Posttest: syarat lesson dianggap selesai (menggantikan tombol "Tandai Selesai" manual).
+        $pretest = $this->loadLessonQuizForStudent($lesson, 'pretest');
+        $posttest = $this->loadLessonQuizForStudent($lesson, 'posttest');
+
+        // orderByDesc('id') dipakai (bukan latest()/created_at) supaya urutan attempt tetap
+        // pasti walau dua attempt tercatat dalam detik yang sama (created_at bisa kembar).
+        $pretestAttempt = $pretest
+            ? QuizAttempt::where('quiz_id', $pretest->id)->where('user_id', auth()->id())->where('status', 'completed')->orderByDesc('id')->first()
+            : null;
+        // Konten terkunci kalau lesson punya pretest dan siswa belum pernah menyelesaikannya
+        // (tidak perlu lulus — pretest sifatnya diagnostik, bukan gate berdasarkan nilai).
+        $contentLocked = $pretest && !$pretestAttempt;
+
+        $posttestAttempt = $posttest
+            ? QuizAttempt::where('quiz_id', $posttest->id)->where('user_id', auth()->id())->where('status', 'completed')->orderByDesc('id')->first()
+            : null;
+        // "Pernah lulus" (bukan cuma attempt terakhir) — sekali lulus, tetap dianggap lulus
+        // walau nanti iseng dicoba ulang dan hasilnya lebih jelek.
+        $posttestPassed = $posttest && QuizAttempt::where('quiz_id', $posttest->id)
+            ->where('user_id', auth()->id())
+            ->where('is_passed', true)
+            ->exists();
+
+        // Breadcrumb: lesson-lesson lain di section yang sama hanya bisa diklik kalau
+        // lesson SEBELUMNYA (berurutan, mengikuti $allLessons di atas) sudah completed —
+        // mencegah siswa "loncat" lewat breadcrumb ke materi yang belum waktunya dibuka.
+        $completedIds = LessonCompletion::where('user_id', auth()->id())
+            ->whereIn('lesson_id', $allLessons->pluck('id'))
+            ->pluck('lesson_id')
+            ->all();
+
+        $blocked = false;
+        $lockedMap = [];
+        foreach ($allLessons as $l) {
+            $lockedMap[$l->id] = $blocked;
+            if (!in_array($l->id, $completedIds, true)) {
+                $blocked = true;
+            }
+        }
+
+        $sectionLessonsForBreadcrumb = $lesson->section->lessons()->orderBy('order')->get()
+            ->map(fn ($l) => [
+                'label' => $l->title,
+                'url' => route('student.lessons.show', [$course, $l]),
+                'locked' => $lockedMap[$l->id] ?? false,
+                'active' => $l->id === $lesson->id,
+            ]);
+
         return view('student.lessons.show', compact(
             'course',
             'lesson',
@@ -73,8 +125,41 @@ class LessonController extends Controller
             'isCompleted',
             'resources',
             'enrollment',
-            'userPoint'
+            'userPoint',
+            'pretest',
+            'pretestAttempt',
+            'contentLocked',
+            'posttest',
+            'posttestAttempt',
+            'posttestPassed',
+            'sectionLessonsForBreadcrumb'
         ));
+    }
+
+    /**
+     * Ambil quiz (pretest/posttest) milik lesson beserta info percobaan siswa saat ini,
+     * atau null kalau lesson tidak punya quiz tipe tsb / belum dipublikasikan.
+     */
+    private function loadLessonQuizForStudent(Lesson $lesson, string $quizType)
+    {
+        if ($lesson->type !== 'quiz') {
+            return null;
+        }
+
+        $quiz = $quizType === 'pretest' ? $lesson->pretest : $lesson->posttest;
+        if (!$quiz || !$quiz->is_published) {
+            return null;
+        }
+
+        $quiz->loadCount('questions');
+        $quiz->user_attempt_count = QuizAttempt::where('quiz_id', $quiz->id)
+            ->where('user_id', auth()->id())
+            ->count();
+        $quiz->user_best_score = QuizAttempt::where('quiz_id', $quiz->id)
+            ->where('user_id', auth()->id())
+            ->max('percentage') ?? 0;
+
+        return $quiz;
     }
 
     /**
@@ -83,6 +168,34 @@ class LessonController extends Controller
     public function complete(Request $request, Lesson $lesson)
     {
         try {
+            // Kalau lesson punya posttest, penyelesaian lesson HARUS lewat lulus posttest
+            // (lihat QuizController::updateLessonProgress), bukan tombol manual ini —
+            // supaya siswa tidak bisa melewati posttest begitu saja.
+            if ($lesson->type === 'quiz' && $lesson->posttest()->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Lesson ini punya post-test. Selesaikan dan lulus post-test untuk menandai lesson ini selesai.'
+                ], 422);
+            }
+
+            // Cegah selesaikan lesson yang kontennya masih terkunci pretest (mis. request
+            // API langsung tanpa lewat UI yang sudah menyembunyikan tombolnya).
+            if ($lesson->type === 'quiz') {
+                $pretest = $lesson->pretest;
+                if ($pretest && $pretest->is_published) {
+                    $pretestDone = QuizAttempt::where('quiz_id', $pretest->id)
+                        ->where('user_id', auth()->id())
+                        ->where('status', 'completed')
+                        ->exists();
+                    if (!$pretestDone) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Kerjakan pre-test lesson ini terlebih dahulu.'
+                        ], 422);
+                    }
+                }
+            }
+
             // Check lesson and section relationship
             if (!$lesson->section) {
                 return response()->json([

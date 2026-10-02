@@ -5,6 +5,15 @@
 @section('page-title', 'Edit Quiz')
 @section('page-subtitle', 'Kursus: ' . $course->title)
 
+@section('breadcrumb')
+    <x-breadcrumb :items="[
+        ['label' => 'Kursus Saya', 'url' => route('instructor.courses.index')],
+        ['label' => $course->title, 'url' => route('instructor.courses.edit', $course)],
+        ['label' => 'Quiz', 'url' => route('instructor.courses.quizzes.index', $course)],
+        ['label' => $quiz->title, 'url' => null],
+    ]" />
+@endsection
+
 @section('content')
     <div x-data="quizEditor()" x-init="init()" class="max-w-5xl mx-auto space-y-6">
 
@@ -109,6 +118,45 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Tipe Quiz
+                        </label>
+                        <select name="quiz_type"
+                            class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700">
+                            <option value="practice" {{ old('quiz_type', $quiz->quiz_type) === 'practice' ? 'selected' : '' }}>Practice (Latihan)</option>
+                            <option value="pretest" {{ old('quiz_type', $quiz->quiz_type) === 'pretest' ? 'selected' : '' }}>Pre-Test (Sebelum Lesson)</option>
+                            <option value="posttest" {{ old('quiz_type', $quiz->quiz_type) === 'posttest' ? 'selected' : '' }}>Post-Test (Setelah Lesson)</option>
+                            <option value="final" {{ old('quiz_type', $quiz->quiz_type) === 'final' ? 'selected' : '' }}>Final Exam</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Lesson Terkait (opsional)
+                        </label>
+                        <select name="lesson_id"
+                            class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700">
+                            <option value="">-- Tidak terikat lesson tertentu --</option>
+                            @php $quizTypeLabels = ['practice' => 'Practice', 'pretest' => 'Pre-Test', 'posttest' => 'Post-Test', 'final' => 'Final']; @endphp
+                            @foreach ($lessons as $lesson)
+                                <option value="{{ $lesson->id }}" {{ (int) old('lesson_id', $quiz->lesson_id) === $lesson->id ? 'selected' : '' }}>
+                                    {{ $lesson->section->title }} — {{ $lesson->title }}
+                                    @if (!empty($lesson->existing_quiz_types))
+                                        (sudah ada: {{ collect($lesson->existing_quiz_types)->map(fn ($t) => $quizTypeLabels[$t] ?? $t)->implode(', ') }})
+                                    @endif
+                                </option>
+                            @endforeach
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">
+                            @if ($lessons->isEmpty())
+                                Belum ada lesson bertipe "Quiz" yang tersedia di kursus ini.
+                            @else
+                                Kalau dipilih, quiz ini akan muncul dan bisa langsung dikerjakan siswa dari halaman lesson tersebut.
+                            @endif
+                        </p>
+                    </div>
+
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                             Waktu Pengerjaan (menit)

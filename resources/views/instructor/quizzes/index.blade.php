@@ -5,6 +5,14 @@
 @section('page-title', 'Quiz')
 @section('page-subtitle', 'Kelola quiz untuk kursus: ' . $course->title)
 
+@section('breadcrumb')
+    <x-breadcrumb :items="[
+        ['label' => 'Kursus Saya', 'url' => route('instructor.courses.index')],
+        ['label' => $course->title, 'url' => route('instructor.courses.edit', $course)],
+        ['label' => 'Quiz', 'url' => null],
+    ]" />
+@endsection
+
 @section('content')
     <div x-data="quizManager()" x-init="init()" class="space-y-6">
         <div class="flex justify-between items-center">

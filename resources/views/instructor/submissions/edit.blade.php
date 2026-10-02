@@ -21,7 +21,15 @@
                 {!! nl2br(e($submission->content)) !!}
             </div>
             
-            @if($submission->attachments)
+            @if($submission->file_url)
+                <div class="mt-6">
+                    <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Lampiran:</h4>
+                    <a href="{{ Storage::url($submission->file_url) }}" target="_blank" class="flex items-center p-2 border dark:border-gray-700 rounded hover:bg-gray-50 dark:hover:bg-gray-700 text-blue-600">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                        {{ basename($submission->file_url) }}
+                    </a>
+                </div>
+            @elseif($submission->attachments)
                 <div class="mt-6">
                     <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Lampiran:</h4>
                     <div class="space-y-2">

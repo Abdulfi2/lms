@@ -18,7 +18,11 @@ return new class extends Migration
 
         // doctrine/dbal tidak terpasang, gunakan raw SQL untuk mengubah paid_at jadi nullable
         // (dibutuhkan karena permintaan payout dari instruktur belum punya tanggal pencairan).
-        DB::statement('ALTER TABLE payouts MODIFY paid_at TIMESTAMP NULL');
+        // MySQL-only syntax: SQLite (dipakai untuk testing) tidak mendukung ALTER ... MODIFY
+        // dan sudah memperlakukan kolom ini sebagai nullable di skema fresh, jadi cukup di-skip.
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE payouts MODIFY paid_at TIMESTAMP NULL');
+        }
     }
 
     /**
@@ -30,6 +34,8 @@ return new class extends Migration
             $table->dropColumn('status');
         });
 
-        DB::statement('ALTER TABLE payouts MODIFY paid_at TIMESTAMP NOT NULL');
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE payouts MODIFY paid_at TIMESTAMP NOT NULL');
+        }
     }
 };

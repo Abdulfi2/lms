@@ -4,6 +4,13 @@
 @section('page-title', 'Edit User')
 @section('page-subtitle', 'Ubah data user yang sudah ada')
 
+@section('breadcrumb')
+    <x-breadcrumb :items="[
+        ['label' => 'Manajemen User', 'url' => route('admin.users.index')],
+        ['label' => $user->name, 'url' => null],
+    ]" />
+@endsection
+
 @php
     $formData = [
         'name' => $user->name,
@@ -15,7 +22,7 @@
         'nickname' => $user->profile->nickname ?? '',
         'phone' => $user->profile->phone ?? '',
         'gender' => $user->profile->gender ?? '',
-        'birth_date' => $user->profile->birth_date ?? '',
+        'birth_date' => $user->profile->birth_date?->format('Y-m-d') ?? '',
         'role' => $user->role_name ?? '',
         'is_active' => $user->is_active ?? true,
         'email_verified' => isset($user->email_verified_at) ? true : false,
@@ -189,7 +196,9 @@
                             .then(data => {
                                 if (data.success) {
                                     window.toast.success(data.message);
-                                    window.location.href = '{{ route('admin.users.index') }}';
+                                    setTimeout(() => {
+                                        window.location.href = '{{ route('admin.users.index') }}';
+                                    }, 800);
                                 } else {
                                     if (data.errors) this.errors = data.errors;
                                     else window.toast.error(data.message);

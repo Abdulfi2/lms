@@ -4,6 +4,13 @@
 @section('page-title', 'Detail User')
 @section('page-subtitle', 'Informasi lengkap user')
 
+@section('breadcrumb')
+    <x-breadcrumb :items="[
+        ['label' => 'Manajemen User', 'url' => route('admin.users.index')],
+        ['label' => $user->name, 'url' => null],
+    ]" />
+@endsection
+
 @section('content')
     <div class="max-w-4xl mx-auto">
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">

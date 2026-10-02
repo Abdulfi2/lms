@@ -14,6 +14,7 @@ class Submission extends Model
         'student_id',
         'content',
         'attachments',
+        'file_url',
         'submission_count',
         'is_late',
         'status',

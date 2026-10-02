@@ -4,6 +4,13 @@
 @section('page-title', 'Tambah User Baru')
 @section('page-subtitle', 'Isi data user baru')
 
+@section('breadcrumb')
+    <x-breadcrumb :items="[
+        ['label' => 'Manajemen User', 'url' => route('admin.users.index')],
+        ['label' => 'Tambah User', 'url' => null],
+    ]" />
+@endsection
+
 @section('content')
     <div x-data="userForm()" class="max-w-4xl mx-auto">
         <form @submit.prevent="submitForm" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
@@ -181,7 +188,9 @@
                             .then(data => {
                                 if (data.success) {
                                     window.toast.success(data.message);
-                                    window.location.href = '{{ route('admin.users.index') }}';
+                                    setTimeout(() => {
+                                        window.location.href = '{{ route('admin.users.index') }}';
+                                    }, 800);
                                 } else {
                                     if (data.errors) this.errors = data.errors;
                                     else window.toast.error(data.message);

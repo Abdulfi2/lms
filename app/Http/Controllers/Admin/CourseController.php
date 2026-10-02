@@ -11,6 +11,7 @@ use App\Models\Category;
 use App\Models\Tag;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -62,7 +63,7 @@ class CourseController extends Controller
         try {
             DB::beginTransaction();
 
-            $data = $request->except(['thumbnail', 'categories', 'tags']);
+            $data = Arr::except($request->validated(), ['thumbnail', 'categories', 'tags']);
 
             // Handle thumbnail upload
             if ($request->hasFile('thumbnail')) {
@@ -71,6 +72,10 @@ class CourseController extends Controller
             }
 
             $data['slug'] = $request->slug ?: \Illuminate\Support\Str::slug($request->title);
+            // Input datetime-local yang dikosongkan mengirim '' (bukan absen), dan '' bukan
+            // nilai DATETIME yang valid di MySQL — normalisasi ke null di sini.
+            $data['sale_starts_at'] = $data['sale_starts_at'] ?: null;
+            $data['sale_ends_at'] = $data['sale_ends_at'] ?: null;
 
             $course = Course::create($data);
 
@@ -128,7 +133,11 @@ class CourseController extends Controller
         try {
             DB::beginTransaction();
 
-            $data = $request->except(['thumbnail', 'categories', 'tags']);
+            $data = Arr::except($request->validated(), ['thumbnail', 'categories', 'tags']);
+            // Input datetime-local yang dikosongkan mengirim '' (bukan absen), dan '' bukan
+            // nilai DATETIME yang valid di MySQL — normalisasi ke null di sini.
+            $data['sale_starts_at'] = $data['sale_starts_at'] ?: null;
+            $data['sale_ends_at'] = $data['sale_ends_at'] ?: null;
 
             if ($request->hasFile('thumbnail')) {
                 // Delete old thumbnail

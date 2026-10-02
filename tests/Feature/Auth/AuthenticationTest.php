@@ -3,7 +3,6 @@
 namespace Tests\Feature\Auth;
 
 use App\Models\User;
-use App\Providers\RouteServiceProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -28,7 +27,10 @@ class AuthenticationTest extends TestCase
         ]);
 
         $this->assertAuthenticated();
-        $response->assertRedirect(RouteServiceProvider::HOME);
+        // Login redirects straight to the role dashboard (see
+        // AuthenticatedSessionController::redirectTo()), not the generic
+        // RouteServiceProvider::HOME — a plain factory user has no role.
+        $response->assertRedirect(route('student.dashboard'));
     }
 
     public function test_users_can_not_authenticate_with_invalid_password(): void

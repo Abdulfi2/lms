@@ -4,6 +4,13 @@
 @section('page-title', $course->title)
 @section('page-subtitle', $course->short_description)
 
+@section('breadcrumb')
+    <x-breadcrumb :items="[
+        ['label' => 'Kursus Saya', 'url' => route('student.my-courses')],
+        ['label' => $course->title, 'url' => null],
+    ]" />
+@endsection
+
 @php
     $userReview = App\Models\Review::where('user_id', Auth::id())->where('course_id', $course->id)->first();
     $canReview = $enrollment && $enrollment->progress >= 50;

@@ -14,26 +14,23 @@
 
                 <!-- Desktop sidebar toggle -->
                 <button @click="sidebarOpen = !sidebarOpen"
-                    class="hidden lg:block p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700">
-                    <svg x-show="sidebarOpen" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path>
+                    class="hidden lg:block p-2 rounded-lg text-gray-500 bg-gray-100 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-700">
+                    <svg x-show="sidebarOpen" class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z" />
                     </svg>
-                    <svg x-show="!sidebarOpen" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
+                    <svg x-show="!sidebarOpen" class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z" />
                     </svg>
                 </button>
 
                 <!-- Logo -->
                 <a href="{{ route('dashboard') }}" class="flex items-center space-x-2 ml-2">
-                    <div
-                        class="w-8 h-8 bg-gradient-to-r from-primary to-secondary rounded-lg flex items-center justify-center">
-                        <span class="text-white font-bold text-lg">L</span>
+                    <div class="w-8 h-8 shadow rounded-lg flex items-center justify-center">
+                        <img src="{{ asset('images/logo-zakatsukses.png') }}" alt="Logo ZakatSukses" class="w-6">
                     </div>
                     <span
                         class="font-bold text-xl bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent hidden sm:inline">
-                        {{ config('app.name', 'LMS') }}
+                        {{ config('app.name', 'ZS Academy') }}
                     </span>
                 </a>
             </div>
@@ -53,6 +50,51 @@
 
             <!-- Right Side -->
             <div class="flex items-center space-x-2">
+                <!-- Language Switcher -->
+                <div class="relative" x-data="{ open: false }">
+                    <button @click="open = !open"
+                        class="flex items-center space-x-1 px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                        @php
+                            $currentLang = app()->getLocale();
+                        @endphp
+                        @if ($currentLang == 'id')
+                            <span class="text-sm font-medium">🇮🇩 Indonesia</span>
+                        @else
+                            <span class="text-sm font-medium">🇬🇧 English</span>
+                        @endif
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+
+                    <div x-show="open" @click.away="open = false" x-transition.duration.200
+                        class="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-1 z-50 border dark:border-gray-700"
+                        style="display: none;">
+                        <a href="{{ route('lang.switch', 'id') }}"
+                            class="flex items-center px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition {{ app()->getLocale() == 'id' ? 'bg-primary/10 text-primary' : '' }}">
+                            <span class="mr-2">🇮🇩</span> Indonesia
+                            @if (app()->getLocale() == 'id')
+                                <svg class="w-4 h-4 ml-auto text-primary" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M5 13l4 4L19 7" />
+                                </svg>
+                            @endif
+                        </a>
+                        <a href="{{ route('lang.switch', 'en') }}"
+                            class="flex items-center px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition {{ app()->getLocale() == 'en' ? 'bg-primary/10 text-primary' : '' }}">
+                            <span class="mr-2">🇬🇧</span> English
+                            @if (app()->getLocale() == 'en')
+                                <svg class="w-4 h-4 ml-auto text-primary" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M5 13l4 4L19 7" />
+                                </svg>
+                            @endif
+                        </a>
+                    </div>
+                </div>
+
                 <!-- Dark Mode Toggle -->
                 <button @click="darkMode = !darkMode"
                     class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700">
@@ -92,23 +134,29 @@
                         <div class="px-4 py-2 border-b dark:border-gray-700 flex items-center justify-between">
                             <h3 class="font-semibold text-gray-800 dark:text-white">Notifikasi</h3>
                             @if ($navUnreadCount > 0)
-                                <span class="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">{{ $navUnreadCount }} baru</span>
+                                <span
+                                    class="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">{{ $navUnreadCount }}
+                                    baru</span>
                             @endif
                         </div>
                         <div class="max-h-96 overflow-y-auto">
                             @forelse ($navNotifications as $notification)
                                 <a href="{{ route('notifications.read', $notification) }}"
                                     class="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer {{ !$notification->read_at ? 'bg-blue-50/50 dark:bg-blue-900/10' : '' }}">
-                                    <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $notification->title }}</p>
-                                    <p class="text-sm text-gray-600 dark:text-gray-400">{{ \Illuminate\Support\Str::limit($notification->message, 80) }}</p>
-                                    <p class="text-xs text-gray-400 mt-1">{{ $notification->sent_at->diffForHumans() }}</p>
+                                    <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        {{ $notification->title }}</p>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                                        {{ \Illuminate\Support\Str::limit($notification->message, 80) }}</p>
+                                    <p class="text-xs text-gray-400 mt-1">{{ $notification->sent_at->diffForHumans() }}
+                                    </p>
                                 </a>
                             @empty
                                 <div class="px-4 py-6 text-center text-sm text-gray-400">Belum ada notifikasi.</div>
                             @endforelse
                         </div>
                         <div class="px-4 py-2 border-t dark:border-gray-700">
-                            <a href="{{ route('notifications.index') }}" class="text-xs text-primary hover:underline">Lihat semua notifikasi</a>
+                            <a href="{{ route('notifications.index') }}"
+                                class="text-xs text-primary hover:underline">Lihat semua notifikasi</a>
                         </div>
                     </div>
                 </div>
@@ -140,7 +188,7 @@
                             </svg>
                             Profile
                         </a>
-                        <a href="#"
+                        <a href="{{ route('settings.index') }}"
                             class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                             <svg class="inline w-4 h-4 mr-2" fill="none" stroke="currentColor"
                                 viewBox="0 0 24 24">

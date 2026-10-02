@@ -1,57 +1,12 @@
 <div class="h-full bg-white dark:bg-gray-800 shadow-lg flex flex-col overflow-y-auto">
     <!-- User Info Section - Expanded -->
     <div class="p-4 border-b dark:border-gray-700">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <img src="{{ Auth::user()->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) . '&background=3B82F6&color=white' }}"
-                    alt="{{ Auth::user()->name }}" class="w-10 h-10 rounded-full object-cover">
-                <div>
-                    <p class="text-sm font-semibold text-gray-800 dark:text-white">{{ Auth::user()->name }}</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">@lang('sidebar.student')</p>
-                </div>
-            </div>
-            <!-- Language Switcher -->
-            <div class="relative" x-data="{ open: false }">
-                <button @click="open = !open"
-                    class="flex items-center space-x-1 px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-                    @php
-                        $currentLang = app()->getLocale();
-                    @endphp
-                    @if ($currentLang == 'id')
-                        <span class="text-sm font-medium">🇮🇩 Indonesia</span>
-                    @else
-                        <span class="text-sm font-medium">🇬🇧 English</span>
-                    @endif
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                </button>
-
-                <div x-show="open" @click.away="open = false"
-                    class="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-1 z-50 border dark:border-gray-700">
-                    <a href="{{ route('lang.switch', 'id') }}"
-                        class="flex items-center px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition {{ app()->getLocale() == 'id' ? 'bg-primary/10 text-primary' : '' }}">
-                        <span class="mr-2">🇮🇩</span> Indonesia
-                        @if (app()->getLocale() == 'id')
-                            <svg class="w-4 h-4 ml-auto text-primary" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M5 13l4 4L19 7" />
-                            </svg>
-                        @endif
-                    </a>
-                    <a href="{{ route('lang.switch', 'en') }}"
-                        class="flex items-center px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition {{ app()->getLocale() == 'en' ? 'bg-primary/10 text-primary' : '' }}">
-                        <span class="mr-2">🇬🇧</span> English
-                        @if (app()->getLocale() == 'en')
-                            <svg class="w-4 h-4 ml-auto text-primary" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M5 13l4 4L19 7" />
-                            </svg>
-                        @endif
-                    </a>
-                </div>
+        <div class="flex items-center space-x-3">
+            <img src="{{ Auth::user()->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) . '&background=3B82F6&color=white' }}"
+                alt="{{ Auth::user()->name }}" class="w-10 h-10 rounded-full object-cover">
+            <div>
+                <p class="text-sm font-semibold text-gray-800 dark:text-white">{{ Auth::user()->name }}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">@lang('sidebar.student')</p>
             </div>
         </div>
     </div>

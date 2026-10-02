@@ -4,6 +4,14 @@
 @section('page-title', 'Sections: ' . $course->title)
 @section('page-subtitle', 'Kelola bab / section kursus')
 
+@section('breadcrumb')
+    <x-breadcrumb :items="[
+        ['label' => 'Kursus Saya', 'url' => route('instructor.courses.index')],
+        ['label' => $course->title, 'url' => route('instructor.courses.edit', $course)],
+        ['label' => 'Sections', 'url' => null],
+    ]" />
+@endsection
+
 @section('content')
     <div x-data="sectionManager()" x-init="init()">
         @if (request('new'))

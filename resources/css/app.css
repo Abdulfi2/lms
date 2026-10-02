@@ -1,3 +1,20 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+[x-cloak] {
+    display: none !important;
+}
+
+/* Quill's own stylesheet sets .ql-container { height: 100% }, which makes the
+   editor stretch to fill the nearest ancestor with a resolved height (e.g. a
+   flex/grid layout) instead of hugging its content. Size it from content with
+   a scrollable cap instead. */
+.ql-container {
+    height: auto !important;
+}
+
+.ql-editor {
+    max-height: 400px;
+    overflow-y: auto;
+}

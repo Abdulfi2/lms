@@ -144,7 +144,7 @@ class CategoryController extends Controller
                 'icon' => $request->icon,
                 'color' => $request->color,
                 'order' => $request->order ?? 0,
-                'is_active' => $request->has('is_active'),
+                'is_active' => $request->boolean('is_active'),
             ]);
 
             DB::commit();

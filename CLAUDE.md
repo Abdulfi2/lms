@@ -85,11 +85,11 @@ Many models auto-generate slugs on `creating`/`updating` in `boot()` (see `Cours
 - Spatie's `role`, `permission`, `role_or_permission` middleware aliases are available.
 - `CheckTokenAbility` (`ability` alias) — Sanctum token ability checks for the API.
 
-API auth (`routes/api.php`) is Sanctum-based (`auth:sanctum`), separate from the session-based web auth. Google API client (`google/apiclient`) is used for Gmail sending (`MailController`, `/auth/google` OAuth flow).
+API auth (`routes/api.php`) is Sanctum-based (`auth:sanctum`), separate from the session-based web auth.
 
 ### Background jobs & PDFs
 
-`app/Jobs/`: `GenerateCertificateJob`, `SendAssignmentNotificationJob`, `SendVerificationEmailJob` — queued work dispatched from controllers/models rather than done synchronously. `barryvdh/laravel-dompdf` generates certificate PDFs; `endroid/qr-code` generates certificate verification QR codes (see the public `certificate.verify` route).
+`app/Jobs/`: `GenerateCertificateJob`, `SendAssignmentNotificationJob` — queued work dispatched from controllers/models rather than done synchronously. Email verification uses Laravel's built-in `SendEmailVerificationNotification` listener on the `Registered` event, not a custom job. `barryvdh/laravel-dompdf` generates certificate PDFs; `endroid/qr-code` generates certificate verification QR codes (see the public `certificate.verify` route).
 
 ### Seeding
 

@@ -93,8 +93,10 @@ class PayoutController extends Controller
             'processed_by' => auth()->id(),
             'status' => 'paid',
             'amount' => $validated['amount'],
-            'period_start' => $validated['period_start'] ?? null,
-            'period_end' => $validated['period_end'] ?? null,
+            // '?? null' saja tidak cukup: input datetime yang dikosongkan mengirim '' (bukan
+            // absen), dan '' bukan nilai DATE yang valid di MySQL.
+            'period_start' => !empty($validated['period_start']) ? $validated['period_start'] : null,
+            'period_end' => !empty($validated['period_end']) ? $validated['period_end'] : null,
             'method' => $validated['method'] ?? null,
             'reference' => $validated['reference'] ?? null,
             'note' => $validated['note'] ?? null,

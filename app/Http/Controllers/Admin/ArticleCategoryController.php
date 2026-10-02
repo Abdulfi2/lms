@@ -23,7 +23,7 @@ class ArticleCategoryController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255|unique:article_categories,name',
             'description' => 'nullable|string',
             'icon' => 'nullable|string|max:100',
@@ -31,7 +31,7 @@ class ArticleCategoryController extends Controller
             'is_active' => 'nullable|boolean',
         ]);
 
-        ArticleCategory::create($request->all());
+        ArticleCategory::create($validated);
 
         return redirect()->route('admin.article-categories.index')
             ->with('success', 'Kategori artikel berhasil dibuat.');
@@ -44,7 +44,7 @@ class ArticleCategoryController extends Controller
 
     public function update(Request $request, ArticleCategory $articleCategory)
     {
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255|unique:article_categories,name,' . $articleCategory->id,
             'description' => 'nullable|string',
             'icon' => 'nullable|string|max:100',
@@ -52,7 +52,7 @@ class ArticleCategoryController extends Controller
             'is_active' => 'nullable|boolean',
         ]);
 
-        $articleCategory->update($request->all());
+        $articleCategory->update($validated);
 
         return redirect()->route('admin.article-categories.index')
             ->with('success', 'Kategori artikel berhasil diperbarui.');

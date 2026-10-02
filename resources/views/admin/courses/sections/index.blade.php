@@ -4,6 +4,14 @@
 @section('page-title', 'Sections: ' . $course->title)
 @section('page-subtitle', 'Atur bab/bagian dari kursus')
 
+@section('breadcrumb')
+    <x-breadcrumb :items="[
+        ['label' => 'Kursus', 'url' => route('admin.courses.index')],
+        ['label' => $course->title, 'url' => route('admin.courses.edit', $course)],
+        ['label' => 'Sections', 'url' => null],
+    ]" />
+@endsection
+
 @section('content')
     <div x-data="sectionManager()" x-init="init()">
         <div class="flex justify-between items-center mb-6">

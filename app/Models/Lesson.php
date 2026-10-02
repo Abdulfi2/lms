@@ -80,6 +80,11 @@ class Lesson extends Model
         return $this->hasOneThrough(Course::class, Section::class, 'id', 'id', 'section_id', 'course_id');
     }
 
+    public function quiz()
+    {
+        return $this->hasOne(Quiz::class);
+    }
+
     public function pretest()
     {
         return $this->hasOne(Quiz::class)->where('quiz_type', 'pretest');

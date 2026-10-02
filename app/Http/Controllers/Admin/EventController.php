@@ -8,6 +8,7 @@ use App\Models\Event;
 use App\Models\EventRegistration;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -90,7 +91,7 @@ class EventController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'type' => 'required|in:webinar,workshop,parenting,live_class,zoom_meeting,seminar',
@@ -114,9 +115,13 @@ class EventController extends Controller
         try {
             DB::beginTransaction();
 
-            $data = $request->except(['image', '_token', '_method']);
+            $data = Arr::except($validated, ['image']);
             $data['slug'] = Str::slug($request->title) . '-' . uniqid();
             $data['organizer_id'] = auth()->id();
+            $data['is_featured'] = $request->boolean('is_featured');
+            // Input datetime-local yang dikosongkan mengirim '' (bukan absen), dan '' bukan
+            // nilai DATETIME yang valid di MySQL — normalisasi ke null di sini.
+            $data['end_time'] = $data['end_time'] ?: null;
 
             if ($request->hasFile('image')) {
                 $path = $request->file('image')->store('events', 'public');
@@ -204,7 +209,7 @@ class EventController extends Controller
             }
         }
 
-        $request->validate([
+        $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'type' => 'required|in:webinar,workshop,parenting,live_class,zoom_meeting,seminar',
@@ -228,7 +233,11 @@ class EventController extends Controller
         try {
             DB::beginTransaction();
 
-            $data = $request->except(['image', '_token', '_method']);
+            $data = Arr::except($validated, ['image']);
+            $data['is_featured'] = $request->boolean('is_featured');
+            // Input datetime-local yang dikosongkan mengirim '' (bukan absen), dan '' bukan
+            // nilai DATETIME yang valid di MySQL — normalisasi ke null di sini.
+            $data['end_time'] = $data['end_time'] ?: null;
 
             if ($request->hasFile('image')) {
                 if ($event->image && Storage::disk('public')->exists($event->image)) {

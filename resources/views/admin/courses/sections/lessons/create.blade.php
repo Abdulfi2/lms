@@ -107,8 +107,10 @@
                             .then(data => {
                                 if (data.success) {
                                     window.toast.success(data.message);
-                                    window.location.href =
-                                        '{{ route('admin.lessons.index', [$course, $section]) }}';
+                                    setTimeout(() => {
+                                        window.location.href =
+                                            '{{ route('admin.lessons.index', [$course, $section]) }}';
+                                    }, 800);
                                 } else {
                                     if (data.errors) this.errors = data.errors;
                                     else window.toast.error(data.message);

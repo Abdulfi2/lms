@@ -79,7 +79,9 @@
                             .then(data => {
                                 if (data.success) {
                                     window.toast.success(data.message);
-                                    window.location.href = '{{ route('admin.tags.index') }}';
+                                    setTimeout(() => {
+                                        window.location.href = '{{ route('admin.tags.index') }}';
+                                    }, 800);
                                 } else {
                                     if (data.errors) this.errors = data.errors;
                                     else window.toast.error(data.message);

@@ -17,7 +17,6 @@ use App\Http\Controllers\Admin\ContactMessageController as AdminContactMessageCo
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ContactController;
-use App\Http\Controllers\MailController;
 use App\Http\Controllers\PublicEventController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\NotificationController;
@@ -313,6 +312,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('courses/{course}/duplicate', [InstructorCourseController::class, 'duplicate'])->name('courses.duplicate');
         Route::get('courses/{course}/preview', [InstructorCourseController::class, 'preview'])->name('courses.preview');
         Route::resource('assignments', InstructorAssignmentController::class)->except(['show']);
+        Route::get('/api/courses/{course}/lessons', [InstructorAssignmentController::class, 'lessonsForCourse'])->name('api.courses.lessons');
 
         Route::prefix('courses/{course}')->name('courses.')->group(function () {
             Route::resource('sections', InstructorSectionController::class)->except(['show']);
@@ -503,9 +503,5 @@ Route::get('/lang/{locale}', function ($locale) {
 
     return redirect()->back();
 })->name('lang.switch');
-
-Route::get('/auth/google', [MailController::class, 'getAuthUrl']);
-Route::get('/auth/google/callback', [MailController::class, 'handleCallback']);
-Route::get('/send-email', [MailController::class, 'sendEmail']);
 
 require __DIR__ . '/auth.php';

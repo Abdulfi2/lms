@@ -4,6 +4,15 @@
 @section('page-title', 'Tambah Section Baru')
 @section('page-subtitle', 'Untuk kursus: ' . $course->title)
 
+@section('breadcrumb')
+    <x-breadcrumb :items="[
+        ['label' => 'Kursus Saya', 'url' => route('instructor.courses.index')],
+        ['label' => $course->title, 'url' => route('instructor.courses.edit', $course)],
+        ['label' => 'Sections', 'url' => route('instructor.courses.sections.index', $course)],
+        ['label' => 'Tambah Section', 'url' => null],
+    ]" />
+@endsection
+
 @section('content')
     <div class="max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
         <form method="POST" action="{{ route('instructor.courses.sections.store', $course) }}">

@@ -4,6 +4,16 @@
 @section('page-title', 'Lessons: ' . $section->title)
 @section('page-subtitle', 'Kursus: ' . $course->title)
 
+@section('breadcrumb')
+    <x-breadcrumb :items="[
+        ['label' => 'Kursus Saya', 'url' => route('instructor.courses.index')],
+        ['label' => $course->title, 'url' => route('instructor.courses.edit', $course)],
+        ['label' => 'Sections', 'url' => route('instructor.courses.sections.index', $course)],
+        ['label' => $section->title, 'url' => route('instructor.courses.sections.edit', [$course, $section])],
+        ['label' => 'Lessons', 'url' => null],
+    ]" />
+@endsection
+
 @section('content')
     <div x-data="lessonManager()" x-init="init()">
         <div class="mb-4 flex flex-col sm:flex-row justify-between sm:items-center gap-3">

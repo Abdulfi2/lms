@@ -14,7 +14,10 @@ return new class extends Migration
         // kolomnya masih NOT NULL tanpa default — bikin insert gagal (500) saat
         // instruktur membuat tugas tanpa mengisi deadline. doctrine/dbal tidak
         // terpasang di project ini, jadi pakai raw SQL alih-alih Schema::change().
-        DB::statement('ALTER TABLE assignments MODIFY due_date TIMESTAMP NULL');
+        // MySQL-only syntax: SQLite (dipakai untuk testing) tidak mendukung ALTER ... MODIFY.
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE assignments MODIFY due_date TIMESTAMP NULL');
+        }
     }
 
     /**
@@ -22,6 +25,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement('ALTER TABLE assignments MODIFY due_date TIMESTAMP NOT NULL');
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE assignments MODIFY due_date TIMESTAMP NOT NULL');
+        }
     }
 };

@@ -83,6 +83,10 @@ class CouponController extends Controller
 
         $validated['code'] = strtoupper($validated['code']);
         $validated['is_active'] = $request->boolean('is_active');
+        // Input datetime-local yang dikosongkan mengirim '' (bukan absen), dan '' bukan
+        // nilai DATETIME yang valid di MySQL — normalisasi ke null di sini.
+        $validated['starts_at'] = $validated['starts_at'] ?: null;
+        $validated['expires_at'] = $validated['expires_at'] ?: null;
 
         return $validated;
     }

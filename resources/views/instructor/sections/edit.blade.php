@@ -1,13 +1,23 @@
 @extends('layouts.app')
 
-@section('title', 'Tambah Section')
-@section('page-title', 'Tambah Section Baru')
+@section('title', 'Edit Section')
+@section('page-title', 'Edit Section')
 @section('page-subtitle', 'Untuk kursus: ' . $course->title)
+
+@section('breadcrumb')
+    <x-breadcrumb :items="[
+        ['label' => 'Kursus Saya', 'url' => route('instructor.courses.index')],
+        ['label' => $course->title, 'url' => route('instructor.courses.edit', $course)],
+        ['label' => 'Sections', 'url' => route('instructor.courses.sections.index', $course)],
+        ['label' => $section->title, 'url' => null],
+    ]" />
+@endsection
 
 @section('content')
     <div class="max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
-        <form method="POST" action="{{ route('instructor.courses.sections.store', [$course, $section]) }}">
+        <form method="POST" action="{{ route('instructor.courses.sections.update', [$course, $section]) }}">
             @csrf
+            @method('PUT')
             <div class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Judul Section <span
@@ -26,7 +36,7 @@
                 </div>
                 <div class="flex items-center">
                     <input type="checkbox" name="is_published" value="1"
-                        {{ old('is_published', true) ? 'checked' : '' }} class="rounded border-gray-300">
+                        {{ old('is_published', $section->is_published) ? 'checked' : '' }} class="rounded border-gray-300">
                     <label class="ml-2 text-sm text-gray-700 dark:text-gray-300">Publikasikan (dapat dilihat siswa)</label>
                 </div>
             </div>

@@ -5,6 +5,15 @@
 @section('page-title', 'Buat Quiz Baru')
 @section('page-subtitle', 'Untuk kursus: ' . $course->title)
 
+@section('breadcrumb')
+    <x-breadcrumb :items="[
+        ['label' => 'Kursus Saya', 'url' => route('instructor.courses.index')],
+        ['label' => $course->title, 'url' => route('instructor.courses.edit', $course)],
+        ['label' => 'Quiz', 'url' => route('instructor.courses.quizzes.index', $course)],
+        ['label' => 'Buat Quiz', 'url' => null],
+    ]" />
+@endsection
+
 @section('content')
     <div x-data="quizForm()" x-init="init()" class="max-w-5xl mx-auto">
         <form @submit.prevent="submitForm" class="space-y-6">
@@ -130,6 +139,32 @@
                             <option value="posttest">Post-Test (Setelah Lesson)</option>
                             <option value="final">Final Exam</option>
                         </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Lesson Terkait (opsional)
+                        </label>
+                        <select x-model="form.lesson_id"
+                            class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700">
+                            <option value="">-- Tidak terikat lesson tertentu --</option>
+                            @php $quizTypeLabels = ['practice' => 'Practice', 'pretest' => 'Pre-Test', 'posttest' => 'Post-Test', 'final' => 'Final']; @endphp
+                            @foreach ($lessons as $lesson)
+                                <option value="{{ $lesson->id }}">
+                                    {{ $lesson->section->title }} — {{ $lesson->title }}
+                                    @if (!empty($lesson->existing_quiz_types))
+                                        (sudah ada: {{ collect($lesson->existing_quiz_types)->map(fn ($t) => $quizTypeLabels[$t] ?? $t)->implode(', ') }})
+                                    @endif
+                                </option>
+                            @endforeach
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">
+                            @if ($lessons->isEmpty())
+                                Belum ada lesson bertipe "Quiz" yang tersedia di kursus ini. Buat lesson dengan tipe Quiz dulu di menu Section, lalu quiz ini akan bisa dikaitkan dan tampil langsung di halaman lesson tersebut.
+                            @else
+                                Satu lesson bisa punya satu Pre-Test dan satu Post-Test (tipe berbeda). Kalau lesson yang dipilih sudah punya quiz dengan tipe yang sama dengan "Tipe Quiz" di atas, penyimpanan akan ditolak.
+                            @endif
+                        </p>
                     </div>
 
                     <div>
@@ -347,6 +382,7 @@
                         slug: '',
                         description: '',
                         quiz_type: 'practice',
+                        lesson_id: '',
                         time_limit: 0,
                         attempts_allowed: 1,
                         passing_score: 70,
@@ -467,7 +503,9 @@
                             .then(data => {
                                 if (data.success) {
                                     window.toast.success(data.message);
-                                    window.location.href = '{{ route('instructor.courses.quizzes.index', $course) }}';
+                                    setTimeout(() => {
+                                        window.location.href = '{{ route('instructor.courses.quizzes.index', $course) }}';
+                                    }, 800);
                                 } else {
                                     if (data.errors) this.errors = data.errors;
                                     else window.toast.error(data.message);

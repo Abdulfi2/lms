@@ -4,6 +4,13 @@
 @section('page-title', 'Detail Kursus')
 @section('page-subtitle', $course->title)
 
+@section('breadcrumb')
+    <x-breadcrumb :items="[
+        ['label' => 'Kursus', 'url' => route('admin.courses.index')],
+        ['label' => $course->title, 'url' => null],
+    ]" />
+@endsection
+
 @section('content')
 <div class="max-w-5xl mx-auto space-y-6">
     <div class="flex justify-between items-center">
