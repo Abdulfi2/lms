@@ -9,6 +9,10 @@
 
     <title>{{ config('app.name', 'LMS') }} - @yield('title', 'Platform Belajar Online')</title>
 
+    <link rel="icon" type="image/png" href="{{ asset('favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('favicon-192.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('favicon-192.png') }}">
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700,800&display=swap" rel="stylesheet" />
