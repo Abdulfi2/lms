@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\BadgeController as AdminBadgeController;
 use App\Http\Controllers\Admin\LevelController as AdminLevelController;
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\SettingController as AdminSettingController;
+use App\Http\Controllers\Admin\GoogleMailController;
 use App\Http\Controllers\Admin\WishlistController as AdminWishlistController;
 use App\Http\Controllers\Admin\PayoutController as AdminPayoutController;
 use App\Http\Controllers\Admin\PostReportController as AdminPostReportController;
@@ -237,6 +238,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Site Settings
         Route::get('/settings', [AdminSettingController::class, 'index'])->name('settings.index');
         Route::put('/settings', [AdminSettingController::class, 'update'])->name('settings.update');
+        Route::post('/settings/google/disconnect', [GoogleMailController::class, 'disconnect'])->name('settings.google.disconnect');
 
         // Statistik Wishlist
         Route::get('/wishlists', [AdminWishlistController::class, 'index'])->name('wishlists.index');
@@ -464,6 +466,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
 
+
+    // Koneksi Gmail API untuk pengiriman email sistem (admin only)
+    Route::middleware(['role:admin'])->prefix('auth/google')->name('auth.google.')->group(function () {
+        Route::get('/redirect', [GoogleMailController::class, 'redirect'])->name('redirect');
+        Route::get('/callback', [GoogleMailController::class, 'callback'])->name('callback');
+    });
 
     // Profile Routes (Semua role)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile');

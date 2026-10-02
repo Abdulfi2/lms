@@ -75,6 +75,10 @@ return [
             'channel' => env('MAIL_LOG_CHANNEL'),
         ],
 
+        'gmail_api' => [
+            'transport' => 'gmail_api',
+        ],
+
         'array' => [
             'transport' => 'array',
         ],

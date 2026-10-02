@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
+use App\Services\GoogleService;
 use Illuminate\Http\Request;
 
 class SettingController extends Controller
@@ -15,7 +16,7 @@ class SettingController extends Controller
         'homepage' => 'Homepage',
     ];
 
-    public function index(Request $request)
+    public function index(Request $request, GoogleService $google)
     {
         $activeGroup = $request->get('group', 'general');
 
@@ -29,6 +30,9 @@ class SettingController extends Controller
             'settings' => $settings,
             'groups' => self::GROUPS,
             'activeGroup' => $activeGroup,
+            'googleMailerActive' => config('mail.default') === 'gmail_api',
+            'googleAuthorized' => $google->isAuthorized(),
+            'googleEmail' => $google->authorizedEmail(),
         ]);
     }
 

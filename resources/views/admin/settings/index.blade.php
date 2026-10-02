@@ -23,6 +23,56 @@
         </div>
     @endif
 
+    @if ($activeGroup === 'email')
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+            <div class="flex items-start justify-between flex-wrap gap-4">
+                <div>
+                    <h3 class="font-semibold text-gray-800 dark:text-white">Koneksi Google Workspace (Gmail API)</h3>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                        Email sistem (verifikasi akun, reset password, notifikasi) dikirim lewat akun Google yang terhubung di sini.
+                    </p>
+
+                    @if ($googleAuthorized)
+                        <div class="mt-3 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                            <span class="text-sm text-gray-700 dark:text-gray-300">Terhubung sebagai <strong>{{ $googleEmail }}</strong></span>
+                        </div>
+                    @else
+                        <div class="mt-3 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-gray-300"></span>
+                            <span class="text-sm text-gray-500">Belum terhubung ke akun Google manapun</span>
+                        </div>
+                    @endif
+
+                    @unless ($googleMailerActive)
+                        <p class="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                            Catatan: <code>MAIL_MAILER</code> di <code>.env</code> belum diset ke <code>gmail_api</code>, jadi email sistem masih dikirim lewat mailer lain meskipun sudah terhubung di sini.
+                        </p>
+                    @endunless
+                </div>
+
+                <div class="flex gap-2 flex-shrink-0">
+                    @if ($googleAuthorized)
+                        <form action="{{ route('admin.settings.google.disconnect') }}" method="POST"
+                            onsubmit="return confirm('Putuskan koneksi akun Google? Email sistem tidak akan terkirim sampai dihubungkan ulang.')">
+                            @csrf
+                            <button type="submit" class="px-4 py-2 border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 rounded-lg text-sm font-medium hover:bg-red-50 dark:hover:bg-red-900/20 transition">
+                                Putuskan
+                            </button>
+                        </form>
+                        <a href="{{ route('auth.google.redirect') }}" class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                            Ganti Akun
+                        </a>
+                    @else
+                        <a href="{{ route('auth.google.redirect') }}" class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-secondary transition">
+                            Hubungkan Google
+                        </a>
+                    @endif
+                </div>
+            </div>
+        </div>
+    @endif
+
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
         <form action="{{ route('admin.settings.update') }}" method="POST" class="space-y-4">
             @csrf
