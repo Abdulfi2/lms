@@ -92,7 +92,7 @@ class UserController extends Controller
             Profile::create([
                 'profileable_id' => $user->id,
                 'profileable_type' => User::class,
-                'profile_type' => $request->role,
+                'profile_type' => $this->profileTypeForRole($request->role),
                 'first_name' => $request->first_name ?? $request->name,
                 'last_name' => $request->last_name ?? '',
                 'nickname' => $request->nickname,
@@ -119,9 +119,20 @@ class UserController extends Controller
             Log::error('Failed to create user: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menambahkan user: ' . $e->getMessage()
+                'message' => 'Gagal menambahkan user. Silakan coba lagi atau hubungi administrator.'
             ], 500);
         }
+    }
+
+    /**
+     * Petakan role ke nilai ENUM profiles.profile_type. Role staf tambahan
+     * (event_manager, editor, author) tidak ada di ENUM, jadi dicatat sebagai 'employee'.
+     */
+    private function profileTypeForRole(string $role): string
+    {
+        $allowed = ['student', 'instructor', 'admin', 'employee', 'alumni', 'support'];
+
+        return in_array($role, $allowed, true) ? $role : 'employee';
     }
 
     /**
@@ -198,7 +209,7 @@ class UserController extends Controller
 
             // Update or create profile
             $profileData = [
-                'profile_type' => $request->role,
+                'profile_type' => $this->profileTypeForRole($request->role),
                 'first_name' => $request->first_name ?? $request->name,
                 'last_name' => $request->last_name ?? '',
                 'nickname' => $request->nickname,
@@ -234,7 +245,7 @@ class UserController extends Controller
             Log::error('Failed to update user: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal memperbarui user: ' . $e->getMessage()
+                'message' => 'Gagal memperbarui user. Silakan coba lagi atau hubungi administrator.'
             ], 500);
         }
     }
