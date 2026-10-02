@@ -39,9 +39,10 @@ Route::get('verify-email', [EmailVerificationPromptController::class, '__invoke'
     ->middleware(['web'])
     ->name('verification.notice');
 
-// Link verifikasi - menggunakan signed URL (sudah aman)
+// Link verifikasi - wajib login dulu (EmailVerificationRequest butuh Auth::user()
+// untuk mencocokkan id/hash), signed URL cuma mencegah link dipalsukan/diubah.
 Route::get('verify-email/{id}/{hash}', [VerifyEmailController::class, '__invoke'])
-    ->middleware(['signed', 'throttle:6,1'])
+    ->middleware(['auth', 'signed', 'throttle:6,1'])
     ->name('verification.verify');
 
 // Kirim ulang email - butuh rate limiting dan validasi email

@@ -35,30 +35,26 @@ class AuthenticatedSessionController extends Controller
 
             $user = $request->user();
 
-            // Cek verifikasi email
+            $request->session()->regenerate();
+
+            // Catatan: user yang belum verifikasi TETAP dibiarkan login (tidak
+            // di-logout paksa di sini) supaya mereka bisa menuju link verifikasi
+            // email yang sedang coba diakses (route itu butuh auth). Middleware
+            // 'verified' pada route lain yang tetap akan mengarahkan mereka ke
+            // halaman verifikasi kalau mencoba mengakses halaman terproteksi.
             if (is_null($user->email_verified_at)) {
-                // Simpan email ke session dengan timestamp
-                session([
-                    'verification_email' => $user->email,
-                    'verification_needed_at' => now()->timestamp
-                ]);
-
-                auth()->logout();
-
                 if ($request->wantsJson()) {
                     return response()->json([
-                        'success' => false,
-                        'message' => 'Email belum diverifikasi. Silakan verifikasi email Anda terlebih dahulu.',
+                        'success' => true,
+                        'message' => 'Login berhasil, namun email Anda belum diverifikasi.',
                         'redirect' => route('verification.notice'),
                         'need_verification' => true
-                    ], 422);
+                    ]);
                 }
 
-                return redirect()->route('verification.notice')
+                return redirect()->intended(route('verification.notice'))
                     ->with('warning', 'Email Anda belum diverifikasi. Silakan cek email Anda untuk melakukan verifikasi.');
             }
-
-            $request->session()->regenerate();
 
             if ($request->wantsJson()) {
                 return response()->json([

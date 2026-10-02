@@ -62,4 +62,59 @@ class EmailVerificationTest extends TestCase
 
         $this->assertFalse($user->fresh()->hasVerifiedEmail());
     }
+
+    public function test_clicking_verification_link_while_logged_out_redirects_to_login_instead_of_crashing(): void
+    {
+        // Reproduksi bug produksi: route verification.verify sempat hanya
+        // dilindungi middleware 'signed', tanpa 'auth' — jadi Auth::user()
+        // null saat link dibuka di browser/sesi yang belum login, dan
+        // EmailVerificationRequest::authorize() crash manggil getKey() di null.
+        $user = User::factory()->create([
+            'email_verified_at' => null,
+        ]);
+
+        $verificationUrl = URL::temporarySignedRoute(
+            'verification.verify',
+            now()->addMinutes(60),
+            ['id' => $user->id, 'hash' => sha1($user->email)]
+        );
+
+        // Tanpa actingAs() — benar-benar belum login, sama seperti klik link dari email.
+        $response = $this->get($verificationUrl);
+
+        $response->assertRedirect(route('login'));
+        $this->assertFalse($user->fresh()->hasVerifiedEmail());
+    }
+
+    public function test_user_can_login_and_complete_verification_after_clicking_link_while_logged_out(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => null,
+        ]);
+
+        $verificationUrl = URL::temporarySignedRoute(
+            'verification.verify',
+            now()->addMinutes(60),
+            ['id' => $user->id, 'hash' => sha1($user->email)]
+        );
+
+        // 1. Buka link verifikasi tanpa login -> diarahkan ke login, URL tujuan disimpan sebagai "intended".
+        $this->get($verificationUrl)->assertRedirect(route('login'));
+
+        // 2. Login dengan kredensial benar -> TIDAK boleh langsung di-logout paksa
+        //    hanya karena belum verifikasi (itu akar masalah kedua dari bug ini),
+        //    dan harus diarahkan balik ke link verifikasi yang tadi dituju.
+        $loginResponse = $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $this->assertAuthenticatedAs($user);
+        $loginResponse->assertRedirect($verificationUrl);
+
+        // 3. Mengikuti redirect tadi akhirnya benar-benar memverifikasi email.
+        $this->get($verificationUrl);
+
+        $this->assertTrue($user->fresh()->hasVerifiedEmail());
+    }
 }
