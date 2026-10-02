@@ -2,7 +2,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div class="flex flex-col md:flex-row justify-between items-center">
             <div class="text-sm text-gray-500 dark:text-gray-400">
-                © {{ date('Y') }} {{ config('app.name', 'LMS') }}. All rights reserved.
+                © {{ date('Y') }} {{ config('app.name', 'ZS Academy') }}. All rights reserved.
             </div>
             <div class="flex space-x-4 mt-4 md:mt-0">
                 <a href="#" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">

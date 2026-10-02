@@ -202,7 +202,7 @@ window.addEventListener('resize', handleResize);"
             <div class="p-4 border-b dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-3">
-                        <img src="{{ Auth::user()->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) . '&background=3B82F6&color=white' }}"
+                        <img src="{{ Auth::user()->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) . '&background=769826&color=white' }}"
                             alt="{{ Auth::user()->name }}" class="w-12 h-12 rounded-full object-cover">
                         <div>
                             <p class="text-base font-semibold text-gray-800 dark:text-white">{{ Auth::user()->name }}

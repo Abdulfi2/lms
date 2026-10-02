@@ -28,7 +28,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Warna (Hex)</label>
-                    <input type="color" x-model="form.color" value="#3B82F6" class="mt-1 w-full h-10 rounded border">
+                    <input type="color" x-model="form.color" value="#769826" class="mt-1 w-full h-10 rounded border">
                 </div>
                 <div class="flex items-center">
                     <input type="checkbox" x-model="form.is_active" class="rounded border-gray-300">
@@ -54,7 +54,7 @@
                         name: '',
                         slug: '',
                         description: '',
-                        color: '#3B82F6',
+                        color: '#769826',
                         is_active: true
                     },
                     errors: {},

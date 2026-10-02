@@ -88,7 +88,7 @@
                         parent_id: '{{ $category->parent_id }}',
                         description: '{{ addslashes($category->description) }}',
                         icon: '{{ $category->icon }}',
-                        color: '{{ $category->color ?? '#3B82F6' }}',
+                        color: '{{ $category->color ?? '#769826' }}',
                         order: '{{ $category->order }}',
                         is_active: {{ $category->is_active ? 'true' : 'false' }}
                     },

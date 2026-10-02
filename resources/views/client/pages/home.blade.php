@@ -121,7 +121,7 @@
                 @forelse($popularCourses as $course)
                     <div
                         class="bg-gray-50 dark:bg-gray-800 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition">
-                        <img src="{{ $course->thumbnail ? Storage::url($course->thumbnail) : 'https://placehold.co/400x200/3B82F6/white?text=Course' }}"
+                        <img src="{{ $course->thumbnail ? Storage::url($course->thumbnail) : 'https://placehold.co/400x200/769826/white?text=Course' }}"
                             class="w-full h-48 object-cover">
                         <div class="p-5">
                             <div class="flex items-center justify-between mb-2">
@@ -211,7 +211,7 @@
                     </a>
                 </div>
                 <div class="flex-1">
-                    <img src="https://placehold.co/500x400/3B82F6/white?text=Instructor" alt="Instructor"
+                    <img src="https://placehold.co/500x400/769826/white?text=Instructor" alt="Instructor"
                         class="rounded-lg shadow-xl">
                 </div>
             </div>

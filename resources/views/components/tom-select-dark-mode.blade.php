@@ -33,11 +33,11 @@
         background-color: rgb(75 85 99);
     }
     .ts-control > .item {
-        background-color: rgb(59 130 246 / 0.1);
-        border-color: rgb(59 130 246 / 0.3);
-        color: #3B82F6;
+        background-color: rgb(118 152 38 / 0.1);
+        border-color: rgb(118 152 38 / 0.3);
+        color: #769826;
     }
     .dark .ts-control > .item {
-        background-color: rgb(59 130 246 / 0.2);
+        background-color: rgb(118 152 38 / 0.2);
     }
 </style>

@@ -35,15 +35,15 @@
                                 <td class="px-6 py-4">
                                     <div class="flex items-center space-x-2">
                                         <div class="w-3 h-3 rounded-full"
-                                            :style="{ backgroundColor: tag.color || '#3B82F6' }"></div>
+                                            :style="{ backgroundColor: tag.color || '#769826' }"></div>
                                         <span x-text="tag.name"></span>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 text-sm" x-text="tag.slug"></td>
                                 <td class="px-6 py-4">
                                     <span class="px-2 py-1 text-xs rounded-full"
-                                        :style="{ backgroundColor: tag.color || '#3B82F6', color: '#fff' }"
-                                        x-text="tag.color || '#3B82F6'"></span>
+                                        :style="{ backgroundColor: tag.color || '#769826', color: '#fff' }"
+                                        x-text="tag.color || '#769826'"></span>
                                 </td>
                                 <td class="px-6 py-4 text-sm" x-text="tag.usage_count"></td>
                                 <td class="px-6 py-4">

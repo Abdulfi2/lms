@@ -112,7 +112,7 @@
                     </select>
                 </div>
                 
-                <button type="submit" class="w-full bg-primary hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200">
+                <button type="submit" class="w-full bg-primary hover:bg-secondary text-white font-bold py-2 px-4 rounded-lg transition duration-200">
                     Simpan Penilaian
                 </button>
             </form>

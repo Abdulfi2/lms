@@ -232,7 +232,7 @@
                     datasets: [{
                         label: 'Pendaftaran',
                         data: @json($chartData),
-                        borderColor: '#3B82F6',
+                        borderColor: '#769826',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
                         tension: 0.3,
                         fill: true

@@ -205,7 +205,7 @@
             datasets: [{
                 label: 'Pendapatan Bulanan',
                 data: chartData.map(item => item.total),
-                backgroundColor: '#3B82F6',
+                backgroundColor: '#769826',
                 borderRadius: 8,
                 barThickness: 30,
             }]

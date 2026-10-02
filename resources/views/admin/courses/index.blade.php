@@ -59,7 +59,7 @@
                                 <td class="px-6 py-4">
                                     <div class="flex items-center space-x-3">
                                         <img :src="course.thumbnail ? '/storage/' + course.thumbnail :
-                                            'https://placehold.co/60x40/3B82F6/white?text=Course'"
+                                            'https://placehold.co/60x40/769826/white?text=Course'"
                                             class="w-16 h-10 object-cover rounded">
                                         <div>
                                             <div class="font-medium" x-text="course.title"></div>

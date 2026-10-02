@@ -8,7 +8,7 @@
 <div class="space-y-6">
     <div class="flex justify-between items-center">
         <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Semua Tugas</h2>
-        <a href="{{ route('instructor.assignments.create') }}" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center">
+        <a href="{{ route('instructor.assignments.create') }}" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-secondary transition flex items-center">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
             Tambah Tugas Baru
         </a>

@@ -117,7 +117,7 @@
             datasets: [{
                 label: 'Pendaftaran',
                 data: @json($enrollmentTrend),
-                borderColor: '#3B82F6',
+                borderColor: '#769826',
                 backgroundColor: 'rgba(59, 130, 246, 0.1)',
                 tension: 0.3,
                 fill: true
@@ -146,7 +146,7 @@
             labels: @json(array_keys($roleDistribution->toArray())),
             datasets: [{
                 data: @json(array_values($roleDistribution->toArray())),
-                backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444']
+                backgroundColor: ['#769826', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444']
             }]
         },
         options: { responsive: true }

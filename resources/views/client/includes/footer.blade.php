@@ -3,24 +3,24 @@
         <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
                 <div class="flex items-center space-x-2 mb-4">
-                    <div
-                        class="w-8 h-8 bg-gradient-to-r from-primary to-secondary rounded-lg flex items-center justify-center">
-                        <span class="text-white font-bold text-lg">L</span>
+                    <div class="w-8 h-8 shadow rounded-lg flex items-center justify-center">
+                        <img src="{{ asset('images/logo-zakatsukses.png') }}" alt="Logo ZakatSukses" class="w-6">
                     </div>
                     <span
-                        class="font-bold text-xl bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                        {{ config('app.name', 'LMS') }}
+                        class="font-bold text-xl bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent hidden sm:inline">
+                        {{ config('app.name', 'ZS Academy') }}
                     </span>
                 </div>
                 <p class="text-gray-600 dark:text-gray-400 text-sm">
-                    Platform pembelajaran online terbaik untuk masa depan yang lebih cerah.
+                    Platform pembelajaran online milik LAZ Zakat Sukses.
                 </p>
             </div>
 
             <div>
                 <h4 class="font-semibold text-gray-900 dark:text-white mb-4">Tentang</h4>
                 <ul class="space-y-2 text-sm">
-                    <li><a href="{{ route('about') }}" class="text-gray-600 dark:text-gray-400 hover:text-primary transition">Tentang
+                    <li><a href="{{ route('about') }}"
+                            class="text-gray-600 dark:text-gray-400 hover:text-primary transition">Tentang
                             Kami</a></li>
                     <li><a href="#"
                             class="text-gray-600 dark:text-gray-400 hover:text-primary transition">Karir</a></li>
@@ -32,14 +32,16 @@
             <div>
                 <h4 class="font-semibold text-gray-900 dark:text-white mb-4">Bantuan</h4>
                 <ul class="space-y-2 text-sm">
-                    <li><a href="{{ route('faq') }}" class="text-gray-600 dark:text-gray-400 hover:text-primary transition">FAQ</a>
+                    <li><a href="{{ route('faq') }}"
+                            class="text-gray-600 dark:text-gray-400 hover:text-primary transition">FAQ</a>
                     </li>
                     <li><a href="{{ route('contact.create') }}"
                             class="text-gray-600 dark:text-gray-400 hover:text-primary transition">Kontak</a></li>
                     <li><a href="{{ route('privacy-policy') }}"
                             class="text-gray-600 dark:text-gray-400 hover:text-primary transition">Kebijakan Privasi</a>
                     </li>
-                    <li><a href="{{ route('terms') }}" class="text-gray-600 dark:text-gray-400 hover:text-primary transition">Syarat
+                    <li><a href="{{ route('terms') }}"
+                            class="text-gray-600 dark:text-gray-400 hover:text-primary transition">Syarat
                             & Ketentuan</a></li>
                 </ul>
             </div>
@@ -47,7 +49,8 @@
             <div>
                 <h4 class="font-semibold text-gray-900 dark:text-white mb-4">Hubungi Kami</h4>
                 <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                    <li><i class="fas fa-envelope mr-2 w-4"></i> {{ \App\Models\Setting::get('contact_email', 'support@lms.com') }}</li>
+                    <li><i class="fas fa-envelope mr-2 w-4"></i>
+                        {{ \App\Models\Setting::get('contact_email', 'support@lms.com') }}</li>
                     <li><i class="fas fa-phone mr-2 w-4"></i> +62 21 12345678</li>
                 </ul>
                 <div class="flex space-x-4 mt-4">

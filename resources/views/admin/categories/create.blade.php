@@ -52,7 +52,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Warna (Hex)</label>
-                        <input type="color" name="color" value="{{ old('color', '#3B82F6') }}"
+                        <input type="color" name="color" value="{{ old('color', '#769826') }}"
                             class="mt-1 w-full h-10 rounded border">
                     </div>
                 </div>

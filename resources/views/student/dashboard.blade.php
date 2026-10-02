@@ -91,7 +91,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 @foreach ($enrollments->take(3) as $enrollment)
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition">
-                        <img src="{{ $enrollment->course->thumbnail ? Storage::url($enrollment->course->thumbnail) : 'https://placehold.co/400x200/3B82F6/white?text=Course' }}"
+                        <img src="{{ $enrollment->course->thumbnail ? Storage::url($enrollment->course->thumbnail) : 'https://placehold.co/400x200/769826/white?text=Course' }}"
                             class="w-full h-40 object-cover">
                         <div class="p-4">
                             <h4 class="font-semibold text-gray-800 dark:text-white mb-2">{{ $enrollment->course->title }}
@@ -122,7 +122,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 @foreach ($recommendedCourses as $course)
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition">
-                        <img src="{{ $course->thumbnail ? Storage::url($course->thumbnail) : 'https://placehold.co/400x200/3B82F6/white?text=Course' }}"
+                        <img src="{{ $course->thumbnail ? Storage::url($course->thumbnail) : 'https://placehold.co/400x200/769826/white?text=Course' }}"
                             class="w-full h-32 object-cover">
                         <div class="p-3">
                             <h4 class="font-semibold text-gray-800 dark:text-white text-sm">

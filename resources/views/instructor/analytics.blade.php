@@ -115,13 +115,13 @@
             datasets: [{
                 label: 'Pendaftaran Baru',
                 data: enrollmentData.map(item => item.count),
-                borderColor: '#3B82F6',
+                borderColor: '#769826',
                 backgroundColor: 'rgba(59, 130, 246, 0.1)',
                 borderWidth: 3,
                 fill: true,
                 tension: 0.4,
                 pointRadius: 4,
-                pointBackgroundColor: '#3B82F6'
+                pointBackgroundColor: '#769826'
             }]
         },
         options: {

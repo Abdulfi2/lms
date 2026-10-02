@@ -10,7 +10,7 @@
             @forelse($enrollments as $enrollment)
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition">
                     <div class="relative">
-                        <img src="{{ $enrollment->course->thumbnail ? Storage::url($enrollment->course->thumbnail) : 'https://placehold.co/400x200/3B82F6/white?text=Course' }}"
+                        <img src="{{ $enrollment->course->thumbnail ? Storage::url($enrollment->course->thumbnail) : 'https://placehold.co/400x200/769826/white?text=Course' }}"
                             class="w-full h-40 object-cover">
                         <div class="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
                             {{ round($enrollment->progress) }}%

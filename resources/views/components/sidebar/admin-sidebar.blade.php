@@ -111,7 +111,7 @@
     <!-- User Info Section -->
     <div class="p-4 border-b dark:border-gray-700">
         <div class="flex items-center space-x-3">
-            <img src="{{ Auth::user()->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) . '&background=3B82F6&color=white' }}"
+            <img src="{{ Auth::user()->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) . '&background=769826&color=white' }}"
                 alt="{{ Auth::user()->name }}" class="w-10 h-10 rounded-full object-cover">
             <div x-show="sidebarOpen">
                 <p class="text-sm font-semibold text-gray-800 dark:text-white">{{ Auth::user()->name }}</p>

@@ -34,7 +34,7 @@
                             <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                                 <td class="px-6 py-4">
                                     <div class="flex items-center space-x-3">
-                                        <img src="{{ $course->thumbnail ? Storage::url($course->thumbnail) : 'https://placehold.co/60x40/3B82F6/white?text=Course' }}"
+                                        <img src="{{ $course->thumbnail ? Storage::url($course->thumbnail) : 'https://placehold.co/60x40/769826/white?text=Course' }}"
                                             class="w-16 h-10 object-cover rounded">
                                         <div>
                                             <div class="font-medium">{{ $course->title }}</div>

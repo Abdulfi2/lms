@@ -56,7 +56,7 @@
                         name: '{{ addslashes($tag->name) }}',
                         slug: '{{ $tag->slug }}',
                         description: '{{ addslashes($tag->description) }}',
-                        color: '{{ $tag->color ?? '#3B82F6' }}',
+                        color: '{{ $tag->color ?? '#769826' }}',
                         is_active: {{ $tag->is_active ? 'true' : 'false' }}
                     },
                     errors: {},

@@ -32,7 +32,7 @@
                 </select>
             </div>
             <div class="flex items-end">
-                <button type="submit" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                <button type="submit" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-secondary transition">
                     Filter
                 </button>
                 @if(request()->hasAny(['course_id', 'rating']))
@@ -90,7 +90,7 @@
                         <textarea name="response" rows="3" class="w-full rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm focus:ring-primary focus:border-primary" placeholder="Tulis balasan Anda di sini...">{{ $review->instructor_response['content'] ?? '' }}</textarea>
                         <div class="flex justify-end gap-2 mt-2">
                             <button type="button" @click="replying = false" class="px-3 py-1 text-xs text-gray-500 hover:text-gray-700">Batal</button>
-                            <button type="submit" class="bg-primary text-white px-4 py-1 rounded-lg text-xs hover:bg-blue-700 transition">Kirim Balasan</button>
+                            <button type="submit" class="bg-primary text-white px-4 py-1 rounded-lg text-xs hover:bg-secondary transition">Kirim Balasan</button>
                         </div>
                     </form>
                 </div>

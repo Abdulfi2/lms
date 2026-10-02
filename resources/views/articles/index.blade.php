@@ -15,7 +15,7 @@
                         @foreach ($featuredArticles as $featured)
                             <div class="relative rounded-xl overflow-hidden h-64 group cursor-pointer"
                                 onclick="window.location='{{ route('articles.show', $featured->slug) }}'">
-                                <img src="{{ $featured->featured_image ? Storage::url($featured->featured_image) : 'https://placehold.co/600x400/3B82F6/white?text=Article' }}"
+                                <img src="{{ $featured->featured_image ? Storage::url($featured->featured_image) : 'https://placehold.co/600x400/769826/white?text=Article' }}"
                                     class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
                                 <div
                                     class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end p-4">

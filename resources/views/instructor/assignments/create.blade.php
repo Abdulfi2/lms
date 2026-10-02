@@ -95,7 +95,7 @@
 
         <div class="flex justify-end space-x-3">
             <a href="{{ route('instructor.assignments.index') }}" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">Batal</a>
-            <button type="submit" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition">Simpan Tugas</button>
+            <button type="submit" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition">Simpan Tugas</button>
         </div>
     </form>
 </div>

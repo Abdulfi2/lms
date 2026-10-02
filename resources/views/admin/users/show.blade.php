@@ -16,7 +16,7 @@
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
             <div class="p-6">
                 <div class="flex items-center space-x-4 mb-6">
-                    <img src="{{ $user->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=3B82F6&color=white' }}"
+                    <img src="{{ $user->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=769826&color=white' }}"
                         class="w-20 h-20 rounded-full object-cover">
                     <div>
                         <h2 class="text-2xl font-bold text-gray-800 dark:text-white">{{ $user->name }}</h2>

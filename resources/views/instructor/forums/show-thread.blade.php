@@ -77,7 +77,7 @@
                 <div id="post-{{ $post->id }}" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
                     <div class="flex justify-between items-start">
                         <div class="flex items-center space-x-3">
-                            <img src="{{ $post->user->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode($post->user->name) . '&background=3B82F6&color=white' }}"
+                            <img src="{{ $post->user->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode($post->user->name) . '&background=769826&color=white' }}"
                                 class="w-10 h-10 rounded-full object-cover">
                             <div>
                                 <div class="font-semibold text-gray-800 dark:text-white">{{ $post->user->name }}</div>
