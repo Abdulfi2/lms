@@ -64,6 +64,10 @@
         "allow-plugins": {
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
+        },
+        "audit": {
+            "abandoned": "report",
+            "block-insecure": false
         }
     },
     "minimum-stability": "stable",

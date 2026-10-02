@@ -57,11 +57,19 @@ server, karena `config:cache` membekukan nilai env saat itu juga.
 - **Payment gateway** masih manual (admin approve pembayaran secara manual di
   `Admin/EnrollmentController::markPaid`) — belum terintegrasi dengan
   Midtrans/Xendit/dsb. Lihat riwayat audit sebelumnya untuk detail.
-- **`laravel/framework` masih punya 3 advisory keamanan** (signed URL path
-  confusion & CRLF injection di email validation rule) yang baru benar-benar
-  di-patch di Laravel 12.60+/13.10+ — proyek ini di Laravel 10, jadi tidak bisa
-  ditutup lewat `composer update` biasa. Menutupnya butuh upgrade major version
-  Laravel (proyek terpisah, bukan patch cepat). Sebagai mitigasi sementara:
-  hindari menerima signed URL dari sumber tidak tepercaya, dan jangan
-  mengandalkan validasi email bawaan (`email` rule) sebagai satu-satunya lapis
-  anti-spoofing untuk alamat pengirim.
+- **`laravel/framework` kena 4 advisory keamanan** (cek detail terbaru lewat
+  `composer audit`): XSS di debug page, signed URL path confusion, dan 2
+  varian CRLF injection di email validation rule. Yang paling ketat baru
+  benar-benar bersih di **Laravel >=13.30** — proyek ini masih di Laravel
+  10.50, jadi ini lompat 3 major version (10→11→12→13), bukan patch cepat.
+  Upgrade penuh butuh proyek terpisah dengan testing menyeluruh (lihat
+  breaking changes `app/Http/Kernel.php` yang dihapus di Laravel 11).
+  Mitigasi yang sudah berjalan:
+  - `composer.json` → `config.audit.block-insecure: false`, supaya
+    `composer install` di server (Composer 2.7+) tidak diblokir paksa oleh
+    advisory ini sebelum upgrade selesai dikerjakan.
+  - Pastikan `APP_DEBUG=false` di server produksi (mitigasi advisory XSS
+    debug page — cuma aktif kalau debug mode menyala).
+  - Hindari menerima signed URL dari sumber tidak tepercaya, dan jangan
+    mengandalkan validasi email bawaan (`email` rule) sebagai satu-satunya
+    lapis anti-spoofing untuk alamat pengirim.
