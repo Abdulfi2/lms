@@ -5,6 +5,7 @@ namespace Tests\Feature\Auth;
 use App\Models\User;
 use App\Notifications\CustomResetPasswordNotification as ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
@@ -69,6 +70,41 @@ class PasswordResetTest extends TestCase
             $response
                 ->assertSessionHasNoErrors()
                 ->assertRedirect(route('login'));
+
+            return true;
+        });
+    }
+
+    public function test_password_reset_token_cannot_be_reused(): void
+    {
+        Notification::fake();
+
+        $user = User::factory()->create();
+
+        $this->post('/forgot-password', ['email' => $user->email]);
+
+        Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user) {
+            // Pemakaian pertama: harus berhasil.
+            $this->post('/reset-password', [
+                'token' => $notification->token,
+                'email' => $user->email,
+                'password' => 'password',
+                'password_confirmation' => 'password',
+            ])->assertSessionHasNoErrors();
+
+            // Link yang sama tidak boleh bisa dipakai sekali lagi — harus
+            // ditolak dan password dari percobaan kedua tidak boleh berlaku.
+            $response = $this->post('/reset-password', [
+                'token' => $notification->token,
+                'email' => $user->email,
+                'password' => 'password-kedua',
+                'password_confirmation' => 'password-kedua',
+            ]);
+
+            $response->assertSessionHasErrors('email');
+
+            $this->assertTrue(Hash::check('password', $user->fresh()->password));
+            $this->assertFalse(Hash::check('password-kedua', $user->fresh()->password));
 
             return true;
         });
