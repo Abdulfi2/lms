@@ -64,14 +64,42 @@
             <div class="p-6 md:p-8 bg-gray-50 dark:bg-gray-700/50 border-t dark:border-gray-700">
                 <div class="flex justify-between items-center">
                     <div class="flex gap-4">
-                        <button class="flex items-center gap-2 text-gray-500 hover:text-red-500 transition">
-                            <i class="far fa-heart"></i>
-                            <span>{{ number_format($article->likes) }}</span>
-                        </button>
-                        <button class="flex items-center gap-2 text-gray-500 hover:text-primary transition">
-                            <i class="far fa-share-alt"></i>
-                            <span>Bagikan</span>
-                        </button>
+                        <div x-data="articleLike({{ $article->id }}, {{ $isLiked ? 'true' : 'false' }}, {{ $article->likes }})">
+                            <button @click="toggle()" :disabled="loading"
+                                class="flex items-center gap-2 transition"
+                                :class="liked ? 'text-red-500' : 'text-gray-500 hover:text-red-500'">
+                                <i :class="liked ? 'fas fa-heart' : 'far fa-heart'"></i>
+                                <span x-text="count"></span>
+                            </button>
+                        </div>
+
+                        <div x-data="articleShare({{ $article->id }}, {{ $article->shares }}, @js($article->title))" class="relative">
+                            <button @click="open = !open" class="flex items-center gap-2 text-gray-500 hover:text-primary transition">
+                                <i class="far fa-share-alt"></i>
+                                <span>Bagikan</span>
+                                <span x-show="count > 0" x-text="'(' + count + ')'"></span>
+                            </button>
+                            <div x-show="open" @click.outside="open = false" x-transition
+                                class="absolute bottom-full mb-2 left-0 bg-white dark:bg-gray-800 rounded-lg shadow-lg border dark:border-gray-700 p-2 w-48 z-20"
+                                style="display: none;">
+                                <a href="#" @click.prevent="shareTo('whatsapp')"
+                                    class="flex items-center gap-2 px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-sm text-gray-700 dark:text-gray-300">
+                                    <i class="fab fa-whatsapp text-green-500 w-4"></i> WhatsApp
+                                </a>
+                                <a href="#" @click.prevent="shareTo('facebook')"
+                                    class="flex items-center gap-2 px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-sm text-gray-700 dark:text-gray-300">
+                                    <i class="fab fa-facebook text-blue-600 w-4"></i> Facebook
+                                </a>
+                                <a href="#" @click.prevent="shareTo('twitter')"
+                                    class="flex items-center gap-2 px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-sm text-gray-700 dark:text-gray-300">
+                                    <i class="fab fa-twitter text-sky-500 w-4"></i> Twitter
+                                </a>
+                                <button @click="copyLink()"
+                                    class="w-full flex items-center gap-2 px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-sm text-gray-700 dark:text-gray-300">
+                                    <i class="far fa-copy w-4"></i> Salin Tautan
+                                </button>
+                            </div>
+                        </div>
                     </div>
                     <button onclick="window.print()" class="text-gray-500 hover:text-primary transition">
                         <i class="fas fa-print"></i> Cetak
@@ -108,3 +136,89 @@
         @endif
     </div>
 @endsection
+
+@push('scripts')
+<script>
+    function articleLike(articleId, initiallyLiked, initialCount) {
+        return {
+            liked: initiallyLiked,
+            count: initialCount,
+            loading: false,
+            toggle() {
+                @guest
+                    window.location.href = '{{ route('login') }}';
+                    return;
+                @endguest
+
+                if (this.loading) return;
+                this.loading = true;
+
+                fetch(`/articles/${articleId}/like`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json',
+                    },
+                })
+                    .then((r) => r.json())
+                    .then((data) => {
+                        this.liked = data.liked;
+                        this.count = data.likes;
+                    })
+                    .catch(() => {
+                        if (window.toast) window.toast.error('Gagal memproses like. Silakan coba lagi.');
+                    })
+                    .finally(() => {
+                        this.loading = false;
+                    });
+            },
+        };
+    }
+
+    function articleShare(articleId, initialCount, articleTitle) {
+        return {
+            open: false,
+            count: initialCount,
+            recordShare() {
+                fetch(`/articles/${articleId}/share`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json',
+                    },
+                })
+                    .then((r) => r.json())
+                    .then((data) => {
+                        this.count = data.shares;
+                    })
+                    .catch(() => {});
+            },
+            shareTo(platform) {
+                const url = encodeURIComponent(window.location.href);
+                const title = encodeURIComponent(articleTitle);
+                let shareUrl = '';
+
+                if (platform === 'whatsapp') shareUrl = `https://wa.me/?text=${title}%20${url}`;
+                if (platform === 'facebook') shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
+                if (platform === 'twitter') shareUrl = `https://twitter.com/intent/tweet?text=${title}&url=${url}`;
+
+                window.open(shareUrl, '_blank', 'noopener,noreferrer,width=600,height=500');
+                this.recordShare();
+                this.open = false;
+            },
+            copyLink() {
+                navigator.clipboard
+                    .writeText(window.location.href)
+                    .then(() => {
+                        if (window.toast) window.toast.success('Tautan berhasil disalin.');
+                        this.recordShare();
+                        this.open = false;
+                    })
+                    .catch(() => {
+                        if (window.toast) window.toast.error('Gagal menyalin tautan.');
+                    });
+            },
+        };
+    }
+</script>
+@endpush

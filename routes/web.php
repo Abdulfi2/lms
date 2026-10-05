@@ -87,6 +87,7 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 
 Route::get('/articles', [ArticleController::class, 'index'])->name('articles.index');
 Route::get('/articles/{slug}', [ArticleController::class, 'show'])->name('articles.show');
+Route::post('/articles/{article}/share', [ArticleController::class, 'share'])->name('articles.share');
 
 Route::get('/events', [PublicEventController::class, 'index'])->name('events.index');
 Route::get('/events/{slug}', [PublicEventController::class, 'show'])->name('events.show');
@@ -125,6 +126,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/courses', [PublicCourseController::class, 'index'])->name('courses.index');
     Route::get('/courses/{slug}', [PublicCourseController::class, 'show'])->name('courses.show');
+
+    Route::post('/articles/{article}/like', [ArticleController::class, 'toggleLike'])->name('articles.like');
 
     /*
     |--------------------------------------------------------------------------

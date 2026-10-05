@@ -6,6 +6,8 @@
 
 @section('content')
     <div class="space-y-6">
+        <x-notification-card />
+
         @php
             $needsAttention = $pendingInstructorApprovals + $pendingPayments + $pendingReviews + $pendingCourses + $pendingPostReports + $newContactMessages + $failedJobsCount;
         @endphp

@@ -6,6 +6,8 @@
 
 @section('content')
 <div class="space-y-6">
+    <x-notification-card />
+
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5">
             <p class="text-sm text-gray-500 dark:text-gray-400">Total Artikel</p>

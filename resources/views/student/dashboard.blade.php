@@ -6,6 +6,8 @@
 
 @section('content')
     <div class="space-y-6">
+        <x-notification-card />
+
         <!-- Stats Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 hover:shadow-md transition">
