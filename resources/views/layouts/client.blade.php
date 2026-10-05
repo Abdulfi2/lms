@@ -9,6 +9,14 @@
 
     <title>{{ config('app.name', 'LMS') }} - @yield('title', 'Platform Belajar Online')</title>
 
+    <meta name="description" content="@yield('meta-description', 'Platform pembelajaran online ' . config('app.name', 'LMS') . '.')">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="@yield('og-title', config('app.name', 'LMS'))">
+    <meta property="og:description" content="@yield('meta-description', 'Platform pembelajaran online ' . config('app.name', 'LMS') . '.')">
+    @hasSection('og-image')
+        <meta property="og:image" content="@yield('og-image')">
+    @endif
+
     <link rel="icon" type="image/png" href="{{ asset('favicon-32.png') }}">
     <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('favicon-192.png') }}">
     <link rel="apple-touch-icon" href="{{ asset('favicon-192.png') }}">

@@ -32,14 +32,20 @@ class ArticleController extends Controller
             ->withCount('articles')
             ->orderBy('order')
             ->get();
-        $featuredArticles = Article::published()->latest()->limit(3)->get();
+        // Prioritaskan artikel yang sengaja ditandai unggulan oleh admin; kalau
+        // belum ada yang ditandai, fallback ke artikel terbaru supaya section
+        // ini tidak kosong.
+        $featuredArticles = Article::published()->where('is_featured', true)->latest()->limit(3)->get();
+        if ($featuredArticles->isEmpty()) {
+            $featuredArticles = Article::published()->latest()->limit(3)->get();
+        }
 
         return view('articles.index', compact('articles', 'categories', 'featuredArticles'));
     }
 
     public function show($slug)
     {
-        $article = Article::with(['author', 'category'])
+        $article = Article::with(['author', 'category', 'tags'])
             ->where('slug', $slug)
             ->published()
             ->firstOrFail();

@@ -32,6 +32,12 @@ class Tag extends Model
         return $this->morphedByMany(Course::class, 'taggable', 'taggables');
     }
 
+    // Helper to get all articles using this tag
+    public function articles()
+    {
+        return $this->morphedByMany(Article::class, 'taggable', 'taggables');
+    }
+
     public function scopeActive($query)
     {
         return $query->where('is_active', true);

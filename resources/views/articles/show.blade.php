@@ -1,8 +1,15 @@
 @extends('layouts.client')
 
-@section('title', $article->title)
+@section('title', $article->meta_title ?: $article->title)
 @section('page-title', $article->title)
 @section('page-subtitle', $article->excerpt ?? strip_tags($article->content))
+@section('og-title', $article->meta_title ?: $article->title)
+@section('meta-description', $article->meta_description ?: ($article->excerpt ?: Str::limit(strip_tags($article->content), 160)))
+@if ($article->og_image)
+    @section('og-image', Storage::url($article->og_image))
+@elseif ($article->featured_image)
+    @section('og-image', Storage::url($article->featured_image))
+@endif
 
 @section('content')
     <div class="max-w-4xl mx-auto">
@@ -41,6 +48,17 @@
             <div class="p-6 md:p-8 prose dark:prose-invert max-w-none">
                 {!! $article->content !!}
             </div>
+
+            <!-- Tags -->
+            @if ($article->tags->isNotEmpty())
+                <div class="px-6 md:px-8 pb-6 flex flex-wrap gap-2">
+                    @foreach ($article->tags as $tag)
+                        <span class="px-3 py-1 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                            #{{ $tag->name }}
+                        </span>
+                    @endforeach
+                </div>
+            @endif
 
             <!-- Article Footer -->
             <div class="p-6 md:p-8 bg-gray-50 dark:bg-gray-700/50 border-t dark:border-gray-700">

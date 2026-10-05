@@ -19,16 +19,21 @@ class Article extends Model
         'excerpt',
         'content',
         'status',
+        'is_featured',
         'published_at',
         'views',
         'likes',
         'allow_comments',
-        'meta_data'
+        'meta_data',
+        'meta_title',
+        'meta_description',
+        'og_image',
     ];
 
     protected $casts = [
         'published_at' => 'datetime',
         'allow_comments' => 'boolean',
+        'is_featured' => 'boolean',
         'meta_data' => 'array',
         'views' => 'integer',
         'likes' => 'integer',
@@ -42,6 +47,11 @@ class Article extends Model
     public function category()
     {
         return $this->belongsTo(ArticleCategory::class, 'category_id');
+    }
+
+    public function tags()
+    {
+        return $this->morphToMany(Tag::class, 'taggable', 'taggables');
     }
 
     // ============ BOOT ============
