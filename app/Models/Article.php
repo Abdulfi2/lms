@@ -14,6 +14,7 @@ class Article extends Model
         'user_id',
         'category_id',
         'title',
+        'subtitle',
         'slug',
         'featured_image',
         'excerpt',
@@ -23,6 +24,7 @@ class Article extends Model
         'published_at',
         'views',
         'likes',
+        'shares',
         'allow_comments',
         'meta_data',
         'meta_title',
@@ -37,6 +39,7 @@ class Article extends Model
         'meta_data' => 'array',
         'views' => 'integer',
         'likes' => 'integer',
+        'shares' => 'integer',
     ];
 
     public function author()
@@ -52,6 +55,20 @@ class Article extends Model
     public function tags()
     {
         return $this->morphToMany(Tag::class, 'taggable', 'taggables');
+    }
+
+    public function articleLikes()
+    {
+        return $this->hasMany(ArticleLike::class);
+    }
+
+    public function isLikedBy(?User $user): bool
+    {
+        if (!$user) {
+            return false;
+        }
+
+        return $this->articleLikes()->where('user_id', $user->id)->exists();
     }
 
     // ============ BOOT ============

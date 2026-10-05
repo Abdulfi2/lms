@@ -62,14 +62,14 @@
 
             <div>
                 <x-label-tooltip tooltip="Isi lengkap artikel. Gunakan toolbar editor untuk format teks seperti heading, bold, daftar, dan tautan.">Konten <span class="text-red-500">*</span></x-label-tooltip>
-                <x-tiptap-editor name="content" :content="old('content')" placeholder="Tulis isi artikel di sini..." />
+                <x-tinymce-editor name="content" :content="old('content')" placeholder="Tulis isi artikel di sini..." :upload-url="route('admin.articles.upload-image')" />
                 @error('content')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
             </div>
 
             <div>
-                <x-label-tooltip tooltip="Gambar utama yang tampil di bagian atas artikel dan di daftar artikel. Maksimal 2MB, format JPG/PNG.">Gambar Unggulan</x-label-tooltip>
+                <x-label-tooltip tooltip="Gambar utama yang tampil di bagian atas artikel dan di daftar artikel. Ukuran yang disarankan 1200x630 piksel (rasio 16:9). Maksimal 2MB, format JPG/PNG.">Gambar Unggulan</x-label-tooltip>
                 <input type="file" name="featured_image" accept="image/*" class="w-full">
-                <p class="text-xs text-gray-500 mt-1">Maksimal 2MB.</p>
+                <p class="text-xs text-gray-500 mt-1">Disarankan 1200x630 piksel. Maksimal 2MB.</p>
                 @error('featured_image')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
             </div>
 

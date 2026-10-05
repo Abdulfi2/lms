@@ -14,6 +14,23 @@ use Illuminate\Support\Str;
 
 class ArticleController extends Controller
 {
+    /**
+     * Upload gambar yang disisipkan di dalam konten artikel (dipanggil dari
+     * dalam text editor, bukan form submission biasa).
+     */
+    public function uploadImage(Request $request)
+    {
+        $request->validate([
+            'image' => 'required|image|max:4096',
+        ]);
+
+        $path = $request->file('image')->store('articles/content', 'public');
+
+        return response()->json([
+            'location' => Storage::url($path),
+        ]);
+    }
+
     public function index(Request $request)
     {
         $query = Article::with(['author', 'category']);

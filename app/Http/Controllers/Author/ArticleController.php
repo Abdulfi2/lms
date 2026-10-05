@@ -12,6 +12,25 @@ use Illuminate\Support\Facades\Storage;
 
 class ArticleController extends Controller
 {
+    /**
+     * Upload gambar yang disisipkan di dalam konten artikel (dipanggil dari
+     * dalam text editor, bukan form submission biasa).
+     */
+    public function uploadImage(Request $request)
+    {
+        $this->authorize('create', Article::class);
+
+        $request->validate([
+            'image' => 'required|image|max:4096',
+        ]);
+
+        $path = $request->file('image')->store('articles/content', 'public');
+
+        return response()->json([
+            'location' => Storage::url($path),
+        ]);
+    }
+
     public function index(Request $request)
     {
         $this->authorize('viewAny', Article::class);
@@ -41,12 +60,67 @@ class ArticleController extends Controller
         return view('author.articles.create', compact('categories', 'tags'));
     }
 
+    /**
+     * Buat kategori artikel baru langsung dari form tulis artikel (author
+     * tidak punya akses ke halaman manajemen kategori admin).
+     */
+    public function storeCategory(Request $request)
+    {
+        $this->authorize('create', Article::class);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:article_categories,name',
+        ]);
+
+        $category = ArticleCategory::create([
+            'name' => $validated['name'],
+            'is_active' => true,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'category' => ['id' => $category->id, 'name' => $category->name],
+        ]);
+    }
+
+    /**
+     * Terima campuran ID tag yang sudah ada (angka) dan nama tag baru (teks,
+     * diketik lewat opsi "create" di Tom Select) — author tidak punya akses
+     * ke halaman manajemen tag admin, jadi tag baru dibuat langsung di sini.
+     */
+    private function resolveTagIds(array $tagInputs): array
+    {
+        $ids = [];
+
+        foreach ($tagInputs as $input) {
+            $input = trim((string) $input);
+
+            if ($input === '') {
+                continue;
+            }
+
+            if (ctype_digit($input)) {
+                $ids[] = (int) $input;
+                continue;
+            }
+
+            $tag = Tag::firstOrCreate(
+                ['name' => $input],
+                ['is_active' => true]
+            );
+            $ids[] = $tag->id;
+        }
+
+        return array_unique($ids);
+    }
+
     public function store(Request $request)
     {
         $this->authorize('create', Article::class);
 
         $validated = $request->validate([
             'title' => 'required|string|max:255',
+            'subtitle' => 'nullable|string|max:150',
             'slug' => 'nullable|string|max:255|alpha_dash|unique:articles,slug',
             'category_id' => 'nullable|exists:article_categories,id',
             'excerpt' => 'nullable|string',
@@ -55,13 +129,21 @@ class ArticleController extends Controller
             // Author tidak boleh langsung publish — cuma editor/admin yang bisa (lihat ArticlePolicy::publish).
             'status' => 'required|in:draft,archived',
             'tags' => 'nullable|array',
-            'tags.*' => 'exists:tags,id',
+            'tags.*' => 'string|max:255',
             'meta_title' => 'nullable|string|max:255',
             'meta_description' => 'nullable|string|max:500',
             'og_image' => 'nullable|image|max:2048',
+            // is_featured cuma "permintaan" dari author — baru benar-benar tampil di
+            // halaman utama setelah admin/editor publish artikelnya (lihat scope published()).
+            'is_featured' => 'nullable|boolean',
+            'allow_comments' => 'nullable|boolean',
         ]);
 
         $data = collect($validated)->except(['featured_image', 'tags', 'og_image', 'slug'])->all();
+        $data['is_featured'] = $request->boolean('is_featured');
+        // Form mengirim hidden input bernilai "0" sebelum checkbox-nya, supaya
+        // unchecked tetap terkirim (checkbox polos tidak mengirim apa-apa saat unchecked).
+        $data['allow_comments'] = $request->boolean('allow_comments');
         $data['user_id'] = Auth::id();
         $data['slug'] = $validated['slug'] ?? null;
 
@@ -75,9 +157,10 @@ class ArticleController extends Controller
 
         $article = Article::create($data);
 
-        if ($request->filled('tags')) {
-            $article->tags()->sync($request->tags);
-            Tag::whereIn('id', $request->tags)->increment('usage_count');
+        $tagIds = $this->resolveTagIds($request->input('tags', []));
+        if (!empty($tagIds)) {
+            $article->tags()->sync($tagIds);
+            Tag::whereIn('id', $tagIds)->increment('usage_count');
         }
 
         return redirect()->route('author.articles.index')
@@ -107,6 +190,7 @@ class ArticleController extends Controller
 
         $validated = $request->validate([
             'title' => 'required|string|max:255',
+            'subtitle' => 'nullable|string|max:150',
             'slug' => ['nullable', 'string', 'max:255', 'alpha_dash', \Illuminate\Validation\Rule::unique('articles', 'slug')->ignore($article->id)],
             'category_id' => 'nullable|exists:article_categories,id',
             'excerpt' => 'nullable|string',
@@ -114,13 +198,17 @@ class ArticleController extends Controller
             'featured_image' => 'nullable|image|max:2048',
             'status' => $statusRule,
             'tags' => 'nullable|array',
-            'tags.*' => 'exists:tags,id',
+            'tags.*' => 'string|max:255',
             'meta_title' => 'nullable|string|max:255',
             'meta_description' => 'nullable|string|max:500',
             'og_image' => 'nullable|image|max:2048',
+            'is_featured' => 'nullable|boolean',
+            'allow_comments' => 'nullable|boolean',
         ]);
 
         $data = collect($validated)->except(['featured_image', 'tags', 'status', 'og_image', 'slug'])->all();
+        $data['is_featured'] = $request->boolean('is_featured');
+        $data['allow_comments'] = $request->boolean('allow_comments');
 
         if (!empty($validated['slug'])) {
             $data['slug'] = $validated['slug'];
@@ -147,7 +235,7 @@ class ArticleController extends Controller
         $article->update($data);
 
         $oldTags = $article->tags->pluck('id')->toArray();
-        $newTags = $request->input('tags', []);
+        $newTags = $this->resolveTagIds($request->input('tags', []));
 
         Tag::whereIn('id', array_diff($oldTags, $newTags))->decrement('usage_count');
         Tag::whereIn('id', array_diff($newTags, $oldTags))->increment('usage_count');

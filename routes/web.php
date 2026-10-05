@@ -190,6 +190,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/permissions/{permission}', [RolePermissionController::class, 'destroyPermission'])->name('permissions.destroy');
 
         // Articles
+        Route::post('articles/upload-image', [AdminArticleController::class, 'uploadImage'])->name('articles.upload-image');
         Route::resource('articles', AdminArticleController::class)->except(['show']);
         Route::patch('articles/{article}/toggle-status', [AdminArticleController::class, 'toggleStatus'])->name('articles.toggle-status');
         Route::resource('article-categories', ArticleCategoryController::class)->except(['show']);
@@ -292,6 +293,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // tetap wewenang editor/admin, lihat App\Policies\ArticlePolicy.
     Route::middleware(['role:author'])->prefix('author')->name('author.')->group(function () {
         Route::get('/dashboard', [AuthorDashboardController::class, 'index'])->name('dashboard');
+        Route::post('articles/upload-image', [AuthorArticleController::class, 'uploadImage'])->name('articles.upload-image');
+        Route::post('article-categories', [AuthorArticleController::class, 'storeCategory'])->name('article-categories.store');
         Route::resource('articles', AuthorArticleController::class)->except(['show', 'destroy']);
     });
 
