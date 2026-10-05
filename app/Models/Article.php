@@ -62,6 +62,16 @@ class Article extends Model
         return $this->hasMany(ArticleLike::class);
     }
 
+    public function comments()
+    {
+        return $this->hasMany(ArticleComment::class);
+    }
+
+    public function visits()
+    {
+        return $this->hasMany(VisitorKhusus::class);
+    }
+
     public function isLikedBy(?User $user): bool
     {
         if (!$user) {

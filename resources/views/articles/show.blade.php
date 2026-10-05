@@ -108,6 +108,51 @@
             </div>
         </article>
 
+        <!-- Comments -->
+        <div class="mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 md:p-8">
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Komentar ({{ $comments->count() }})</h3>
+
+            @if (!$article->allow_comments)
+                <p class="text-sm text-gray-500 dark:text-gray-400">Komentar dinonaktifkan untuk artikel ini.</p>
+            @elseif (Auth::check())
+                <form method="POST" action="{{ route('articles.comments.store', $article) }}" class="mb-6">
+                    @csrf
+                    <textarea name="content" rows="3" required maxlength="1000" placeholder="Tulis komentar Anda..."
+                        class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-primary focus:border-primary">{{ old('content') }}</textarea>
+                    @error('content')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                    <button type="submit" class="mt-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition text-sm">Kirim Komentar</button>
+                </form>
+            @else
+                <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                    <a href="{{ route('login') }}" class="text-primary hover:underline">Masuk</a> untuk menulis komentar.
+                </p>
+            @endif
+
+            <div class="space-y-4 divide-y dark:divide-gray-700">
+                @forelse ($comments as $comment)
+                    <div class="flex items-start justify-between gap-3 {{ !$loop->first ? 'pt-4' : '' }}">
+                        <div class="flex items-start gap-3 min-w-0">
+                            <img src="{{ $comment->user->avatar_url }}" class="w-9 h-9 rounded-full object-cover flex-shrink-0">
+                            <div class="min-w-0">
+                                <p class="font-medium text-sm text-gray-800 dark:text-white">{{ $comment->user->name }}</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-400 mt-0.5 break-words">{{ $comment->content }}</p>
+                                <p class="text-xs text-gray-400 mt-1">{{ $comment->created_at->diffForHumans() }}</p>
+                            </div>
+                        </div>
+                        @if (Auth::check() && (Auth::id() === $comment->user_id || Auth::id() === $article->user_id || Auth::user()->hasRole('admin')))
+                            <form method="POST" action="{{ route('articles.comments.destroy', [$article, $comment]) }}" onsubmit="return confirm('Hapus komentar ini?')" class="flex-shrink-0">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="text-red-500 hover:underline text-xs">Hapus</button>
+                            </form>
+                        @endif
+                    </div>
+                @empty
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Belum ada komentar. Jadilah yang pertama berkomentar.</p>
+                @endforelse
+            </div>
+        </div>
+
         <!-- Related Articles -->
         @if ($relatedArticles->count() > 0)
             <div class="mt-8">

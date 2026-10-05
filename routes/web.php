@@ -18,8 +18,13 @@ use App\Http\Controllers\Admin\NotificationController as AdminNotificationContro
 use App\Http\Controllers\Admin\AnalyticsController as AdminAnalyticsController;
 use App\Http\Controllers\Admin\ContactMessageController as AdminContactMessageController;
 use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\ArticleCommentController;
+use App\Http\Controllers\Author\CategoryController as AuthorCategoryController;
+use App\Http\Controllers\Author\CommentController as AuthorCommentController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\NewsletterController;
+use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controllers\PublicEventController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\NotificationController;
@@ -128,6 +133,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/courses/{slug}', [PublicCourseController::class, 'show'])->name('courses.show');
 
     Route::post('/articles/{article}/like', [ArticleController::class, 'toggleLike'])->name('articles.like');
+    Route::post('/articles/{article}/comments', [ArticleCommentController::class, 'store'])->name('articles.comments.store');
+    Route::delete('/articles/{article}/comments/{comment}', [ArticleCommentController::class, 'destroy'])->name('articles.comments.destroy');
 
     /*
     |--------------------------------------------------------------------------
@@ -296,6 +303,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('articles/upload-image', [AuthorArticleController::class, 'uploadImage'])->name('articles.upload-image');
         Route::post('article-categories', [AuthorArticleController::class, 'storeCategory'])->name('article-categories.store');
         Route::resource('articles', AuthorArticleController::class)->except(['show', 'destroy']);
+        Route::get('/categories', [AuthorCategoryController::class, 'index'])->name('categories.index');
+        Route::get('/comments', [AuthorCommentController::class, 'index'])->name('comments.index');
+        Route::delete('/comments/{comment}', [AuthorCommentController::class, 'destroy'])->name('comments.destroy');
     });
 
     // Halaman status untuk instruktur yang belum/tidak disetujui admin — sengaja di luar

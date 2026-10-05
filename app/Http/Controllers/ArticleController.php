@@ -6,6 +6,8 @@ namespace App\Http\Controllers;
 use App\Models\Article;
 use App\Models\ArticleCategory;
 use App\Models\ArticleLike;
+use App\Models\Tag;
+use App\Models\VisitorKhusus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -14,11 +16,14 @@ class ArticleController extends Controller
     public function index(Request $request)
     {
         $query = Article::with(['author', 'category'])
-            ->published()
-            ->orderBy('published_at', 'desc');
+            ->published();
 
         if ($request->filled('category')) {
             $query->whereHas('category', fn($q) => $q->where('slug', $request->category));
+        }
+
+        if ($request->filled('tag')) {
+            $query->whereHas('tags', fn($q) => $q->where('slug', $request->tag));
         }
 
         if ($request->filled('search')) {
@@ -29,23 +34,50 @@ class ArticleController extends Controller
             });
         }
 
-        $articles = $query->paginate(12);
-        $categories = ArticleCategory::where('is_active', true)
-            ->withCount('articles')
-            ->orderBy('order')
-            ->get();
-        // Prioritaskan artikel yang sengaja ditandai unggulan oleh admin; kalau
-        // belum ada yang ditandai, fallback ke artikel terbaru supaya section
-        // ini tidak kosong.
-        $featuredArticles = Article::published()->where('is_featured', true)->latest()->limit(3)->get();
-        if ($featuredArticles->isEmpty()) {
-            $featuredArticles = Article::published()->latest()->limit(3)->get();
+        $sort = $request->get('sort', 'latest');
+        match ($sort) {
+            'popular' => $query->orderBy('views', 'desc'),
+            'oldest' => $query->orderBy('published_at', 'asc'),
+            default => $query->orderBy('published_at', 'desc'),
+        };
+
+        // Artikel yang sengaja ditandai unggulan oleh admin tampil sebagai
+        // sorotan di atas grid; kalau belum ada yang ditandai, fallback ke
+        // artikel terbaru supaya sorotan ini tidak kosong. Dikecualikan dari
+        // grid di bawahnya supaya tidak tampil dobel.
+        $heroArticle = Article::published()->where('is_featured', true)->latest()->first()
+            ?? Article::published()->latest()->first();
+
+        if ($heroArticle && !$request->filled('search') && !$request->filled('category') && !$request->filled('tag')) {
+            $query->where('id', '!=', $heroArticle->id);
+        } else {
+            $heroArticle = null;
         }
 
-        return view('articles.index', compact('articles', 'categories', 'featuredArticles'));
+        $articles = $query->paginate(8)->withQueryString();
+
+        $categories = ArticleCategory::where('is_active', true)
+            ->withCount(['articles' => fn ($q) => $q->published()])
+            ->orderBy('order')
+            ->get();
+        $totalPublished = Article::published()->count();
+
+        $popularArticles = Article::published()->orderBy('views', 'desc')->limit(5)->get();
+
+        $popularTags = Tag::active()->orderBy('usage_count', 'desc')->limit(10)->get();
+
+        return view('articles.index', compact(
+            'articles',
+            'categories',
+            'totalPublished',
+            'heroArticle',
+            'popularArticles',
+            'popularTags',
+            'sort'
+        ));
     }
 
-    public function show($slug)
+    public function show(Request $request, $slug)
     {
         $article = Article::with(['author', 'category', 'tags'])
             ->where('slug', $slug)
@@ -55,6 +87,18 @@ class ArticleController extends Controller
         // Increment views
         $article->increment('views');
 
+        // Catat setiap kunjungan untuk statistik pengunjung/tayangan harian di
+        // dashboard author (lihat Author\DashboardController). Tidak di-dedup
+        // supaya tetap konsisten dengan counter 'views' di atas yang juga
+        // bertambah setiap kali halaman dibuka.
+        VisitorKhusus::create([
+            'article_id' => $article->id,
+            'user_id' => Auth::id(),
+            'ip_address' => $request->ip(),
+            'user_agent' => substr((string) $request->userAgent(), 0, 255),
+            'visited_at' => now(),
+        ]);
+
         $relatedArticles = Article::where('category_id', $article->category_id)
             ->where('id', '!=', $article->id)
             ->published()
@@ -63,7 +107,9 @@ class ArticleController extends Controller
 
         $isLiked = $article->isLikedBy(Auth::user());
 
-        return view('articles.show', compact('article', 'relatedArticles', 'isLiked'));
+        $comments = $article->comments()->with('user')->latest()->get();
+
+        return view('articles.show', compact('article', 'relatedArticles', 'isLiked', 'comments'));
     }
 
     /**
