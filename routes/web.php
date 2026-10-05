@@ -103,6 +103,8 @@ Route::get('/certificate/verify/{code}', [CertificateController::class, 'verify'
 Route::get('/contact', [ContactController::class, 'create'])->name('contact.create');
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
 
+Route::post('/newsletter/subscribe', [NewsletterController::class, 'store'])->name('newsletter.subscribe');
+
 Route::get('/instructors/{instructor}', [InstructorProfileController::class, 'show'])->name('instructors.show');
 
 Route::view('/about', 'public.about')->name('about');
@@ -286,6 +288,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/contact-messages/{contactMessage}/reply', [AdminContactMessageController::class, 'reply'])->name('contact-messages.reply');
         Route::patch('/contact-messages/{contactMessage}/close', [AdminContactMessageController::class, 'close'])->name('contact-messages.close');
         Route::delete('/contact-messages/{contactMessage}', [AdminContactMessageController::class, 'destroy'])->name('contact-messages.destroy');
+
+        Route::get('/newsletter', [AdminNewsletterController::class, 'index'])->name('newsletter.index');
+        Route::delete('/newsletter/{subscriber}', [AdminNewsletterController::class, 'destroy'])->name('newsletter.destroy');
 
         // Failed Jobs Management
         Route::get('/failed-jobs', [FailedJobsController::class, 'index'])->name('failed-jobs.index');

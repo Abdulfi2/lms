@@ -159,6 +159,16 @@
         <span class="ml-3 text-sm font-medium">Pesan Kontak</span>
     </a>
 
+    <!-- Newsletter -->
+    <a href="{{ route('admin.newsletter.index') }}" @click="mobileSidebarOpen = false"
+        class="flex items-center px-4 py-3 rounded-lg transition-all duration-200 {{ request()->routeIs('admin.newsletter.*') ? 'bg-primary text-white' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }}">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+        </svg>
+        <span class="ml-3 text-sm font-medium">Newsletter</span>
+    </a>
+
     <!-- Forum Moderation -->
     <a href="{{ route('admin.post-reports.index') }}" @click="mobileSidebarOpen = false"
         class="flex items-center px-4 py-3 rounded-lg transition-all duration-200 {{ request()->routeIs('admin.post-reports.*') ? 'bg-primary text-white' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }}">

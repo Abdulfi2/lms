@@ -124,7 +124,7 @@ class Article extends Model
     {
         $words = str_word_count(strip_tags($this->content));
         $minutes = ceil($words / 200);
-        return $minutes . ' min read';
+        return $minutes . ' menit baca';
     }
 
     public function getFormattedDateAttribute()
