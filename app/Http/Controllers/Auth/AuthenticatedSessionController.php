@@ -107,6 +107,9 @@ class AuthenticatedSessionController extends Controller
         if ($user->hasRole('event_manager')) {
             return route('admin.events.index');
         }
+        if ($user->hasRole('author')) {
+            return route('author.dashboard');
+        }
         return route('student.dashboard');
     }
 }

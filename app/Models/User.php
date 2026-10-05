@@ -121,6 +121,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasRole('admin') || $this->default_role === 'admin';
     }
 
+    public function isAuthor(): bool
+    {
+        return $this->hasRole('author') || $this->default_role === 'author';
+    }
+
     // Accessor untuk role name
     public function getRoleNameAttribute()
     {

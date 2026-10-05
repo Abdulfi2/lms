@@ -104,6 +104,8 @@ window.addEventListener('resize', handleResize);"
                         @include('components.sidebar.admin-sidebar')
                     @elseif(auth()->user()->hasRole('instructor'))
                         @include('components.sidebar.instructor-sidebar')
+                    @elseif(auth()->user()->hasRole('author'))
+                        @include('components.sidebar.author-sidebar')
                     @else
                         @include('components.sidebar.student-sidebar')
                     @endif
@@ -218,6 +220,8 @@ window.addEventListener('resize', handleResize);"
                                     Event Manager
                                 @elseif(auth()->user()->hasRole('instructor'))
                                     Instruktur
+                                @elseif(auth()->user()->hasRole('author'))
+                                    Author
                                 @else
                                     Mahasiswa
                                 @endif
@@ -240,6 +244,8 @@ window.addEventListener('resize', handleResize);"
                     @include('components.sidebar.mobile-admin-sidebar')
                 @elseif(auth()->user()->hasRole('instructor'))
                     @include('components.sidebar.mobile-instructor-sidebar')
+                @elseif(auth()->user()->hasRole('author'))
+                    @include('components.sidebar.mobile-author-sidebar')
                 @else
                     @include('components.sidebar.mobile-student-sidebar')
                 @endif

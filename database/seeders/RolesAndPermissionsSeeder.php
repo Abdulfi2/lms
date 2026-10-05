@@ -181,14 +181,14 @@ class RolesAndPermissionsSeeder extends Seeder
             'export event reports',
         ]);
 
-        $editorRole->givePermissionTo([
+        $editorRole->syncPermissions([
             'view articles',
             'create articles',
             'edit articles',
             'publish articles',
         ]);
 
-        $authorRole->givePermissionTo([
+        $authorRole->syncPermissions([
             'view articles',
             'create articles',
             'edit articles',

@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Admin\ArticleCategoryController;
+use App\Http\Controllers\Author\DashboardController as AuthorDashboardController;
+use App\Http\Controllers\Author\ArticleController as AuthorArticleController;
 use App\Http\Controllers\Admin\CertificateController as AdminCertificateController;
 use App\Http\Controllers\Admin\AchievementController as AdminAchievementController;
 use App\Http\Controllers\Admin\BadgeController as AdminBadgeController;
@@ -115,6 +117,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             // Role ini hanya diberi akses ke manajemen event (lihat middleware
             // 'role:admin|event_manager' di bawah), jadi tidak punya dashboard sendiri.
             return redirect()->route('admin.events.index');
+        } elseif ($user->hasRole('author')) {
+            return redirect()->route('author.dashboard');
         }
         return redirect()->route('student.dashboard');
     })->name('dashboard');
@@ -279,6 +283,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/failed-jobs/retry-all', [FailedJobsController::class, 'retryAll'])->name('failed-jobs.retry-all');
         Route::delete('/failed-jobs/{id}', [FailedJobsController::class, 'delete'])->name('failed-jobs.delete');
         Route::delete('/failed-jobs', [FailedJobsController::class, 'deleteAll'])->name('failed-jobs.delete-all');
+    });
+
+    // Author — kelola artikel milik sendiri saja (draft/archived). Publish & hapus
+    // tetap wewenang editor/admin, lihat App\Policies\ArticlePolicy.
+    Route::middleware(['role:author'])->prefix('author')->name('author.')->group(function () {
+        Route::get('/dashboard', [AuthorDashboardController::class, 'index'])->name('dashboard');
+        Route::resource('articles', AuthorArticleController::class)->except(['show', 'destroy']);
     });
 
     // Halaman status untuk instruktur yang belum/tidak disetujui admin — sengaja di luar
