@@ -5,7 +5,6 @@
 @section('page-subtitle', 'Tulis artikel berita atau informasi baru')
 
 @push('styles')
-    <link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2/dist/css/tom-select.default.min.css" rel="stylesheet">
     @include('components.tom-select-dark-mode')
 @endpush
@@ -63,8 +62,7 @@
 
             <div>
                 <x-label-tooltip tooltip="Isi lengkap artikel. Gunakan toolbar editor untuk format teks seperti heading, bold, daftar, dan tautan.">Konten <span class="text-red-500">*</span></x-label-tooltip>
-                <div id="quill-content" class="bg-white dark:bg-gray-900 rounded-b-lg" style="min-height: 250px;"></div>
-                <textarea name="content" id="content-hidden" class="hidden" required>{{ old('content') }}</textarea>
+                <x-tiptap-editor name="content" :content="old('content')" placeholder="Tulis isi artikel di sini..." />
                 @error('content')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
             </div>
 
@@ -143,27 +141,8 @@
 @endsection
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2/dist/js/tom-select.complete.min.js"></script>
 <script>
-    const contentQuill = new Quill('#quill-content', {
-        theme: 'snow',
-        placeholder: 'Tulis isi artikel di sini...',
-        modules: {
-            toolbar: [
-                [{ header: [2, 3, false] }],
-                ['bold', 'italic', 'underline', 'strike'],
-                [{ list: 'ordered' }, { list: 'bullet' }],
-                ['blockquote', 'link'],
-                ['clean']
-            ]
-        }
-    });
-    const contentHidden = document.getElementById('content-hidden');
-    if (contentHidden.value) {
-        contentQuill.root.innerHTML = contentHidden.value;
-    }
-
     new TomSelect('#tags-select', {
         plugins: ['remove_button'],
         placeholder: 'Pilih tag...',
@@ -178,10 +157,6 @@
                 container.appendChild(input);
             });
         }
-    });
-
-    document.getElementById('article-form').addEventListener('submit', function () {
-        contentHidden.value = contentQuill.root.innerHTML;
     });
 </script>
 @endpush
