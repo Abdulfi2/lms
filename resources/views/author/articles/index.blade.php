@@ -50,9 +50,7 @@
                             <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{{ $article->category->name ?? '-' }}</td>
                             <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{{ number_format($article->views) }}</td>
                             <td class="px-6 py-4">
-                                <span class="px-2 py-1 text-xs rounded-full {{ $article->status == 'published' ? 'bg-green-100 text-green-800' : ($article->status == 'draft' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800') }}">
-                                    {{ ucfirst($article->status) }}
-                                </span>
+                                <x-article-status-badge :status="$article->status" />
                             </td>
                             <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{{ $article->created_at->format('d/m/Y') }}</td>
                             <td class="px-6 py-4 text-right">

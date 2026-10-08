@@ -1,8 +1,8 @@
 @extends('layouts.app')
 
-@section('title', 'Edit Artikel')
-@section('page-title', 'Edit Artikel')
-@section('page-subtitle', 'Perbarui artikel Anda')
+@section('title', 'Tulis Artikel')
+@section('page-title', 'Tulis Artikel')
+@section('page-subtitle', 'Tulis artikel baru — Anda bisa langsung mempublikasikannya')
 
 @push('styles')
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2/dist/css/tom-select.default.min.css" rel="stylesheet">
@@ -11,25 +11,8 @@
 
 @section('content')
 <div class="max-w-6xl mx-auto">
-    @if ($article->status === 'published')
-        <div class="mb-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg text-sm text-green-800 dark:text-green-400">
-            Artikel ini sudah dipublikasikan. Anda masih bisa mengubah isinya, tapi status publikasi hanya bisa diubah oleh admin/editor.
-        </div>
-    @elseif ($article->status === 'ready_to_publish')
-        <div class="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-sm text-blue-800 dark:text-blue-400">
-            Editor sudah menyetujui artikel ini dan menandainya siap terbit. Anda masih bisa mengubah isinya, tapi status hanya bisa diubah oleh admin/editor.
-        </div>
-    @elseif ($article->status === 'revision')
-        <div class="mb-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg text-sm text-red-800 dark:text-red-400">
-            <p class="font-medium mb-1">Editor meminta revisi untuk artikel ini:</p>
-            <p>{{ $article->revision_notes }}</p>
-            <p class="mt-2 text-xs">Perbaiki isi artikel lalu simpan sebagai Draft untuk dikirim ulang ke editor.</p>
-        </div>
-    @endif
-
-    <form action="{{ route('author.articles.update', $article) }}" method="POST" enctype="multipart/form-data" id="article-form">
+    <form action="{{ route('editor.articles.store') }}" method="POST" enctype="multipart/form-data" id="article-form">
         @csrf
-        @method('PUT')
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
             <!-- Kolom Utama -->
@@ -39,21 +22,21 @@
 
                     <div>
                         <x-label-tooltip tooltip="Judul akan tampil di halaman artikel, daftar artikel, dan tab browser. Usahakan jelas dan menarik.">Judul <span class="text-red-500">*</span></x-label-tooltip>
-                        <input type="text" name="title" value="{{ old('title', $article->title) }}" required
+                        <input type="text" name="title" value="{{ old('title') }}" required
                             class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-primary focus:border-primary">
                         @error('title')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
 
                     <div>
                         <x-label-tooltip tooltip="Kalimat pendek pelengkap judul, tampil di bawah judul utama. Opsional.">Subjudul</x-label-tooltip>
-                        <input type="text" name="subtitle" value="{{ old('subtitle', $article->subtitle) }}" maxlength="150" placeholder="Opsional"
+                        <input type="text" name="subtitle" value="{{ old('subtitle') }}" maxlength="150" placeholder="Opsional"
                             class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-primary focus:border-primary">
                         @error('subtitle')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
 
                     <div>
-                        <x-label-tooltip tooltip="Bagian akhir alamat URL artikel, contoh: namadomain.com/artikel/slug-ini. Hanya huruf kecil, angka, dan tanda strip. Mengubah slug akan mengubah URL artikel yang sudah ada.">Slug URL</x-label-tooltip>
-                        <input type="text" name="slug" value="{{ old('slug', $article->slug) }}"
+                        <x-label-tooltip tooltip="Bagian akhir alamat URL artikel, contoh: namadomain.com/artikel/slug-ini. Hanya huruf kecil, angka, dan tanda strip. Kosongkan untuk dibuat otomatis dari judul.">Slug URL</x-label-tooltip>
+                        <input type="text" name="slug" value="{{ old('slug') }}" placeholder="Kosongkan untuk dibuat otomatis dari judul"
                             class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-primary focus:border-primary">
                         @error('slug')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
@@ -65,7 +48,7 @@
                                 <select name="category_id" id="category-select" class="flex-1 rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-primary focus:border-primary">
                                     <option value="">Tanpa Kategori</option>
                                     @foreach ($categories as $category)
-                                        <option value="{{ $category->id }}" {{ old('category_id', $article->category_id) == $category->id ? 'selected' : '' }}>
+                                        <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>
                                             {{ $category->name }}
                                         </option>
                                     @endforeach
@@ -86,7 +69,7 @@
                             <x-label-tooltip tooltip="Kata kunci tambahan untuk artikel ini, membantu pencarian dan menampilkan artikel terkait. Ketik lalu Enter untuk membuat tag baru kalau belum ada.">Tag</x-label-tooltip>
                             <select id="tags-select" multiple class="w-full">
                                 @foreach ($tags as $tag)
-                                    <option value="{{ $tag->id }}" {{ in_array($tag->id, old('tags', $selectedTags)) ? 'selected' : '' }}>{{ $tag->name }}</option>
+                                    <option value="{{ $tag->id }}">{{ $tag->name }}</option>
                                 @endforeach
                             </select>
                             <div id="tags-hidden-inputs"></div>
@@ -95,8 +78,8 @@
 
                     <div>
                         <x-label-tooltip tooltip="Teks singkat yang tampil di daftar artikel, dan dipakai sebagai deskripsi SEO kalau Meta Description di bawah tidak diisi.">Ringkasan</x-label-tooltip>
-                        <textarea name="excerpt" rows="2"
-                            class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-primary focus:border-primary">{{ old('excerpt', $article->excerpt) }}</textarea>
+                        <textarea name="excerpt" rows="2" placeholder="Ringkasan singkat yang tampil di daftar artikel"
+                            class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-primary focus:border-primary">{{ old('excerpt') }}</textarea>
                         @error('excerpt')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
                 </div>
@@ -104,7 +87,7 @@
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
                     <h3 class="font-semibold text-gray-800 dark:text-white mb-4">Konten Artikel</h3>
                     <x-label-tooltip tooltip="Isi lengkap artikel. Gunakan toolbar editor untuk format teks seperti heading, bold, daftar, tabel, dan tautan.">Konten <span class="text-red-500">*</span></x-label-tooltip>
-                    <x-tinymce-editor name="content" :content="old('content', $article->content)" placeholder="Tulis isi artikel di sini..." :upload-url="route('author.articles.upload-image')" />
+                    <x-tinymce-editor name="content" :content="old('content')" placeholder="Tulis isi artikel di sini..." :upload-url="route('editor.articles.upload-image')" />
                     @error('content')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
 
@@ -113,7 +96,7 @@
                     <h3 class="font-semibold text-gray-800 dark:text-white">SEO & Share Sosial Media</h3>
                     <div>
                         <x-label-tooltip tooltip="Judul khusus yang muncul di hasil pencarian Google dan tab browser. Idealnya di bawah 60 karakter. Kosongkan untuk memakai judul artikel.">Meta Title</x-label-tooltip>
-                        <input type="text" name="meta_title" value="{{ old('meta_title', $article->meta_title) }}" maxlength="255"
+                        <input type="text" name="meta_title" value="{{ old('meta_title') }}" maxlength="255"
                             placeholder="Kosongkan untuk memakai judul artikel"
                             class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-primary focus:border-primary">
                         @error('meta_title')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
@@ -122,14 +105,11 @@
                         <x-label-tooltip tooltip="Deskripsi singkat yang muncul di bawah judul pada hasil pencarian Google. Idealnya 120-160 karakter. Kosongkan untuk memakai ringkasan artikel.">Meta Description</x-label-tooltip>
                         <textarea name="meta_description" rows="2" maxlength="500"
                             placeholder="Kosongkan untuk memakai ringkasan artikel"
-                            class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-primary focus:border-primary">{{ old('meta_description', $article->meta_description) }}</textarea>
+                            class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-primary focus:border-primary">{{ old('meta_description') }}</textarea>
                         @error('meta_description')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
                     <div>
                         <x-label-tooltip tooltip="Gambar yang tampil sebagai pratinjau saat artikel dibagikan ke WhatsApp, Facebook, atau Twitter. Kosongkan untuk memakai Gambar Unggulan.">Gambar Share (OG Image)</x-label-tooltip>
-                        @if ($article->og_image)
-                            <img src="{{ Storage::url($article->og_image) }}" class="w-32 h-20 object-cover rounded-lg mb-2">
-                        @endif
                         <input type="file" name="og_image" accept="image/*" class="w-full">
                         <p class="text-xs text-gray-500 mt-1">Dipakai saat artikel dibagikan ke media sosial. Kosongkan untuk memakai gambar unggulan.</p>
                         @error('og_image')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
@@ -142,9 +122,6 @@
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5">
                     <h3 class="font-semibold text-gray-800 dark:text-white mb-1">Gambar Unggulan</h3>
                     <p class="text-xs text-gray-500 mb-3">Gambar utama yang tampil di bagian atas artikel dan di daftar artikel.</p>
-                    @if ($article->featured_image)
-                        <img src="{{ Storage::url($article->featured_image) }}" class="w-full h-32 object-cover rounded-lg mb-3">
-                    @endif
                     <label for="featured_image_input"
                         class="flex flex-col items-center justify-center gap-1 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg py-8 px-4 cursor-pointer hover:border-primary transition text-center">
                         <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -152,34 +129,24 @@
                                 d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M14 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
                             </path>
                         </svg>
-                        <span class="text-sm text-gray-600 dark:text-gray-300">Klik untuk ganti gambar</span>
+                        <span class="text-sm text-gray-600 dark:text-gray-300">Klik untuk upload gambar</span>
                         <span id="featured-image-filename" class="text-xs text-gray-400">Belum ada file dipilih</span>
                     </label>
                     <input id="featured_image_input" type="file" name="featured_image" accept="image/*" class="hidden"
                         onchange="document.getElementById('featured-image-filename').textContent = this.files[0] ? this.files[0].name : 'Belum ada file dipilih'">
-                    <p class="text-xs text-gray-500 mt-2">Format JPG/PNG. Disarankan 1200x630 piksel. Maksimal 2MB. Kosongkan jika tidak ingin mengganti.</p>
+                    <p class="text-xs text-gray-500 mt-2">Format JPG/PNG. Disarankan 1200x630 piksel. Maksimal 2MB.</p>
                     @error('featured_image')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
 
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5">
                     <h3 class="font-semibold text-gray-800 dark:text-white mb-1">Status & Publikasi</h3>
-                    <p class="text-xs text-gray-500 mb-3">Atur status artikel Anda.</p>
-                    <x-label-tooltip tooltip="Draft tersimpan untuk ditinjau admin/editor. Archived disembunyikan dari daftar. Anda tidak bisa langsung Publish — itu wewenang admin/editor setelah artikel ditinjau.">Status</x-label-tooltip>
-                    @if (in_array($article->status, ['published', 'ready_to_publish']))
-                        <x-article-status-badge :status="$article->status" class="inline-block" />
-                    @else
-                        <select name="status" required class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-primary focus:border-primary">
-                            <option value="draft" {{ old('status', $article->status === 'revision' ? 'draft' : $article->status) == 'draft' ? 'selected' : '' }}>Draft</option>
-                            <option value="archived" {{ old('status', $article->status) == 'archived' ? 'selected' : '' }}>Archived</option>
-                        </select>
-                        <p class="text-xs text-gray-500 mt-1">
-                            @if ($article->status === 'revision')
-                                Pilih Draft untuk mengirim ulang ke editor setelah diperbaiki.
-                            @else
-                                Publish hanya bisa dilakukan oleh admin/editor setelah ditinjau.
-                            @endif
-                        </p>
-                    @endif
+                    <p class="text-xs text-gray-500 mb-3">Sebagai editor, Anda bisa langsung mempublikasikan artikel sendiri.</p>
+                    <x-label-tooltip tooltip="Draft tersimpan tanpa tampil publik. Published langsung tampil di halaman Blog & Artikel. Archived disembunyikan dari daftar.">Status <span class="text-red-500">*</span></x-label-tooltip>
+                    <select name="status" required class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-primary focus:border-primary">
+                        <option value="draft" {{ old('status', 'draft') == 'draft' ? 'selected' : '' }}>Draft</option>
+                        <option value="published" {{ old('status') == 'published' ? 'selected' : '' }}>Published</option>
+                        <option value="archived" {{ old('status') == 'archived' ? 'selected' : '' }}>Archived</option>
+                    </select>
                     @error('status')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
 
@@ -193,7 +160,7 @@
                         </span>
                         <span class="relative inline-flex items-center flex-shrink-0">
                             <input type="hidden" name="allow_comments" value="0">
-                            <input type="checkbox" name="allow_comments" value="1" {{ old('allow_comments', $article->allow_comments) ? 'checked' : '' }} class="sr-only peer">
+                            <input type="checkbox" name="allow_comments" value="1" {{ old('allow_comments', true) ? 'checked' : '' }} class="sr-only peer">
                             <span class="w-10 h-6 bg-gray-300 dark:bg-gray-600 rounded-full peer-checked:bg-primary transition-colors"></span>
                             <span class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform peer-checked:translate-x-4"></span>
                         </span>
@@ -202,10 +169,10 @@
                     <label class="flex items-center justify-between gap-3 cursor-pointer">
                         <span>
                             <span class="block text-sm font-medium text-gray-700 dark:text-gray-300">Tampilkan di halaman utama</span>
-                            <span class="block text-xs text-gray-500">Permintaan artikel unggulan; aktif otomatis setelah dipublikasikan admin/editor</span>
+                            <span class="block text-xs text-gray-500">Jadikan artikel unggulan begitu dipublikasikan</span>
                         </span>
                         <span class="relative inline-flex items-center flex-shrink-0">
-                            <input type="checkbox" name="is_featured" value="1" {{ old('is_featured', $article->is_featured) ? 'checked' : '' }} class="sr-only peer">
+                            <input type="checkbox" name="is_featured" value="1" {{ old('is_featured') ? 'checked' : '' }} class="sr-only peer">
                             <span class="w-10 h-6 bg-gray-300 dark:bg-gray-600 rounded-full peer-checked:bg-primary transition-colors"></span>
                             <span class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform peer-checked:translate-x-4"></span>
                         </span>
@@ -215,8 +182,8 @@
         </div>
 
         <div class="flex justify-end space-x-3 mt-6">
-            <a href="{{ route('author.articles.index') }}" class="px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">Batal</a>
-            <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition">Simpan Perubahan</button>
+            <a href="{{ route('editor.articles.index', ['tab' => 'mine']) }}" class="px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">Batal</a>
+            <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition">Simpan Artikel</button>
         </div>
     </form>
 </div>
@@ -225,33 +192,30 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2/dist/js/tom-select.complete.min.js"></script>
 <script>
-    function syncTagsHidden(values) {
-        const container = document.getElementById('tags-hidden-inputs');
-        container.innerHTML = '';
-        values.forEach(value => {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'tags[]';
-            input.value = value;
-            container.appendChild(input);
-        });
-    }
-
-    const tagsTomSelect = new TomSelect('#tags-select', {
+    new TomSelect('#tags-select', {
         plugins: ['remove_button'],
         placeholder: 'Pilih atau ketik tag baru...',
         create: true,
         createOnBlur: true,
-        onChange: syncTagsHidden
+        onChange: function (values) {
+            const container = document.getElementById('tags-hidden-inputs');
+            container.innerHTML = '';
+            values.forEach(value => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'tags[]';
+                input.value = value;
+                container.appendChild(input);
+            });
+        }
     });
-    syncTagsHidden(tagsTomSelect.getValue());
 
     function createCategory() {
         const nameInput = document.getElementById('new-category-name');
         const name = nameInput.value.trim();
         if (!name) return;
 
-        fetch('{{ route('author.article-categories.store') }}', {
+        fetch('{{ route('editor.article-categories.store') }}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

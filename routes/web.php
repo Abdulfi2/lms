@@ -3,6 +3,22 @@
 use App\Http\Controllers\Admin\ArticleCategoryController;
 use App\Http\Controllers\Author\DashboardController as AuthorDashboardController;
 use App\Http\Controllers\Author\ArticleController as AuthorArticleController;
+use App\Http\Controllers\Editor\DashboardController as EditorDashboardController;
+use App\Http\Controllers\Editor\ArticleController as EditorArticleController;
+use App\Http\Controllers\Editor\CategoryController as EditorCategoryController;
+use App\Http\Controllers\Editor\CommentController as EditorCommentController;
+use App\Http\Controllers\Editor\WriterController as EditorWriterController;
+use App\Http\Controllers\Editor\CalendarController as EditorCalendarController;
+use App\Http\Controllers\Support\DashboardController as SupportDashboardController;
+use App\Http\Controllers\Support\UserController as SupportUserController;
+use App\Http\Controllers\Support\CourseController as SupportCourseController;
+use App\Http\Controllers\Support\EnrollmentController as SupportEnrollmentController;
+use App\Http\Controllers\Support\TicketController as SupportTicketController;
+use App\Http\Controllers\Support\KnowledgeBaseController as SupportKnowledgeBaseController;
+use App\Http\Controllers\Support\ScheduleController as SupportScheduleController;
+use App\Http\Controllers\Support\ReportController as SupportReportController;
+use App\Http\Controllers\TicketController;
+use App\Http\Controllers\KnowledgeBaseController;
 use App\Http\Controllers\Admin\CertificateController as AdminCertificateController;
 use App\Http\Controllers\Admin\AchievementController as AdminAchievementController;
 use App\Http\Controllers\Admin\BadgeController as AdminBadgeController;
@@ -37,6 +53,7 @@ use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CourseController;
 use App\Http\Controllers\Admin\EventController;
+use App\Http\Controllers\Admin\EventDashboardController;
 use App\Http\Controllers\Admin\FailedJobsController;
 use App\Http\Controllers\Admin\RolePermissionController;
 use App\Http\Controllers\Admin\SectionController;
@@ -122,11 +139,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         } elseif ($user->hasRole('instructor')) {
             return redirect()->route('instructor.dashboard');
         } elseif ($user->hasRole('event_manager')) {
-            // Role ini hanya diberi akses ke manajemen event (lihat middleware
-            // 'role:admin|event_manager' di bawah), jadi tidak punya dashboard sendiri.
-            return redirect()->route('admin.events.index');
+            return redirect()->route('admin.events.dashboard');
         } elseif ($user->hasRole('author')) {
             return redirect()->route('author.dashboard');
+        } elseif ($user->hasRole('editor')) {
+            return redirect()->route('editor.dashboard');
+        } elseif ($user->hasRole('support')) {
+            return redirect()->route('support.dashboard');
         }
         return redirect()->route('student.dashboard');
     })->name('dashboard');
@@ -138,12 +157,27 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/articles/{article}/comments', [ArticleCommentController::class, 'store'])->name('articles.comments.store');
     Route::delete('/articles/{article}/comments/{comment}', [ArticleCommentController::class, 'destroy'])->name('articles.comments.destroy');
 
+    // Tiket bantuan — siapa saja yang login boleh membuat & membalas tiket
+    // miliknya sendiri. Penanganan tiket oleh staf ada di grup role:support.
+    Route::get('/tickets', [TicketController::class, 'index'])->name('tickets.index');
+    Route::get('/tickets/create', [TicketController::class, 'create'])->name('tickets.create');
+    Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');
+    Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
+    Route::post('/tickets/{ticket}/reply', [TicketController::class, 'reply'])->name('tickets.reply');
+
+    // Basis pengetahuan publik (swalayan sebelum membuat tiket).
+    Route::get('/knowledge-base', [KnowledgeBaseController::class, 'index'])->name('knowledge-base.index');
+    Route::get('/knowledge-base/{article}', [KnowledgeBaseController::class, 'show'])->name('knowledge-base.show');
+
     /*
     |--------------------------------------------------------------------------
     | Admin Event Routes
     |--------------------------------------------------------------------------
     */
     Route::middleware(['auth', 'role:admin|event_manager'])->prefix('admin')->name('admin.')->group(function () {
+
+        // Dashboard event manager (path dibuat 'event-dashboard' agar tidak bentrok dengan /events/{event})
+        Route::get('/event-dashboard', [EventDashboardController::class, 'index'])->name('events.dashboard');
 
         // Event Management
         Route::get('/events', [EventController::class, 'index'])->name('events.index');
@@ -172,10 +206,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/events-stats', [EventController::class, 'getStats'])->name('events.stats');
     });
 
+    // Fitur yang dipakai bareng admin & support (lihat role:support di bawah) —
+    // read-only/terbatas, aman dibagikan langsung tanpa controller terpisah.
+    Route::middleware(['auth', 'role:admin|support'])->prefix('admin')->name('admin.')->group(function () {
+        Route::get('/analytics', [AdminAnalyticsController::class, 'index'])->name('analytics');
+
+        Route::get('/post-reports', [AdminPostReportController::class, 'index'])->name('post-reports.index');
+        Route::patch('/post-reports/{postReport}/dismiss', [AdminPostReportController::class, 'dismiss'])->name('post-reports.dismiss');
+        Route::delete('/post-reports/{postReport}/resolve', [AdminPostReportController::class, 'resolve'])->name('post-reports.resolve');
+    });
+
     // Admin Routes
     Route::middleware(['role:admin'])->prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
-        Route::get('/analytics', [AdminAnalyticsController::class, 'index'])->name('analytics');
 
         Route::resource('users', UserController::class);
         Route::post('users/bulk-delete', [UserController::class, 'bulkDestroy'])->name('users.bulk-delete');
@@ -268,11 +311,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::patch('/payouts/entry/{payout}/approve', [AdminPayoutController::class, 'approve'])->name('payouts.approve');
         Route::patch('/payouts/entry/{payout}/reject', [AdminPayoutController::class, 'reject'])->name('payouts.reject');
 
-        // Moderasi Laporan Forum
-        Route::get('/post-reports', [AdminPostReportController::class, 'index'])->name('post-reports.index');
-        Route::patch('/post-reports/{postReport}/dismiss', [AdminPostReportController::class, 'dismiss'])->name('post-reports.dismiss');
-        Route::delete('/post-reports/{postReport}/resolve', [AdminPostReportController::class, 'resolve'])->name('post-reports.resolve');
-
         // Coupon / Diskon
         Route::resource('coupons', AdminCouponController::class)->except(['show']);
         Route::patch('coupons/{coupon}/toggle-status', [AdminCouponController::class, 'toggleStatus'])->name('coupons.toggle-status');
@@ -311,6 +349,59 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/categories', [AuthorCategoryController::class, 'index'])->name('categories.index');
         Route::get('/comments', [AuthorCommentController::class, 'index'])->name('comments.index');
         Route::delete('/comments/{comment}', [AuthorCommentController::class, 'destroy'])->name('comments.destroy');
+    });
+
+    // Editor — bisa tulis & edit artikel sendiri (seperti author), plus meninjau
+    // dan menerbitkan/mengarsipkan draft dari author lain (lihat ArticlePolicy::publish/archive).
+    Route::middleware(['role:editor'])->prefix('editor')->name('editor.')->group(function () {
+        Route::get('/dashboard', [EditorDashboardController::class, 'index'])->name('dashboard');
+        Route::post('articles/upload-image', [EditorArticleController::class, 'uploadImage'])->name('articles.upload-image');
+        Route::post('article-categories', [EditorArticleController::class, 'storeCategory'])->name('article-categories.store');
+        Route::patch('articles/{article}/publish', [EditorArticleController::class, 'publish'])->name('articles.publish');
+        Route::patch('articles/{article}/archive', [EditorArticleController::class, 'archive'])->name('articles.archive');
+        Route::post('articles/{article}/request-revision', [EditorArticleController::class, 'requestRevision'])->name('articles.request-revision');
+        Route::patch('articles/{article}/mark-ready', [EditorArticleController::class, 'markReady'])->name('articles.mark-ready');
+        Route::resource('articles', EditorArticleController::class)->except(['destroy']);
+        Route::get('/categories', [EditorCategoryController::class, 'index'])->name('categories.index');
+        Route::get('/comments', [EditorCommentController::class, 'index'])->name('comments.index');
+        Route::delete('/comments/{comment}', [EditorCommentController::class, 'destroy'])->name('comments.destroy');
+        Route::get('/writers', [EditorWriterController::class, 'index'])->name('writers.index');
+        Route::get('/calendar', [EditorCalendarController::class, 'index'])->name('calendar.index');
+    });
+
+    // Support — akses lihat-saja untuk user/kursus/enrollment (bantu troubleshooting
+    // pengguna), plus moderasi forum & analytics yang dipakai bareng admin (lihat
+    // grup role:admin|support di atas). Tidak ada create/edit/delete di sini sama
+    // sekali, sesuai permission yang di-seed (lihat RolesAndPermissionsSeeder).
+    Route::middleware(['role:support'])->prefix('support')->name('support.')->group(function () {
+        Route::get('/dashboard', [SupportDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/users', [SupportUserController::class, 'index'])->name('users.index');
+        Route::get('/users/{user}', [SupportUserController::class, 'show'])->name('users.show');
+        Route::get('/courses', [SupportCourseController::class, 'index'])->name('courses.index');
+        Route::get('/courses/{course}', [SupportCourseController::class, 'show'])->name('courses.show');
+        Route::get('/enrollments', [SupportEnrollmentController::class, 'index'])->name('enrollments.index');
+
+        // Tiket — penanganan oleh staf support (lihat juga rute tiket bersama
+        // di atas untuk sisi pelapor/pengguna biasa).
+        Route::get('/tickets', [SupportTicketController::class, 'index'])->name('tickets.index');
+        Route::get('/tickets/{ticket}', [SupportTicketController::class, 'show'])->name('tickets.show');
+        Route::post('/tickets/{ticket}/reply', [SupportTicketController::class, 'reply'])->name('tickets.reply');
+        Route::patch('/tickets/{ticket}/status', [SupportTicketController::class, 'updateStatus'])->name('tickets.status');
+        Route::patch('/tickets/{ticket}/priority', [SupportTicketController::class, 'updatePriority'])->name('tickets.priority');
+        Route::post('/ticket-categories', [SupportTicketController::class, 'storeCategory'])->name('ticket-categories.store');
+
+        // Basis Pengetahuan — CRUD oleh staf support.
+        Route::resource('knowledge-base', SupportKnowledgeBaseController::class)
+            ->except(['show'])
+            ->parameters(['knowledge-base' => 'knowledgeBaseArticle']);
+
+        // Jadwal Support — kalender shift/maintenance/meeting/kegiatan.
+        Route::get('/schedule', [SupportScheduleController::class, 'index'])->name('schedule.index');
+        Route::post('/schedule', [SupportScheduleController::class, 'store'])->name('schedule.store');
+        Route::delete('/schedule/{schedule}', [SupportScheduleController::class, 'destroy'])->name('schedule.destroy');
+
+        // Laporan — ringkasan performa tiket.
+        Route::get('/reports', [SupportReportController::class, 'index'])->name('reports.index');
     });
 
     // Halaman status untuk instruktur yang belum/tidak disetujui admin — sengaja di luar

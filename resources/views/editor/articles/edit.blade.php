@@ -11,23 +11,7 @@
 
 @section('content')
 <div class="max-w-6xl mx-auto">
-    @if ($article->status === 'published')
-        <div class="mb-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg text-sm text-green-800 dark:text-green-400">
-            Artikel ini sudah dipublikasikan. Anda masih bisa mengubah isinya, tapi status publikasi hanya bisa diubah oleh admin/editor.
-        </div>
-    @elseif ($article->status === 'ready_to_publish')
-        <div class="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-sm text-blue-800 dark:text-blue-400">
-            Editor sudah menyetujui artikel ini dan menandainya siap terbit. Anda masih bisa mengubah isinya, tapi status hanya bisa diubah oleh admin/editor.
-        </div>
-    @elseif ($article->status === 'revision')
-        <div class="mb-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg text-sm text-red-800 dark:text-red-400">
-            <p class="font-medium mb-1">Editor meminta revisi untuk artikel ini:</p>
-            <p>{{ $article->revision_notes }}</p>
-            <p class="mt-2 text-xs">Perbaiki isi artikel lalu simpan sebagai Draft untuk dikirim ulang ke editor.</p>
-        </div>
-    @endif
-
-    <form action="{{ route('author.articles.update', $article) }}" method="POST" enctype="multipart/form-data" id="article-form">
+    <form action="{{ route('editor.articles.update', $article) }}" method="POST" enctype="multipart/form-data" id="article-form">
         @csrf
         @method('PUT')
 
@@ -104,7 +88,7 @@
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
                     <h3 class="font-semibold text-gray-800 dark:text-white mb-4">Konten Artikel</h3>
                     <x-label-tooltip tooltip="Isi lengkap artikel. Gunakan toolbar editor untuk format teks seperti heading, bold, daftar, tabel, dan tautan.">Konten <span class="text-red-500">*</span></x-label-tooltip>
-                    <x-tinymce-editor name="content" :content="old('content', $article->content)" placeholder="Tulis isi artikel di sini..." :upload-url="route('author.articles.upload-image')" />
+                    <x-tinymce-editor name="content" :content="old('content', $article->content)" placeholder="Tulis isi artikel di sini..." :upload-url="route('editor.articles.upload-image')" />
                     @error('content')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
 
@@ -163,23 +147,19 @@
 
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5">
                     <h3 class="font-semibold text-gray-800 dark:text-white mb-1">Status & Publikasi</h3>
-                    <p class="text-xs text-gray-500 mb-3">Atur status artikel Anda.</p>
-                    <x-label-tooltip tooltip="Draft tersimpan untuk ditinjau admin/editor. Archived disembunyikan dari daftar. Anda tidak bisa langsung Publish — itu wewenang admin/editor setelah artikel ditinjau.">Status</x-label-tooltip>
-                    @if (in_array($article->status, ['published', 'ready_to_publish']))
-                        <x-article-status-badge :status="$article->status" class="inline-block" />
-                    @else
-                        <select name="status" required class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-primary focus:border-primary">
-                            <option value="draft" {{ old('status', $article->status === 'revision' ? 'draft' : $article->status) == 'draft' ? 'selected' : '' }}>Draft</option>
-                            <option value="archived" {{ old('status', $article->status) == 'archived' ? 'selected' : '' }}>Archived</option>
-                        </select>
-                        <p class="text-xs text-gray-500 mt-1">
-                            @if ($article->status === 'revision')
-                                Pilih Draft untuk mengirim ulang ke editor setelah diperbaiki.
-                            @else
-                                Publish hanya bisa dilakukan oleh admin/editor setelah ditinjau.
-                            @endif
-                        </p>
-                    @endif
+                    <p class="text-xs text-gray-500 mb-3">Sebagai editor, Anda bisa langsung mengubah status artikel sendiri.</p>
+                    <x-label-tooltip tooltip="Draft tersimpan tanpa tampil publik. Published langsung tampil di halaman Blog & Artikel. Archived disembunyikan dari daftar.">Status <span class="text-red-500">*</span></x-label-tooltip>
+                    <select name="status" required class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-primary focus:border-primary">
+                        <option value="draft" {{ old('status', $article->status) == 'draft' ? 'selected' : '' }}>Draft</option>
+                        @if ($article->status === 'revision')
+                            <option value="revision" selected>Revisi (diminta editor lain)</option>
+                        @endif
+                        @if ($article->status === 'ready_to_publish')
+                            <option value="ready_to_publish" selected>Siap Terbit (disetujui editor lain)</option>
+                        @endif
+                        <option value="published" {{ old('status', $article->status) == 'published' ? 'selected' : '' }}>Published</option>
+                        <option value="archived" {{ old('status', $article->status) == 'archived' ? 'selected' : '' }}>Archived</option>
+                    </select>
                     @error('status')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
 
@@ -202,7 +182,7 @@
                     <label class="flex items-center justify-between gap-3 cursor-pointer">
                         <span>
                             <span class="block text-sm font-medium text-gray-700 dark:text-gray-300">Tampilkan di halaman utama</span>
-                            <span class="block text-xs text-gray-500">Permintaan artikel unggulan; aktif otomatis setelah dipublikasikan admin/editor</span>
+                            <span class="block text-xs text-gray-500">Jadikan artikel unggulan</span>
                         </span>
                         <span class="relative inline-flex items-center flex-shrink-0">
                             <input type="checkbox" name="is_featured" value="1" {{ old('is_featured', $article->is_featured) ? 'checked' : '' }} class="sr-only peer">
@@ -215,7 +195,7 @@
         </div>
 
         <div class="flex justify-end space-x-3 mt-6">
-            <a href="{{ route('author.articles.index') }}" class="px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">Batal</a>
+            <a href="{{ route('editor.articles.index', ['tab' => 'mine']) }}" class="px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">Batal</a>
             <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition">Simpan Perubahan</button>
         </div>
     </form>
@@ -251,7 +231,7 @@
         const name = nameInput.value.trim();
         if (!name) return;
 
-        fetch('{{ route('author.article-categories.store') }}', {
+        fetch('{{ route('editor.article-categories.store') }}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

@@ -13,6 +13,8 @@
                 <select x-model="status" @change="fetchArticles()" class="px-4 py-2 rounded-lg border dark:bg-gray-700">
                     <option value="">Semua Status</option>
                     <option value="draft">Draft</option>
+                    <option value="revision">Revisi</option>
+                    <option value="ready_to_publish">Siap Terbit</option>
                     <option value="published">Published</option>
                     <option value="archived">Archived</option>
                 </select>
@@ -51,9 +53,8 @@
                                 <td class="px-6 py-4">{{ $article->author->name }}</td>
                                 <td class="px-6 py-4">{{ number_format($article->views) }}</td>
                                 <td class="px-6 py-4">
-                                    <button @click="toggleStatus({{ $article->id }})"
-                                        class="px-2 py-1 text-xs rounded-full {{ $article->status == 'published' ? 'bg-green-100 text-green-800' : ($article->status == 'draft' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800') }}">
-                                        {{ ucfirst($article->status) }}
+                                    <button @click="toggleStatus({{ $article->id }})">
+                                        <x-article-status-badge :status="$article->status" class="cursor-pointer" />
                                     </button>
                                 </td>
                                 <td class="px-6 py-4 text-sm">{{ $article->created_at->format('d/m/Y') }}</td>

@@ -78,6 +78,8 @@
                     <x-label-tooltip tooltip="Draft tidak tampil ke publik. Published langsung tayang (atau sesuai Tanggal Publikasi kalau diisi). Archived disembunyikan dari daftar tapi datanya tetap tersimpan.">Status <span class="text-red-500">*</span></x-label-tooltip>
                     <select name="status" required class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700">
                         <option value="draft" {{ old('status', 'draft') == 'draft' ? 'selected' : '' }}>Draft</option>
+                        <option value="revision" {{ old('status') == 'revision' ? 'selected' : '' }}>Revisi</option>
+                        <option value="ready_to_publish" {{ old('status') == 'ready_to_publish' ? 'selected' : '' }}>Siap Terbit</option>
                         <option value="published" {{ old('status') == 'published' ? 'selected' : '' }}>Published</option>
                         <option value="archived" {{ old('status') == 'archived' ? 'selected' : '' }}>Archived</option>
                     </select>

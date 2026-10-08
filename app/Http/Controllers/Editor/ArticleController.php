@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Author;
+namespace App\Http\Controllers\Editor;
 
 use App\Http\Controllers\Controller;
 use App\Models\Article;
@@ -31,23 +31,49 @@ class ArticleController extends Controller
         ]);
     }
 
+    /**
+     * Daftar artikel dengan 3 tab: menunggu review (draft milik author lain),
+     * artikel saya, dan semua artikel.
+     */
     public function index(Request $request)
     {
         $this->authorize('viewAny', Article::class);
 
-        $query = Article::where('user_id', Auth::id())->with('category');
+        $tab = $request->get('tab', 'pending');
+        $query = Article::with(['author', 'category'])->withCount('comments');
+
+        if ($tab === 'pending') {
+            $query->where('status', 'draft')->where('user_id', '!=', Auth::id());
+        } elseif ($tab === 'mine') {
+            $query->where('user_id', Auth::id());
+        }
+        // $tab === 'all' -> tidak ada filter kepemilikan/status tambahan.
 
         if ($request->filled('search')) {
-            $query->where('title', 'like', "%{$request->search}%");
+            $query->where(function ($q) use ($request) {
+                $q->where('title', 'like', "%{$request->search}%")
+                    ->orWhereHas('author', fn ($q2) => $q2->where('name', 'like', "%{$request->search}%"));
+            });
         }
 
-        if ($request->filled('status')) {
+        if ($request->filled('status') && $tab !== 'pending') {
             $query->where('status', $request->status);
         }
 
         $articles = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
 
-        return view('author.articles.index', compact('articles'));
+        $pendingCount = Article::where('status', 'draft')->where('user_id', '!=', Auth::id())->count();
+
+        return view('editor.articles.index', compact('articles', 'tab', 'pendingCount'));
+    }
+
+    public function show(Article $article)
+    {
+        $this->authorize('view', $article);
+
+        $article->load(['author', 'category', 'tags']);
+
+        return view('editor.articles.show', compact('article'));
     }
 
     public function create()
@@ -57,11 +83,11 @@ class ArticleController extends Controller
         $categories = ArticleCategory::where('is_active', true)->orderBy('order')->get();
         $tags = Tag::active()->orderBy('name')->get();
 
-        return view('author.articles.create', compact('categories', 'tags'));
+        return view('editor.articles.create', compact('categories', 'tags'));
     }
 
     /**
-     * Buat kategori artikel baru langsung dari form tulis artikel (author
+     * Buat kategori artikel baru langsung dari form tulis artikel (editor
      * tidak punya akses ke halaman manajemen kategori admin).
      */
     public function storeCategory(Request $request)
@@ -85,8 +111,7 @@ class ArticleController extends Controller
 
     /**
      * Terima campuran ID tag yang sudah ada (angka) dan nama tag baru (teks,
-     * diketik lewat opsi "create" di Tom Select) — author tidak punya akses
-     * ke halaman manajemen tag admin, jadi tag baru dibuat langsung di sini.
+     * diketik lewat opsi "create" di Tom Select).
      */
     private function resolveTagIds(array $tagInputs): array
     {
@@ -126,26 +151,27 @@ class ArticleController extends Controller
             'excerpt' => 'nullable|string',
             'content' => 'required|string',
             'featured_image' => 'nullable|image|max:2048',
-            // Author tidak boleh langsung publish — cuma editor/admin yang bisa (lihat ArticlePolicy::publish).
-            'status' => 'required|in:draft,archived',
+            // Editor punya hak publish (lihat ArticlePolicy::publish), jadi boleh
+            // langsung set status published untuk artikel sendiri.
+            'status' => 'required|in:draft,archived,published',
             'tags' => 'nullable|array',
             'tags.*' => 'string|max:255',
             'meta_title' => 'nullable|string|max:255',
             'meta_description' => 'nullable|string|max:500',
             'og_image' => 'nullable|image|max:2048',
-            // is_featured cuma "permintaan" dari author — baru benar-benar tampil di
-            // halaman utama setelah admin/editor publish artikelnya (lihat scope published()).
             'is_featured' => 'nullable|boolean',
             'allow_comments' => 'nullable|boolean',
         ]);
 
         $data = collect($validated)->except(['featured_image', 'tags', 'og_image', 'slug'])->all();
         $data['is_featured'] = $request->boolean('is_featured');
-        // Form mengirim hidden input bernilai "0" sebelum checkbox-nya, supaya
-        // unchecked tetap terkirim (checkbox polos tidak mengirim apa-apa saat unchecked).
         $data['allow_comments'] = $request->boolean('allow_comments');
         $data['user_id'] = Auth::id();
         $data['slug'] = $validated['slug'] ?? null;
+
+        if ($validated['status'] === 'published') {
+            $data['published_at'] = now();
+        }
 
         if ($request->hasFile('featured_image')) {
             $data['featured_image'] = $request->file('featured_image')->store('articles', 'public');
@@ -163,8 +189,8 @@ class ArticleController extends Controller
             Tag::whereIn('id', $tagIds)->increment('usage_count');
         }
 
-        return redirect()->route('author.articles.index')
-            ->with('success', 'Artikel berhasil disimpan sebagai draft. Admin/editor akan meninjau sebelum dipublikasikan.');
+        return redirect()->route('editor.articles.index', ['tab' => 'mine'])
+            ->with('success', 'Artikel berhasil disimpan.');
     }
 
     public function edit(Article $article)
@@ -176,21 +202,12 @@ class ArticleController extends Controller
         $article->load('tags');
         $selectedTags = $article->tags->pluck('id')->toArray();
 
-        return view('author.articles.edit', compact('article', 'categories', 'tags', 'selectedTags'));
+        return view('editor.articles.edit', compact('article', 'categories', 'tags', 'selectedTags'));
     }
 
     public function update(Request $request, Article $article)
     {
         $this->authorize('update', $article);
-
-        // Begitu sudah published atau ditandai siap terbit oleh editor, status
-        // jadi wewenang editor/admin (lihat ArticlePolicy::publish) — author
-        // masih boleh edit isi artikelnya, tapi tidak boleh ikut mengubah
-        // statusnya lewat form ini (supaya tidak tidak sengaja membatalkan
-        // keputusan review). Kalau statusnya 'revision', pilihan draft/archived
-        // di sini otomatis berarti "kirim ulang untuk ditinjau" / "batalkan".
-        $statusLocked = in_array($article->status, ['published', 'ready_to_publish']);
-        $statusRule = $statusLocked ? 'nullable' : 'required|in:draft,archived';
 
         $validated = $request->validate([
             'title' => 'required|string|max:255',
@@ -200,7 +217,7 @@ class ArticleController extends Controller
             'excerpt' => 'nullable|string',
             'content' => 'required|string',
             'featured_image' => 'nullable|image|max:2048',
-            'status' => $statusRule,
+            'status' => 'required|in:draft,revision,ready_to_publish,archived,published',
             'tags' => 'nullable|array',
             'tags.*' => 'string|max:255',
             'meta_title' => 'nullable|string|max:255',
@@ -210,7 +227,7 @@ class ArticleController extends Controller
             'allow_comments' => 'nullable|boolean',
         ]);
 
-        $data = collect($validated)->except(['featured_image', 'tags', 'status', 'og_image', 'slug'])->all();
+        $data = collect($validated)->except(['featured_image', 'tags', 'og_image', 'slug'])->all();
         $data['is_featured'] = $request->boolean('is_featured');
         $data['allow_comments'] = $request->boolean('allow_comments');
 
@@ -218,8 +235,8 @@ class ArticleController extends Controller
             $data['slug'] = $validated['slug'];
         }
 
-        if (!$statusLocked) {
-            $data['status'] = $validated['status'];
+        if ($validated['status'] === 'published' && $article->status !== 'published') {
+            $data['published_at'] = now();
         }
 
         if ($request->hasFile('featured_image')) {
@@ -246,7 +263,86 @@ class ArticleController extends Controller
 
         $article->tags()->sync($newTags);
 
-        return redirect()->route('author.articles.index')
+        return redirect()->route('editor.articles.index', ['tab' => 'mine'])
             ->with('success', 'Artikel berhasil diperbarui.');
+    }
+
+    /**
+     * Terbitkan draft milik siapa pun (lihat ArticlePolicy::publish) — inti
+     * dari alur kerja review editor.
+     */
+    public function publish(Article $article)
+    {
+        $this->authorize('publish', $article);
+
+        $article->update([
+            'status' => 'published',
+            'published_at' => $article->published_at ?? now(),
+            'revision_notes' => null,
+        ]);
+
+        $this->logActivity('publish', 'articles', $article->id, null, null,
+            Auth::user()->name . ' mempublikasikan artikel "' . $article->title . '"');
+
+        return back()->with('success', 'Artikel "' . $article->title . '" berhasil dipublikasikan.');
+    }
+
+    /**
+     * Tolak draft secara halus dengan mengarsipkannya (bukan menghapus) —
+     * lihat ArticlePolicy::archive.
+     */
+    public function archive(Article $article)
+    {
+        $this->authorize('archive', $article);
+
+        $article->update(['status' => 'archived']);
+
+        $this->logActivity('archive', 'articles', $article->id, null, null,
+            Auth::user()->name . ' mengarsipkan artikel "' . $article->title . '"');
+
+        return back()->with('success', 'Artikel "' . $article->title . '" diarsipkan.');
+    }
+
+    /**
+     * Kembalikan draft ke penulis dengan catatan perbaikan — penulis akan
+     * melihat catatan ini dan artikel kembali berstatus draft begitu
+     * disimpan ulang (lihat Author\ArticleController::update).
+     */
+    public function requestRevision(Request $request, Article $article)
+    {
+        $this->authorize('review', $article);
+
+        $validated = $request->validate([
+            'revision_notes' => 'required|string|max:1000',
+        ]);
+
+        $article->update([
+            'status' => 'revision',
+            'revision_notes' => $validated['revision_notes'],
+        ]);
+
+        $this->logActivity('request_revision', 'articles', $article->id, null, null,
+            Auth::user()->name . ' meminta revisi artikel "' . $article->title . '"');
+
+        return back()->with('success', 'Permintaan revisi untuk "' . $article->title . '" terkirim ke penulis.');
+    }
+
+    /**
+     * Tandai draft sudah disetujui dan siap terbit — langkah antara sebelum
+     * benar-benar dipublikasikan (lihat publish()).
+     */
+    public function markReady(Article $article)
+    {
+        $this->authorize('review', $article);
+
+        $article->update([
+            'status' => 'ready_to_publish',
+            'revision_notes' => null,
+        ]);
+
+        $this->logActivity('mark_ready', 'articles', $article->id, null, null,
+            Auth::user()->name . ' menyetujui artikel "' . $article->title . '"');
+
+        return back()->with('success', 'Artikel "' . $article->title . '" ditandai siap terbit.');
     }
 }

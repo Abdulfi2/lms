@@ -100,12 +100,18 @@ window.addEventListener('resize', handleResize);"
                 class="hidden lg:block lg:fixed lg:top-16 lg:left-0 lg:h-[calc(100vh-4rem)] z-30 sidebar-transition"
                 :class="sidebarOpen ? 'w-64' : 'w-20'">
                 @auth
-                    @if (auth()->user()->hasRole('admin') || auth()->user()->hasRole('event_manager'))
+                    @if (auth()->user()->hasRole('admin'))
                         @include('components.sidebar.admin-sidebar')
+                    @elseif(auth()->user()->hasRole('event_manager'))
+                        @include('components.sidebar.event-manager-sidebar')
                     @elseif(auth()->user()->hasRole('instructor'))
                         @include('components.sidebar.instructor-sidebar')
                     @elseif(auth()->user()->hasRole('author'))
                         @include('components.sidebar.author-sidebar')
+                    @elseif(auth()->user()->hasRole('editor'))
+                        @include('components.sidebar.editor-sidebar')
+                    @elseif(auth()->user()->hasRole('support'))
+                        @include('components.sidebar.support-sidebar')
                     @else
                         @include('components.sidebar.student-sidebar')
                     @endif
@@ -222,6 +228,10 @@ window.addEventListener('resize', handleResize);"
                                     Instruktur
                                 @elseif(auth()->user()->hasRole('author'))
                                     Author
+                                @elseif(auth()->user()->hasRole('editor'))
+                                    Editor
+                                @elseif(auth()->user()->hasRole('support'))
+                                    Support
                                 @else
                                     Mahasiswa
                                 @endif
@@ -240,12 +250,18 @@ window.addEventListener('resize', handleResize);"
 
             <!-- Navigation Menu -->
             @auth
-                @if (auth()->user()->hasRole('admin') || auth()->user()->hasRole('event_manager'))
+                @if (auth()->user()->hasRole('admin'))
                     @include('components.sidebar.mobile-admin-sidebar')
+                @elseif(auth()->user()->hasRole('event_manager'))
+                    @include('components.sidebar.mobile-event-manager-sidebar')
                 @elseif(auth()->user()->hasRole('instructor'))
                     @include('components.sidebar.mobile-instructor-sidebar')
                 @elseif(auth()->user()->hasRole('author'))
                     @include('components.sidebar.mobile-author-sidebar')
+                @elseif(auth()->user()->hasRole('editor'))
+                    @include('components.sidebar.mobile-editor-sidebar')
+                @elseif(auth()->user()->hasRole('support'))
+                    @include('components.sidebar.mobile-support-sidebar')
                 @else
                     @include('components.sidebar.mobile-student-sidebar')
                 @endif

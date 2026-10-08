@@ -94,6 +94,16 @@ class User extends Authenticatable implements MustVerifyEmail
             ->withPivot('earned_at');
     }
 
+    public function tickets()
+    {
+        return $this->hasMany(Ticket::class);
+    }
+
+    public function articles()
+    {
+        return $this->hasMany(Article::class, 'user_id');
+    }
+
     /**
      * Notifikasi in-app (tabel notifications kustom). Diberi nama berbeda dari
      * notifications() milik trait Notifiable karena skema tabelnya berbeda

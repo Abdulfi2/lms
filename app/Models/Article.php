@@ -20,6 +20,7 @@ class Article extends Model
         'excerpt',
         'content',
         'status',
+        'revision_notes',
         'is_featured',
         'published_at',
         'views',

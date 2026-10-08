@@ -63,7 +63,7 @@ class ArticleController extends Controller
             'excerpt' => 'nullable|string',
             'content' => 'required|string',
             'featured_image' => 'nullable|image|max:2048',
-            'status' => 'required|in:draft,published,archived',
+            'status' => 'required|in:draft,revision,ready_to_publish,published,archived',
             'published_at' => 'nullable|date',
             'tags' => 'nullable|array',
             'tags.*' => 'exists:tags,id',
@@ -124,7 +124,7 @@ class ArticleController extends Controller
             'excerpt' => 'nullable|string',
             'content' => 'required|string',
             'featured_image' => 'nullable|image|max:2048',
-            'status' => 'required|in:draft,published,archived',
+            'status' => 'required|in:draft,revision,ready_to_publish,published,archived',
             'published_at' => 'nullable|date',
             'tags' => 'nullable|array',
             'tags.*' => 'exists:tags,id',
@@ -191,10 +191,16 @@ class ArticleController extends Controller
 
     public function toggleStatus(Article $article)
     {
+        $this->authorize('publish', $article);
+
         $newStatus = $article->status === 'published' ? 'draft' : 'published';
         $article->update([
             'status' => $newStatus,
             'published_at' => $newStatus === 'published' ? now() : null,
+            // Force-publish lewat toggle ini juga menyelesaikan siklus review —
+            // bersihkan catatan revisi lama supaya tidak jadi "sisa" yang
+            // menyesatkan (lihat Editor\ArticleController::publish()).
+            'revision_notes' => $newStatus === 'published' ? null : $article->revision_notes,
         ]);
 
         return response()->json(['success' => true, 'status' => $newStatus]);

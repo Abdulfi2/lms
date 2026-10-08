@@ -59,4 +59,18 @@ class ArticlePolicy
 
         return false;
     }
+
+    public function archive(User $user, Article $article): bool
+    {
+        // Sama seperti publish — cara editor/admin menolak draft secara halus
+        // (dikembalikan ke status archived) tanpa menghapusnya.
+        return $this->publish($user, $article);
+    }
+
+    public function review(User $user, Article $article): bool
+    {
+        // Minta revisi & tandai siap terbit — bagian dari alur review, sama
+        // seperti publish/archive (admin & editor, bukan milik sendiri saja).
+        return $this->publish($user, $article);
+    }
 }
