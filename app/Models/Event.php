@@ -35,6 +35,24 @@ class Event extends Model
         'total_registrations'
     ];
 
+    public const TYPE_LABELS = [
+        'webinar' => 'Webinar',
+        'workshop' => 'Workshop',
+        'parenting' => 'Parenting',
+        'live_class' => 'Live Class',
+        'zoom_meeting' => 'Zoom Meeting',
+        'seminar' => 'Seminar',
+    ];
+
+    public const CATEGORY_LABELS = [
+        'education' => 'Pendidikan',
+        'parenting' => 'Parenting',
+        'technology' => 'Teknologi',
+        'business' => 'Bisnis',
+        'health' => 'Kesehatan',
+        'other' => 'Lainnya',
+    ];
+
     protected $casts = [
         'start_time' => 'datetime',
         'end_time' => 'datetime',
@@ -57,6 +75,33 @@ class Event extends Model
         if (!$this->max_participants)
             return null;
         return $this->max_participants - $this->total_registrations;
+    }
+
+    /**
+     * Status siklus hidup untuk tampilan: draft, cancelled, upcoming, ongoing, finished.
+     * Event yang statusnya 'published' dihitung dari jadwal, bukan hanya kolom status.
+     */
+    public function getLifecycleStatusAttribute(): string
+    {
+        if (in_array($this->status, ['draft', 'cancelled'], true)) {
+            return $this->status;
+        }
+
+        if ($this->status === 'completed') {
+            return 'finished';
+        }
+
+        if ($this->start_time->isFuture()) {
+            return 'upcoming';
+        }
+
+        // Tanpa end_time (sesi tanpa jadwal selesai pasti), jangan anggap selesai
+        // hanya karena start_time sudah lewat — tetap 'ongoing' sampai ada info lain.
+        if (!$this->end_time) {
+            return 'ongoing';
+        }
+
+        return $this->end_time->isPast() ? 'finished' : 'ongoing';
     }
 
     public function getFormattedPriceAttribute()
