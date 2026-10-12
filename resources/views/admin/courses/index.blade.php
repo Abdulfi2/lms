@@ -35,6 +35,8 @@
                 </select>
                 <button @click="fetchCourses()" class="px-4 py-2 bg-primary text-white rounded-lg">Filter</button>
             </div>
+            <a href="{{ route('admin.courses.import.create') }}"
+                class="px-4 py-2 border border-green-600 text-green-700 rounded-lg hover:bg-green-50">Impor dari JSON</a>
             <a href="{{ route('admin.courses.create') }}"
                 class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">+ Kursus Baru</a>
         </div>

@@ -1,0 +1,259 @@
+{
+  "new_categories": [
+    {
+      "entity": "category",
+      "scope": "course",
+      "name": "Pelatihan Amil (Uji Impor)",
+      "description": "Kategori uji.",
+      "parent": null,
+      "color": "#769826",
+      "order": 1,
+      "is_active": true
+    }
+  ],
+  "new_tags": [
+    {
+      "entity": "tag",
+      "name": "uji impor",
+      "color": "#EF6905",
+      "is_active": true
+    }
+  ],
+  "course": {
+    "entity": "course",
+    "title": "Kursus Uji Impor Paket JSON",
+    "slug": "",
+    "short_description": "Kursus contoh untuk menguji fitur impor.",
+    "description": "<h2>Gambaran</h2><p>Isi contoh.</p>",
+    "requirements": [
+      "Laptop"
+    ],
+    "learning_objectives": [
+      "Memahami alur impor"
+    ],
+    "target_audience": [
+      "Admin"
+    ],
+    "prerequisites": [],
+    "video_promo": null,
+    "price": 0,
+    "sale_price": null,
+    "level": "beginner",
+    "language": "id",
+    "duration_total": 1,
+    "status": "draft",
+    "is_featured": false,
+    "has_certificate": true,
+    "max_students": null,
+    "enrollment_end_date": null,
+    "start_date": null,
+    "end_date": null,
+    "access_days": null,
+    "meta_keywords": "uji impor, kursus contoh",
+    "meta_description": "Kursus contoh untuk menguji fitur impor paket JSON.",
+    "categories": [
+      "Pelatihan Amil (Uji Impor)"
+    ],
+    "tags": [
+      "uji impor",
+      "amil zakat uji"
+    ],
+    "thumbnail_brief": "-"
+  },
+  "sections": [
+    {
+      "title": "Modul 0: Pengantar",
+      "description": "Pengantar.",
+      "is_published": true,
+      "lessons": [
+        {
+          "title": "Selamat datang",
+          "type": "video",
+          "content": "<p>Halo</p>",
+          "duration": 5,
+          "video_url": "https://youtu.be/dQw4w9WgXcQ",
+          "is_free_preview": true,
+          "points": 5,
+          "status": "draft"
+        },
+        {
+          "title": "Pretest orientasi",
+          "type": "quiz",
+          "content": "<p>Kerjakan pretest.</p>",
+          "duration": 10,
+          "is_free_preview": false,
+          "points": 10,
+          "status": "draft"
+        }
+      ]
+    },
+    {
+      "title": "Modul 1: Isi",
+      "description": "Isi.",
+      "is_published": true,
+      "lessons": [
+        {
+          "title": "Bacaan utama",
+          "type": "article",
+          "content": "<h2>A</h2><p>B</p>",
+          "duration": 10,
+          "is_free_preview": false,
+          "points": 5,
+          "status": "draft",
+          "resources": [
+            {
+              "title": "Ringkasan (PDF)",
+              "description": "Rangkuman."
+            }
+          ]
+        },
+        {
+          "title": "Kuis Modul 1",
+          "type": "quiz",
+          "content": "<p>Kuis.</p>",
+          "duration": 10,
+          "is_free_preview": false,
+          "points": 10,
+          "status": "draft"
+        },
+        {
+          "title": "Tugas: Rencana kerja",
+          "type": "assignment",
+          "content": "<p>Tugas.</p>",
+          "duration": 20,
+          "is_free_preview": false,
+          "points": 20,
+          "status": "draft"
+        }
+      ]
+    }
+  ],
+  "quizzes": [
+    {
+      "entity": "quiz",
+      "lesson_title": "Pretest orientasi",
+      "title": "Pretest",
+      "quiz_type": "pretest",
+      "time_limit": 15,
+      "attempts_allowed": 1,
+      "passing_score": 0,
+      "randomize_questions": true,
+      "is_published": false,
+      "questions": [
+        {
+          "question": "Ibu kota Indonesia?",
+          "type": "multiple_choice",
+          "points": 10,
+          "explanation": "Pembahasan singkat.",
+          "options": [
+            {
+              "text": "Jakarta",
+              "is_correct": true,
+              "points": 0
+            },
+            {
+              "text": "Bandung",
+              "is_correct": false,
+              "points": 0
+            },
+            {
+              "text": "Depok",
+              "is_correct": false,
+              "points": 0
+            },
+            {
+              "text": "Medan",
+              "is_correct": false,
+              "points": 0
+            }
+          ]
+        },
+        {
+          "question": "Zakat maal wajib setiap bulan.",
+          "type": "true_false",
+          "points": 5,
+          "correct_answer": "false",
+          "explanation": "Perlu nisab dan haul."
+        },
+        {
+          "question": "Jelaskan arti amil.",
+          "type": "essay",
+          "points": 10,
+          "explanation": "Kriteria: pengelola zakat."
+        }
+      ]
+    },
+    {
+      "entity": "quiz",
+      "lesson_title": "Kuis Modul 1",
+      "title": "Kuis Modul 1",
+      "quiz_type": "posttest",
+      "time_limit": 10,
+      "attempts_allowed": 3,
+      "passing_score": 70,
+      "randomize_questions": true,
+      "is_published": false,
+      "questions": [
+        {
+          "question": "Berapa asnaf?",
+          "type": "multiple_choice",
+          "points": 10,
+          "explanation": "Pembahasan singkat.",
+          "options": [
+            {
+              "text": "Delapan",
+              "is_correct": true,
+              "points": 0
+            },
+            {
+              "text": "Lima",
+              "is_correct": false,
+              "points": 0
+            },
+            {
+              "text": "Tujuh",
+              "is_correct": false,
+              "points": 0
+            },
+            {
+              "text": "Sepuluh",
+              "is_correct": false,
+              "points": 0
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "assignments": [
+    {
+      "entity": "assignment",
+      "lesson_title": "Tugas: Rencana kerja",
+      "title": "Rencana Kerja 90 Hari",
+      "description": "Susun rencana.",
+      "instructions": "1) Isi template.",
+      "max_score": 100,
+      "passing_score": 70,
+      "due_date": null,
+      "is_published": false,
+      "allow_late_submission": true,
+      "late_penalty": 10,
+      "rubric": [
+        {
+          "criteria": "Keselarasan",
+          "description": "Selaras KPI.",
+          "max_points": 60
+        },
+        {
+          "criteria": "Kualitas target",
+          "description": "SMART.",
+          "max_points": 40
+        }
+      ]
+    }
+  ],
+  "catatan": [
+    "Contoh paket untuk uji impor.",
+    "[PERLU VERIFIKASI] Contoh saja."
+  ]
+}

@@ -37,6 +37,7 @@ use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\ArticleCommentController;
 use App\Http\Controllers\Author\CategoryController as AuthorCategoryController;
 use App\Http\Controllers\Author\CommentController as AuthorCommentController;
+use App\Http\Controllers\CourseImportController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\NewsletterController;
@@ -254,6 +255,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::patch('tags/{tag}/toggle-status', [TagController::class, 'toggleStatus'])->name('tags.toggle-status');
 
         // Course
+        Route::get('courses/import', [CourseImportController::class, 'create'])->name('courses.import.create');
+        Route::post('courses/import/preview', [CourseImportController::class, 'preview'])->name('courses.import.preview');
+        Route::post('courses/import', [CourseImportController::class, 'store'])->name('courses.import.store');
         Route::resource('courses', CourseController::class);
         Route::patch('courses/{course}/toggle-status', [CourseController::class, 'toggleStatus'])->name('courses.toggle-status');
         Route::patch('courses/{course}/approve', [CourseController::class, 'approve'])->name('courses.approve');
@@ -433,6 +437,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/certificates/export', [\App\Http\Controllers\Instructor\CertificateController::class, 'export'])->name('certificates.export');
 
         Route::get('/coupons', [\App\Http\Controllers\Instructor\CouponController::class, 'index'])->name('coupons.index');
+        Route::get('courses/import', [CourseImportController::class, 'create'])->name('courses.import.create');
+        Route::post('courses/import/preview', [CourseImportController::class, 'preview'])->name('courses.import.preview');
+        Route::post('courses/import', [CourseImportController::class, 'store'])->name('courses.import.store');
         Route::resource('courses', InstructorCourseController::class)->except(['show']);
         Route::post('courses/{course}/duplicate', [InstructorCourseController::class, 'duplicate'])->name('courses.duplicate');
         Route::get('courses/{course}/preview', [InstructorCourseController::class, 'preview'])->name('courses.preview');

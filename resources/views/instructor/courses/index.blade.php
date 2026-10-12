@@ -6,7 +6,14 @@
 
 @section('content')
     <div class="space-y-6">
-        <div class="flex justify-end">
+        <div class="flex flex-wrap justify-end gap-3">
+            <a href="{{ route('instructor.courses.import.create') }}"
+                class="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 border border-primary text-primary rounded-lg hover:bg-green-50 dark:hover:bg-gray-700 font-medium shadow-sm">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                Impor dari JSON
+            </a>
             <a href="{{ route('instructor.courses.create') }}"
                 class="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg hover:bg-secondary font-medium shadow-sm">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
