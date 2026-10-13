@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             GamificationSeeder::class,
             EventSeeder::class,
             SettingsSeeder::class,
+            TestimonialSeeder::class,
         ]);
     }
 }

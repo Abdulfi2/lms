@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\ArticleCategoryController;
+use App\Http\Controllers\Admin\TestimonialController;
 use App\Http\Controllers\Author\DashboardController as AuthorDashboardController;
 use App\Http\Controllers\Author\ArticleController as AuthorArticleController;
 use App\Http\Controllers\Editor\DashboardController as EditorDashboardController;
@@ -247,6 +248,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('articles', AdminArticleController::class)->except(['show']);
         Route::patch('articles/{article}/toggle-status', [AdminArticleController::class, 'toggleStatus'])->name('articles.toggle-status');
         Route::resource('article-categories', ArticleCategoryController::class)->except(['show']);
+
+        // Homepage — Testimoni
+        Route::resource('testimonials', TestimonialController::class)->except(['show']);
 
         // Categories & Tags
         Route::resource('categories', CategoryController::class)->except(['show']);

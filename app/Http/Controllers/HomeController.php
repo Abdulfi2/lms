@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Course;
+use App\Models\Testimonial;
 
 class HomeController extends Controller
 {
@@ -13,6 +14,8 @@ class HomeController extends Controller
             ->limit(6)
             ->get();
 
-        return view('client.pages.home', compact('popularCourses'));
+        $testimonials = Testimonial::active()->ordered()->limit(6)->get();
+
+        return view('client.pages.home', compact('popularCourses', 'testimonials'));
     }
 }

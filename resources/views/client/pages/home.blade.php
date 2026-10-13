@@ -228,52 +228,27 @@
                     manfaat belajar di platform kami</p>
             </div>
 
-            <div class="grid md:grid-cols-3 gap-6">
-                <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-6 shadow">
-                    <div class="flex text-yellow-400 mb-3">★★★★★</div>
-                    <p class="text-gray-700 dark:text-gray-300 mb-4">"Platform ini sangat membantu saya dalam
-                        mengembangkan skill programming. Materinya lengkap dan mudah dipahami!"</p>
-                    <div class="flex items-center gap-3">
-                        <div
-                            class="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold">
-                            A</div>
-                        <div>
-                            <h4 class="font-semibold text-gray-900 dark:text-white">Ahmad Rizki</h4>
-                            <p class="text-xs text-gray-500">Fullstack Developer</p>
+            @if ($testimonials->isNotEmpty())
+                <div class="grid md:grid-cols-3 gap-6">
+                    @foreach ($testimonials as $testimonial)
+                        <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-6 shadow">
+                            <div class="flex text-yellow-400 mb-3">{{ str_repeat('★', $testimonial->rating) }}{{ str_repeat('☆', 5 - $testimonial->rating) }}</div>
+                            <p class="text-gray-700 dark:text-gray-300 mb-4">"{{ $testimonial->content }}"</p>
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold">
+                                    {{ $testimonial->initial() }}
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold text-gray-900 dark:text-white">{{ $testimonial->name }}</h4>
+                                    @if ($testimonial->role)
+                                        <p class="text-xs text-gray-500">{{ $testimonial->role }}</p>
+                                    @endif
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    @endforeach
                 </div>
-
-                <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-6 shadow">
-                    <div class="flex text-yellow-400 mb-3">★★★★★</div>
-                    <p class="text-gray-700 dark:text-gray-300 mb-4">"Instruktur profesional dan responsif. Saya
-                        sekarang sudah bisa membuat website sendiri setelah mengikuti kursus di sini."</p>
-                    <div class="flex items-center gap-3">
-                        <div
-                            class="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold">
-                            S</div>
-                        <div>
-                            <h4 class="font-semibold text-gray-900 dark:text-white">Siti Aminah</h4>
-                            <p class="text-xs text-gray-500">UI/UX Designer</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-6 shadow">
-                    <div class="flex text-yellow-400 mb-3">★★★★★</div>
-                    <p class="text-gray-700 dark:text-gray-300 mb-4">"Sertifikatnya diakui industri. Setelah
-                        menyelesaikan kursus, saya langsung mendapat tawaran pekerjaan!"</p>
-                    <div class="flex items-center gap-3">
-                        <div
-                            class="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold">
-                            B</div>
-                        <div>
-                            <h4 class="font-semibold text-gray-900 dark:text-white">Budi Santoso</h4>
-                            <p class="text-xs text-gray-500">Data Analyst</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            @endif
         </div>
     </section>
 
