@@ -26,8 +26,7 @@
 
             <div>
                 <x-label-tooltip tooltip="Isi penjelasan lengkap untuk membantu pengguna menyelesaikan masalahnya sendiri.">Konten <span class="text-red-500">*</span></x-label-tooltip>
-                <textarea name="content" rows="10" required
-                    class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-primary focus:border-primary">{{ old('content') }}</textarea>
+                <x-tinymce-editor name="content" :content="old('content')" placeholder="Tulis isi artikel bantuan..." :min-height="320" />
                 @error('content')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
             </div>
 

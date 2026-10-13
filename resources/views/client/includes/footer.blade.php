@@ -1,6 +1,26 @@
+@php
+    use App\Models\Setting;
+    use App\Support\FooterSettings;
+
+    // Isi footer diatur admin di Pengaturan > Footer. Kolom tautan yang kosong tidak ditampilkan.
+    $columns = collect([
+        ['title' => FooterSettings::value('footer_about_title'), 'links' => FooterSettings::parseLinks(FooterSettings::value('footer_about_links'))],
+        ['title' => FooterSettings::value('footer_help_title'), 'links' => FooterSettings::parseLinks(FooterSettings::value('footer_help_links'))],
+    ])->filter(fn ($column) => $column['links'])->values();
+
+    $email = Setting::get('contact_email', 'support@lms.com');
+    $phone = trim((string) FooterSettings::value('footer_phone'));
+    $address = trim((string) FooterSettings::value('footer_address'));
+    $socials = FooterSettings::socials();
+    $description = trim((string) FooterSettings::value('footer_description'));
+
+    // Nama kelas ditulis utuh (bukan disusun dari angka) supaya terdeteksi build Tailwind.
+    $gridClass = [2 => 'md:grid-cols-2', 3 => 'md:grid-cols-3', 4 => 'md:grid-cols-4'][2 + $columns->count()];
+@endphp
+
 <footer class="bg-white dark:bg-gray-800 border-t dark:border-gray-700 py-12 mt-auto">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div class="grid grid-cols-1 {{ $gridClass }} gap-8">
             <div>
                 <div class="flex items-center space-x-2 mb-4">
                     <div class="w-8 h-8 shadow rounded-lg flex items-center justify-center">
@@ -11,71 +31,52 @@
                         {{ config('app.name', 'ZS Academy') }}
                     </span>
                 </div>
-                <p class="text-gray-600 dark:text-gray-400 text-sm">
-                    Platform pembelajaran online milik LAZ Zakat Sukses.
-                </p>
+                @if ($description !== '')
+                    <p class="text-gray-600 dark:text-gray-400 text-sm">{{ $description }}</p>
+                @endif
             </div>
 
-            <div>
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-4">Tentang</h4>
-                <ul class="space-y-2 text-sm">
-                    <li><a href="{{ route('about') }}"
-                            class="text-gray-600 dark:text-gray-400 hover:text-primary transition">Tentang
-                            Kami</a></li>
-                    <li><a href="#"
-                            class="text-gray-600 dark:text-gray-400 hover:text-primary transition">Karir</a></li>
-                    <li><a href="{{ route('articles.index') }}"
-                            class="text-gray-600 dark:text-gray-400 hover:text-primary transition">Blog</a></li>
-                </ul>
-            </div>
-
-            <div>
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-4">Bantuan</h4>
-                <ul class="space-y-2 text-sm">
-                    <li><a href="{{ route('faq') }}"
-                            class="text-gray-600 dark:text-gray-400 hover:text-primary transition">FAQ</a>
-                    </li>
-                    <li><a href="{{ route('contact.create') }}"
-                            class="text-gray-600 dark:text-gray-400 hover:text-primary transition">Kontak</a></li>
-                    <li><a href="{{ route('privacy-policy') }}"
-                            class="text-gray-600 dark:text-gray-400 hover:text-primary transition">Kebijakan Privasi</a>
-                    </li>
-                    <li><a href="{{ route('terms') }}"
-                            class="text-gray-600 dark:text-gray-400 hover:text-primary transition">Syarat
-                            & Ketentuan</a></li>
-                </ul>
-            </div>
+            @foreach ($columns as $column)
+                <div>
+                    <h4 class="font-semibold text-gray-900 dark:text-white mb-4">{{ $column['title'] }}</h4>
+                    <ul class="space-y-2 text-sm">
+                        @foreach ($column['links'] as $link)
+                            <li><a href="{{ $link['url'] }}"
+                                    @if (preg_match('#^https?://#i', $link['url'])) target="_blank" rel="noopener noreferrer" @endif
+                                    class="text-gray-600 dark:text-gray-400 hover:text-primary transition">{{ $link['label'] }}</a></li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endforeach
 
             <div>
                 <h4 class="font-semibold text-gray-900 dark:text-white mb-4">Hubungi Kami</h4>
                 <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                    <li><i class="fas fa-envelope mr-2 w-4"></i>
-                        {{ \App\Models\Setting::get('contact_email', 'support@lms.com') }}</li>
-                    <li><i class="fas fa-phone mr-2 w-4"></i> +62 21 12345678</li>
+                    @if ($email)
+                        <li><i class="fas fa-envelope mr-2 w-4"></i> {{ $email }}</li>
+                    @endif
+                    @if ($phone !== '')
+                        <li><i class="fas fa-phone mr-2 w-4"></i> {{ $phone }}</li>
+                    @endif
+                    @if ($address !== '')
+                        <li class="flex"><i class="fas fa-location-dot mr-2 w-4 mt-1"></i> <span>{!! nl2br(e($address)) !!}</span></li>
+                    @endif
                 </ul>
-                <div class="flex space-x-4 mt-4">
-                    <a href="#"
-                        class="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center text-gray-500 hover:text-primary hover:bg-primary/10 transition">
-                        <i class="fab fa-facebook-f"></i>
-                    </a>
-                    <a href="#"
-                        class="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center text-gray-500 hover:text-primary hover:bg-primary/10 transition">
-                        <i class="fab fa-twitter"></i>
-                    </a>
-                    <a href="#"
-                        class="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center text-gray-500 hover:text-primary hover:bg-primary/10 transition">
-                        <i class="fab fa-instagram"></i>
-                    </a>
-                    <a href="#"
-                        class="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center text-gray-500 hover:text-primary hover:bg-primary/10 transition">
-                        <i class="fab fa-linkedin-in"></i>
-                    </a>
-                </div>
+                @if ($socials)
+                    <div class="flex space-x-4 mt-4">
+                        @foreach ($socials as $social)
+                            <a href="{{ $social['url'] }}" target="_blank" rel="noopener noreferrer" aria-label="{{ $social['label'] }}"
+                                class="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center text-gray-500 hover:text-primary hover:bg-primary/10 transition">
+                                <i class="{{ $social['icon'] }}"></i>
+                            </a>
+                        @endforeach
+                    </div>
+                @endif
             </div>
         </div>
 
         <div class="border-t dark:border-gray-700 mt-8 pt-8 text-center text-sm text-gray-500 dark:text-gray-400">
-            &copy; {{ date('Y') }} {{ config('app.name', 'LMS') }}. All rights reserved.
+            {{ FooterSettings::copyright() }}
         </div>
     </div>
 </footer>

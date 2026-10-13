@@ -96,7 +96,7 @@
                         <p class="text-sm text-gray-500 mt-1">
                             {{ \Carbon\Carbon::parse($event->start_time)->format('d M Y, H:i') }}</p>
                         <p class="text-sm text-gray-600 dark:text-gray-400 mt-2 line-clamp-2">
-                            {{ Str::limit($event->description, 100) }}</p>
+                            {{ \App\Support\RichText::excerpt($event->description, 100) }}</p>
                         <div class="mt-3 flex justify-between items-center">
                             <span class="font-bold text-primary">{{ $event->formatted_price }}</span>
                             <a href="{{ route('student.events.show', $event) }}"

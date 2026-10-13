@@ -19,8 +19,7 @@
 
             <div>
                 <label class="block text-sm font-medium mb-1">Deskripsi <span class="text-red-500">*</span></label>
-                <textarea name="description" rows="4" required
-                    class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700">{{ old('description') }}</textarea>
+                <x-tinymce-editor name="description" :content="old('description')" placeholder="Tulis deskripsi event..." :min-height="260" />
                 @error('description')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
             </div>
 

@@ -56,7 +56,7 @@
 
                 <div class="mt-6 prose max-w-none">
                     <h3 class="font-semibold">Deskripsi Event</h3>
-                    {!! nl2br(e($event->description)) !!}
+                    {!! \App\Support\RichText::render($event->description) !!}
                 </div>
 
                 @if ($event->speaker)

@@ -92,7 +92,7 @@
                                         </span>
                                     </div>
                                     <p class="text-gray-600 dark:text-gray-400 text-sm mt-2 line-clamp-2">
-                                        {{ Str::limit($reg->event->description, 100) }}</p>
+                                        {{ \App\Support\RichText::excerpt($reg->event->description, 100) }}</p>
                                 </div>
                             </div>
                             <div class="mt-4 flex justify-end space-x-3">

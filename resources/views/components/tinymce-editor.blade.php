@@ -8,7 +8,10 @@
 
 @php($editorId = 'tinymce-' . \Illuminate\Support\Str::random(8))
 
-<textarea id="{{ $editorId }}" name="{{ $name }}">{{ $content }}</textarea>
+{{-- Atribut tambahan (mis. x-model untuk form Alpine) diteruskan ke textarea. JANGAN beri atribut
+     `required`: TinyMCE menyembunyikan textarea, dan browser menolak submit dengan error "invalid form
+     control is not focusable" tanpa pesan apa pun. Wajib-isi dicek di server. --}}
+<textarea id="{{ $editorId }}" name="{{ $name }}" {{ $attributes }}>{{ $content }}</textarea>
 
 @push('scripts')
 <script>
@@ -46,6 +49,8 @@
         }
         @endif
 
+        const textarea = document.getElementById('{{ $editorId }}');
+
         tinymce.init({
             selector: '#{{ $editorId }}',
             height: {{ (int) $minHeight }},
@@ -60,6 +65,32 @@
             remove_script_host: false,
             convert_urls: false,
             placeholder: @js($placeholder),
+            // Form Alpine (x-model) mengisi textarea setelah halaman siap, sedangkan TinyMCE bisa
+            // selesai lebih dulu. Sinkronkan dua arah: textarea -> editor saat Alpine siap/editor
+            // siap, editor -> textarea (lewat event 'input' yang didengar x-model) saat diketik.
+            setup: function (editor) {
+                const hasModel = textarea.hasAttribute('x-model');
+
+                function pull() {
+                    if (hasModel && editor.initialized && textarea.value !== editor.getContent()) {
+                        editor.setContent(textarea.value);
+                    }
+                }
+
+                function push() {
+                    editor.save();
+                    if (hasModel) {
+                        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                }
+
+                editor.on('init', pull);
+                document.addEventListener('alpine:initialized', pull);
+                editor.on('input change keyup undo redo setcontent', function (e) {
+                    if (e.type === 'setcontent' && e.initial) return;
+                    push();
+                });
+            },
             plugins: 'lists link table code fullscreen autoresize{{ $uploadUrl ? ' image' : '' }}',
             toolbar: 'blocks | bold italic underline strikethrough | bullist numlist | blockquote link{{ $uploadUrl ? ' image' : '' }} table | removeformat code fullscreen',
             @if ($uploadUrl)

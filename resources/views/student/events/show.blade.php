@@ -99,7 +99,7 @@
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
                     <h2 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">📖 Tentang Event</h2>
                     <div class="prose dark:prose-invert max-w-none">
-                        {!! nl2br(e($event->description)) !!}
+                        {!! \App\Support\RichText::render($event->description) !!}
                     </div>
                 </div>
 

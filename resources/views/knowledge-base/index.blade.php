@@ -32,7 +32,7 @@
                     <span class="px-2 py-0.5 text-xs rounded-full bg-primary/10 text-primary">{{ $article->category }}</span>
                 @endif
                 <h3 class="font-semibold text-gray-800 dark:text-white mt-2">{{ $article->title }}</h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ Str::limit(strip_tags($article->content), 100) }}</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ \App\Support\RichText::excerpt($article->content, 100) }}</p>
             </a>
         @empty
             <div class="col-span-full text-center py-12 text-gray-500 dark:text-gray-400">

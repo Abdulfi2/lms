@@ -10,7 +10,7 @@
 
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
         <div class="prose dark:prose-invert max-w-none">
-            {!! nl2br(e($article->content)) !!}
+            {!! \App\Support\RichText::render($article->content) !!}
         </div>
     </div>
 

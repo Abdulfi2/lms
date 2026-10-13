@@ -106,7 +106,7 @@
                         <h3 class="font-semibold text-gray-800 dark:text-white text-lg mt-2 line-clamp-1">
                             {{ $event->title }}</h3>
                         <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
-                            {{ Str::limit($event->description, 100) }}</p>
+                            {{ \App\Support\RichText::excerpt($event->description, 100) }}</p>
                         <div class="mt-3 flex justify-between items-center">
                             <div>
                                 @if ($event->price_type === 'free')

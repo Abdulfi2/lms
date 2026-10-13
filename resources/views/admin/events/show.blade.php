@@ -34,7 +34,7 @@
             <h1 class="text-2xl font-bold text-gray-800 dark:text-white">{{ $event->title }}</h1>
             <p class="text-gray-500 text-sm mt-1">Diselenggarakan oleh: {{ $event->organizer->name ?? '-' }}</p>
 
-            <div class="mt-4 prose dark:prose-invert max-w-none">{!! nl2br(e($event->description)) !!}</div>
+            <div class="mt-4 prose dark:prose-invert max-w-none">{!! \App\Support\RichText::render($event->description) !!}</div>
 
             <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6 text-sm">
                 <div><strong>Jadwal:</strong><br>{{ optional($event->start_time)->format('d F Y, H:i') ?? '-' }}</div>

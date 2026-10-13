@@ -84,8 +84,8 @@
                     <label class="block text-sm font-medium mb-1">{{ $setting->label }}</label>
 
                     @if ($setting->type === 'textarea')
-                        <textarea name="{{ $setting->key }}" rows="3"
-                            class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700">{{ old($setting->key, $setting->value) }}</textarea>
+                        <textarea name="{{ $setting->key }}" rows="{{ str_ends_with($setting->key, '_links') ? 5 : 3 }}"
+                            class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 {{ str_ends_with($setting->key, '_links') ? 'font-mono text-sm' : '' }}">{{ old($setting->key, $setting->value) }}</textarea>
                     @elseif ($setting->type === 'boolean')
                         <label class="inline-flex items-center mt-1">
                             <input type="checkbox" name="{{ $setting->key }}" value="1"
@@ -96,6 +96,12 @@
                         <input type="text" name="{{ $setting->key }}" value="{{ old($setting->key, $setting->value) }}"
                             class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700">
                     @endif
+                    @if (!empty($hints[$setting->key]))
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ $hints[$setting->key] }}</p>
+                    @endif
+                    @error($setting->key)
+                        <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
             @empty
                 <p class="text-gray-500 text-sm">Tidak ada pengaturan di grup ini.</p>

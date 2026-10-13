@@ -29,7 +29,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1">Konten</label>
-                    <textarea x-model="form.content" rows="6" class="w-full rounded-lg border-gray-300"></textarea>
+                    <x-tinymce-editor name="content" x-model="form.content" placeholder="Tulis isi materi..." :min-height="300" />
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div><label class="block text-sm font-medium mb-1">Durasi (menit)</label><input type="number"
@@ -65,7 +65,7 @@
                     form: {
                         title: '{{ addslashes($lesson->title) }}',
                         type: '{{ $lesson->type }}',
-                        content: `{!! addslashes($lesson->content) !!}`,
+                        content: @json($lesson->content),
                         duration: {{ $lesson->duration }},
                         points: {{ $lesson->points }},
                         video_url: '{{ $lesson->video_url }}',

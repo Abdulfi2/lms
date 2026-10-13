@@ -37,6 +37,10 @@ class SettingsSeeder extends Seeder
             ['group' => 'homepage', 'key' => 'stat_certificates', 'value' => '100K+', 'type' => 'text', 'label' => 'Statistik: Sertifikat Diterbitkan'],
         ];
 
+        foreach (\App\Support\FooterSettings::defaults() as $footer) {
+            $defaults[] = $footer + ['group' => 'footer'];
+        }
+
         foreach ($defaults as $setting) {
             Setting::firstOrCreate(['key' => $setting['key']], $setting);
         }

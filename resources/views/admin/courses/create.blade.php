@@ -47,8 +47,7 @@
                     <div class="mt-3">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">@lang('courses.field_description')
                             <span class="text-red-500">*</span></label>
-                        <textarea x-model="form.description" rows="5"
-                            class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700"></textarea>
+                        <x-tinymce-editor name="description" x-model="form.description" placeholder="Tulis deskripsi kursus..." :min-height="280" />
                         <p x-show="errors.description" class="text-red-500 text-xs mt-1" x-text="errors.description"></p>
                     </div>
                 </div>
