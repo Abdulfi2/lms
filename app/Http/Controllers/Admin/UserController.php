@@ -136,6 +136,17 @@ class UserController extends Controller
     }
 
     /**
+     * Email unik untuk dipasang ke baris yang akan di-soft-delete, supaya email aslinya
+     * bebas dipakai ulang (users.email punya unique index di level DB yang tidak tahu
+     * soal deleted_at). Diprefix id user yang sudah pasti unik, jadi aman dipanggil
+     * berkali-kali untuk email yang sama tanpa saling bertabrakan.
+     */
+    private function freedEmail(User $user): string
+    {
+        return mb_substr("deleted-{$user->id}-{$user->email}", 0, 255);
+    }
+
+    /**
      * Display the specified user.
      */
     public function show(User $user)
@@ -271,6 +282,13 @@ class UserController extends Controller
                 $user->profile->delete();
             }
 
+            // users.email punya unique index di level DB yang tidak tahu soal deleted_at,
+            // jadi baris yang sudah di-soft-delete tetap mengunci emailnya selamanya kalau
+            // tidak dibebaskan - akibatnya registrasi/pembuatan user baru dengan email yang
+            // sama akan selalu gagal. Lepaskan email sebelum soft delete supaya bisa dipakai
+            // ulang, tapi baris lama tetap tersimpan untuk audit.
+            $user->update(['email' => $this->freedEmail($user)]);
+
             // Delete user (soft delete if using SoftDeletes)
             $user->delete();
 
@@ -312,6 +330,13 @@ class UserController extends Controller
             Profile::whereIn('profileable_id', $ids)
                 ->where('profileable_type', User::class)
                 ->delete();
+
+            // Lepaskan email masing-masing dulu (lihat destroy()) sebelum soft delete massal,
+            // supaya email yang sudah dihapus tetap bisa dipakai ulang untuk user baru.
+            $usersToDelete = User::whereIn('id', $ids)->get();
+            foreach ($usersToDelete as $userToDelete) {
+                $userToDelete->update(['email' => $this->freedEmail($userToDelete)]);
+            }
 
             // Delete users
             User::whereIn('id', $ids)->delete();

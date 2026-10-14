@@ -18,7 +18,9 @@ class UpdateUserRequest extends FormRequest
 
         return [
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $userId,
+            // Email user yang sudah di-soft-delete harus bisa dipakai ulang - exclude baris
+            // yang sudah dihapus, bukan cuma baris user yang masih aktif.
+            'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($userId)->whereNull('deleted_at')],
             'password' => 'nullable|string|min:8|confirmed',
             'role' => 'required|exists:roles,name',
             'is_active' => 'nullable|boolean',
