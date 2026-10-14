@@ -20,7 +20,18 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        $query = User::with('profile', 'roles');
+        $isTrashed = $request->status === 'trashed';
+
+        // Profile user yang di-soft-delete juga ikut ter-soft-delete (lihat destroy()),
+        // jadi harus ikut di-withTrashed supaya tetap muncul di tab "User Dihapus".
+        $query = User::with([
+            'profile' => fn ($q) => $isTrashed ? $q->withTrashed() : $q,
+            'roles',
+        ]);
+
+        if ($isTrashed) {
+            $query->onlyTrashed();
+        }
 
         // Search by name or email
         if ($request->filled('search')) {
@@ -36,8 +47,8 @@ class UserController extends Controller
             $query->role($request->role);
         }
 
-        // Filter by status (active/inactive/pending_approval)
-        if ($request->filled('status')) {
+        // Filter by status (active/inactive/pending_approval/trashed)
+        if ($request->filled('status') && !$isTrashed) {
             if ($request->status === 'pending_approval') {
                 $query->whereHas('profile', function ($q) {
                     $q->where('approval_status', 'pending');
@@ -305,6 +316,51 @@ class UserController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal menghapus user: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Restore a soft-deleted user.
+     */
+    public function restore(string $id)
+    {
+        try {
+            $user = User::onlyTrashed()->findOrFail($id);
+
+            DB::beginTransaction();
+
+            // Kembalikan email asli (lihat freedEmail()) kalau belum direbut user lain
+            // sejak dihapus - kalau sudah dipakai, biarkan email "deleted-..."-nya supaya
+            // tidak bentrok; admin bisa edit manual setelah dipulihkan.
+            if (preg_match('/^deleted-' . $user->id . '-(.+)$/', $user->email, $matches)) {
+                $originalEmail = $matches[1];
+                $emailTaken = User::where('email', $originalEmail)->exists();
+                if (!$emailTaken) {
+                    $user->email = $originalEmail;
+                    $user->save();
+                }
+            }
+
+            $user->restore();
+
+            $trashedProfile = $user->profile()->onlyTrashed()->first();
+            if ($trashedProfile) {
+                $trashedProfile->restore();
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'User berhasil dipulihkan.'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Failed to restore user: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memulihkan user.'
             ], 500);
         }
     }

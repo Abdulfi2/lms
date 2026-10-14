@@ -41,7 +41,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'last_seen_at' => 'datetime',
     ];
 
-    protected $appends = ['role_name', 'avatar_url', 'is_email_verified'];
+    protected $appends = ['role_name', 'avatar_url', 'is_email_verified', 'display_email'];
 
     // ========== RELATIONSHIPS ==========
 
@@ -156,6 +156,20 @@ class User extends Authenticatable implements MustVerifyEmail
     public function getIsEmailVerifiedAttribute()
     {
         return !is_null($this->email_verified_at);
+    }
+
+    /**
+     * Saat user di-soft-delete, email aslinya diganti "deleted-{id}-{email}" supaya bisa
+     * dipakai ulang user baru (lihat Admin\UserController::freedEmail()). Accessor ini
+     * membalikkan itu untuk ditampilkan ke admin, tanpa mengubah data tersimpan.
+     */
+    public function getDisplayEmailAttribute(): string
+    {
+        if (preg_match('/^deleted-' . $this->id . '-(.+)$/', $this->email, $matches)) {
+            return $matches[1];
+        }
+
+        return $this->email;
     }
 
     public function sendPasswordResetNotification($token)

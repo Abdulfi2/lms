@@ -226,6 +226,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('users/bulk-delete', [UserController::class, 'bulkDestroy'])->name('users.bulk-delete');
         Route::patch('users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
         Route::patch('users/{user}/approval-status', [UserController::class, 'updateApprovalStatus'])->name('users.approval-status');
+        // {id} string biasa (bukan route model binding User $user) karena binding implisit
+        // mengecualikan baris yang sudah soft-delete - user yang mau dipulihkan justru begitu.
+        Route::patch('users/{id}/restore', [UserController::class, 'restore'])->name('users.restore');
 
         // Role Management
         Route::get('/roles', [RolePermissionController::class, 'roles'])->name('roles.index');

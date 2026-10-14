@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Profile extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $guarded = [];
 
@@ -35,6 +36,7 @@ class Profile extends Model
         'is_active' => 'boolean',
         'is_public' => 'boolean',
         'approved_at' => 'datetime',
+        'deleted_at' => 'datetime',
     ];
 
     public function profileable()

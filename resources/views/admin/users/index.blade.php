@@ -34,6 +34,7 @@
                     <option value="active">Aktif</option>
                     <option value="inactive">Tidak Aktif</option>
                     <option value="pending_approval">Menunggu Approval</option>
+                    <option value="trashed">Dihapus (Sampah)</option>
                 </select>
 
                 <button @click="fetchUsers()" class="p-2 bg-primary text-white rounded-lg hover:bg-secondary transition">
@@ -55,7 +56,7 @@
         </div>
 
         <!-- Bulk Actions -->
-        <div x-show="selectedIds.length > 0" x-cloak
+        <div x-show="selectedIds.length > 0 && filters.status !== 'trashed'" x-cloak
             class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 flex items-center gap-3">
             <span class="text-sm" x-text="selectedIds.length + ' user dipilih'"></span>
             <button @click="confirmBulkDelete" class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700">
@@ -71,7 +72,7 @@
                         <tr>
                             <th
                                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                <input type="checkbox" @click="toggleSelectAll" x-model="selectAll"
+                                <input type="checkbox" x-show="filters.status !== 'trashed'" @click="toggleSelectAll" x-model="selectAll"
                                     class="rounded border-gray-300 text-primary focus:ring-primary">
                             </th>
                             <th
@@ -98,7 +99,7 @@
                         <template x-for="user in users" :key="user.id">
                             <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
                                 <td class="px-6 py-4">
-                                    <input type="checkbox" x-model="selectedIds" :value="user.id"
+                                    <input type="checkbox" x-show="filters.status !== 'trashed'" x-model="selectedIds" :value="user.id"
                                         class="rounded border-gray-300 text-primary focus:ring-primary">
                                 </td>
                                 <td class="px-6 py-4">
@@ -106,7 +107,7 @@
                                         <img :src="user.avatar_url" class="w-10 h-10 rounded-full object-cover mr-3">
                                         <div>
                                             <div class="font-medium text-gray-800 dark:text-white" x-text="user.name"></div>
-                                            <div class="text-sm text-gray-500 dark:text-gray-400" x-text="user.email"></div>
+                                            <div class="text-sm text-gray-500 dark:text-gray-400" x-text="user.display_email"></div>
                                         </div>
                                     </div>
                                 </td>
@@ -129,12 +130,18 @@
                                     </div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <button @click="toggleStatus(user.id, user.is_active)"
-                                        class="px-2 py-1 text-xs rounded-full transition"
-                                        :class="user.is_active ? 'bg-green-100 text-green-800 hover:bg-green-200' :
-                                            'bg-gray-100 text-gray-800 hover:bg-gray-200'">
-                                        <span x-text="user.is_active ? 'Aktif' : 'Tidak Aktif'"></span>
-                                    </button>
+                                    <template x-if="filters.status === 'trashed'">
+                                        <span class="px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full"
+                                            x-text="'Dihapus ' + formatDate(user.deleted_at)"></span>
+                                    </template>
+                                    <template x-if="filters.status !== 'trashed'">
+                                        <button @click="toggleStatus(user.id, user.is_active)"
+                                            class="px-2 py-1 text-xs rounded-full transition"
+                                            :class="user.is_active ? 'bg-green-100 text-green-800 hover:bg-green-200' :
+                                                'bg-gray-100 text-gray-800 hover:bg-gray-200'">
+                                            <span x-text="user.is_active ? 'Aktif' : 'Tidak Aktif'"></span>
+                                        </button>
+                                    </template>
                                 </td>
                                 <td class="px-6 py-4">
                                     <span x-show="user.email_verified_at"
@@ -145,35 +152,50 @@
                                 <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400"
                                     x-text="formatDate(user.created_at)"></td>
                                 <td class="px-6 py-4 text-right space-x-2">
-                                    <a :href="'/admin/users/' + user.id" class="text-blue-600 hover:text-blue-800"
-                                        title="Lihat">
-                                        <svg class="w-5 h-5 inline" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
-                                            </path>
-                                        </svg>
-                                    </a>
-                                    <a :href="'/admin/users/' + user.id + '/edit'"
-                                        class="text-yellow-600 hover:text-yellow-800" title="Edit">
-                                        <svg class="w-5 h-5 inline" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
-                                            </path>
-                                        </svg>
-                                    </a>
-                                    <button @click="confirmDelete(user.id, user.name)"
-                                        class="text-red-600 hover:text-red-800" title="Hapus">
-                                        <svg class="w-5 h-5 inline" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
-                                            </path>
-                                        </svg>
-                                    </button>
+                                    <template x-if="filters.status === 'trashed'">
+                                        <button @click="restoreUser(user.id, user.name)"
+                                            class="text-green-600 hover:text-green-800" title="Pulihkan">
+                                            <svg class="w-5 h-5 inline" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                                                </path>
+                                            </svg>
+                                        </button>
+                                    </template>
+                                    <template x-if="filters.status !== 'trashed'">
+                                        <span>
+                                            <a :href="'/admin/users/' + user.id" class="text-blue-600 hover:text-blue-800"
+                                                title="Lihat">
+                                                <svg class="w-5 h-5 inline" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                                                    </path>
+                                                </svg>
+                                            </a>
+                                            <a :href="'/admin/users/' + user.id + '/edit'"
+                                                class="text-yellow-600 hover:text-yellow-800" title="Edit">
+                                                <svg class="w-5 h-5 inline" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+                                                    </path>
+                                                </svg>
+                                            </a>
+                                            <button @click="confirmDelete(user.id, user.name)"
+                                                class="text-red-600 hover:text-red-800" title="Hapus">
+                                                <svg class="w-5 h-5 inline" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                                    </path>
+                                                </svg>
+                                            </button>
+                                        </span>
+                                    </template>
                                 </td>
                             </tr>
                         </template>
@@ -407,6 +429,30 @@
                     formatDate(date) {
                         if (!date) return '-';
                         return new Date(date).toLocaleDateString('id-ID');
+                    },
+
+                    restoreUser(id, name) {
+                        if (!confirm(`Pulihkan user "${name}"?`)) return;
+
+                        fetch(`/admin/users/${id}/restore`, {
+                                method: 'PATCH',
+                                headers: {
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({})
+                            })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.success) {
+                                    window.toast.success(data.message);
+                                    this.fetchUsers();
+                                } else {
+                                    window.toast.error(data.message);
+                                }
+                            })
+                            .catch(() => window.toast.error('Gagal memulihkan user'));
                     },
 
                     confirmBulkDelete() {
