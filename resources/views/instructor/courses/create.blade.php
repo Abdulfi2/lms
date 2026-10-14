@@ -4,12 +4,8 @@
 @section('page-title', __('courses.create_heading'))
 @section('page-subtitle', __('courses.create_subtitle'))
 
-@push('styles')
-    <link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet">
-@endpush
-
 @section('content')
-    <div x-data="courseForm()" x-init="$nextTick(() => initQuill())" class="max-w-4xl mx-auto">
+    <div x-data="courseForm()" class="max-w-4xl mx-auto">
         <form @submit.prevent="submitForm" enctype="multipart/form-data" class="space-y-6">
             @csrf
 
@@ -71,7 +67,7 @@
 
                 <div>
                     <label class="block text-sm font-medium mb-1">@lang('courses.field_description') <span class="text-red-500">*</span></label>
-                    <div id="quill-description" class="bg-white dark:bg-gray-900 rounded-b-lg" style="min-height: 180px;"></div>
+                    <x-tinymce-editor name="description" x-model="form.description" placeholder="@lang('courses.field_description_placeholder')" :min-height="220" />
                     <p class="text-xs text-gray-500 mt-1">@lang('courses.field_description_help')</p>
                     <p x-show="errors.description" class="text-red-500 text-xs mt-1" x-text="errors.description"></p>
                 </div>
@@ -322,11 +318,9 @@
     </div>
 
     @push('scripts')
-        <script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
         <script>
             const courseFormI18n = {
                 stepLabels: [@json(__('courses.step_basic_info')), @json(__('courses.step_pricing')), @json(__('courses.step_details')), @json(__('courses.step_publish'))],
-                descriptionPlaceholder: @json(__('courses.field_description_placeholder')),
                 errorTitleRequired: @json(__('courses.error_title_required')),
                 errorDescriptionRequired: @json(__('courses.error_description_required')),
                 errorPriceRequired: @json(__('courses.error_price_required')),
@@ -338,7 +332,6 @@
                 return {
                     step: 1,
                     stepLabels: courseFormI18n.stepLabels,
-                    quill: null,
                     form: {
                         title: '',
                         slug: '',
@@ -392,34 +385,18 @@
                         }
                     },
 
-                    initQuill() {
-                        this.quill = new Quill('#quill-description', {
-                            theme: 'snow',
-                            placeholder: courseFormI18n.descriptionPlaceholder,
-                            modules: {
-                                toolbar: [
-                                    ['bold', 'italic', 'underline'],
-                                    [{ list: 'ordered' }, { list: 'bullet' }],
-                                    ['link'],
-                                    ['clean']
-                                ]
-                            }
-                        });
-                    },
-
                     // x-show hanya menyembunyikan step lewat CSS (display:none), jadi atribut
                     // `required` HTML tidak bisa diandalkan untuk step yang sedang tidak aktif.
                     // Validasi manual di sini sebelum submit, lalu loncat ke step yang bermasalah.
                     validateBeforeSubmit() {
                         this.errors = {};
-                        this.form.description = this.quill.root.innerHTML;
 
                         if (!this.form.title.trim()) {
                             this.errors.title = courseFormI18n.errorTitleRequired;
                             this.step = 1;
                             return false;
                         }
-                        if (this.quill.getText().trim().length === 0) {
+                        if (!this.form.description || this.form.description.replace(/<[^>]*>/g, '').trim().length === 0) {
                             this.errors.description = courseFormI18n.errorDescriptionRequired;
                             this.step = 1;
                             return false;
