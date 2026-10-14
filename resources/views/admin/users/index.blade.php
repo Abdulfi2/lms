@@ -37,6 +37,13 @@
                     <option value="trashed">Dihapus (Sampah)</option>
                 </select>
 
+                <select x-model="filters.employee_type" @change="fetchUsers()"
+                    class="rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white py-2 px-3 focus:ring-2 focus:ring-primary">
+                    <option value="">Semua Tipe User</option>
+                    <option value="internal">Karyawan Internal</option>
+                    <option value="external">External</option>
+                </select>
+
                 <button @click="fetchUsers()" class="p-2 bg-primary text-white rounded-lg hover:bg-secondary transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -125,6 +132,12 @@
                                     <!-- Fallback jika role_name tidak ada -->
                                     <span x-show="!user.role_name"
                                         class="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded-full">-</span>
+                                    <div class="mt-1">
+                                        <span x-show="user.is_internal"
+                                            class="px-2 py-1 text-xs bg-indigo-100 text-indigo-800 rounded-full">Internal</span>
+                                        <span x-show="!user.is_internal"
+                                            class="px-2 py-1 text-xs bg-slate-100 text-slate-600 rounded-full">External</span>
+                                    </div>
                                     <div x-show="user.profile && user.profile.approval_status === 'pending'" class="mt-1">
                                         <span class="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full">Menunggu Approval</span>
                                     </div>
@@ -344,7 +357,8 @@
                     filters: {
                         search: '',
                         role: '',
-                        status: ''
+                        status: '',
+                        employee_type: ''
                     },
                     loading: false,
                     currentPage: 1,
@@ -368,6 +382,7 @@
                         this.filters.search = params.get('search') || '';
                         this.filters.role = params.get('role') || '';
                         this.filters.status = params.get('status') || '';
+                        this.filters.employee_type = params.get('employee_type') || '';
 
                         this.fetchUsers();
                     },
@@ -378,6 +393,7 @@
                             search: this.filters.search,
                             role: this.filters.role,
                             status: this.filters.status,
+                            employee_type: this.filters.employee_type,
                             page: this.currentPage
                         });
 

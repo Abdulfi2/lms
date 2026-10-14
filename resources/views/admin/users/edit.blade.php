@@ -25,6 +25,7 @@
         'birth_date' => $user->profile->birth_date?->format('Y-m-d') ?? '',
         'role' => $user->role_name ?? '',
         'is_active' => $user->is_active ?? true,
+        'is_internal' => $user->is_internal ?? false,
         'email_verified' => isset($user->email_verified_at) ? true : false,
     ];
 @endphp
@@ -149,6 +150,16 @@
                                     class="rounded border-gray-300 text-primary focus:ring-primary">
                                 <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Verifikasi Email</span>
                             </label>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" x-model="form.is_internal"
+                                    class="rounded border-gray-300 text-primary focus:ring-primary">
+                                <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Karyawan Zakat Sukses
+                                    (Internal)</span>
+                            </label>
+                            <p class="mt-1 text-xs text-gray-500">Centang kalau user ini karyawan internal, bukan
+                                pengunjung/pengguna umum (external). Tidak terkait dengan role yang dipilih.</p>
                         </div>
                     </div>
                 </div>

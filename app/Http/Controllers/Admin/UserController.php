@@ -47,6 +47,12 @@ class UserController extends Controller
             $query->role($request->role);
         }
 
+        // Filter by tipe user: internal (karyawan Zakat Sukses) vs external - independen
+        // dari role, jadi filter terpisah dari filter status/role di atas.
+        if ($request->filled('employee_type')) {
+            $query->where('is_internal', $request->employee_type === 'internal');
+        }
+
         // Filter by status (active/inactive/pending_approval/trashed)
         if ($request->filled('status') && !$isTrashed) {
             if ($request->status === 'pending_approval') {
@@ -93,6 +99,7 @@ class UserController extends Controller
                 'password' => Hash::make($request->password),
                 'default_role' => $request->role,
                 'is_active' => $request->boolean('is_active'),
+                'is_internal' => $request->boolean('is_internal'),
                 'email_verified_at' => $request->boolean('email_verified') ? now() : null,
             ]);
 
@@ -209,6 +216,7 @@ class UserController extends Controller
                 'name' => $request->name,
                 'email' => $request->email,
                 'is_active' => $request->boolean('is_active'),
+                'is_internal' => $request->boolean('is_internal'),
                 'default_role' => $request->role,
             ];
 
