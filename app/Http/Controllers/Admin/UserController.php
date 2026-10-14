@@ -366,6 +366,47 @@ class UserController extends Controller
     }
 
     /**
+     * Hapus permanen (hard delete) user yang SUDAH di-soft-delete.
+     *
+     * PERINGATAN: banyak foreign key ke users.id di-set onDelete('cascade')
+     * (enrollments, courses.instructor_id, submissions, dll) - menghapus baris
+     * users secara permanen akan memicu MySQL ikut menghapus permanen semua data
+     * terkait. Kalau user ini instruktur, SEMUA kursus yang dia buat (beserta
+     * section/lesson/enrollment siswa lain di kursus itu) ikut terhapus permanen.
+     * Tidak bisa dibatalkan - makanya hanya bisa dipanggil untuk user yang sudah
+     * di soft delete (onlyTrashed), bukan user aktif, sebagai pengaman dua langkah.
+     */
+    public function forceDestroy(string $id)
+    {
+        try {
+            $user = User::onlyTrashed()->findOrFail($id);
+
+            DB::beginTransaction();
+
+            $trashedProfile = $user->profile()->onlyTrashed()->first();
+            if ($trashedProfile) {
+                $trashedProfile->forceDelete();
+            }
+
+            $user->forceDelete();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'User dihapus permanen.'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Failed to permanently delete user: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus user secara permanen: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Bulk delete users (optional)
      */
     public function bulkDestroy(Request $request)

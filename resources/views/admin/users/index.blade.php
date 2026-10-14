@@ -153,15 +153,27 @@
                                     x-text="formatDate(user.created_at)"></td>
                                 <td class="px-6 py-4 text-right space-x-2">
                                     <template x-if="filters.status === 'trashed'">
-                                        <button @click="restoreUser(user.id, user.name)"
-                                            class="text-green-600 hover:text-green-800" title="Pulihkan">
-                                            <svg class="w-5 h-5 inline" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
-                                                </path>
-                                            </svg>
-                                        </button>
+                                        <span>
+                                            <button @click="restoreUser(user.id, user.name)"
+                                                class="text-green-600 hover:text-green-800" title="Pulihkan">
+                                                <svg class="w-5 h-5 inline" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                                                    </path>
+                                                </svg>
+                                            </button>
+                                            <button @click="confirmForceDelete(user.id, user.name, user.role_name)"
+                                                class="text-red-700 hover:text-red-900" title="Hapus Permanen">
+                                                <svg class="w-5 h-5 inline" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5" />
+                                                </svg>
+                                            </button>
+                                        </span>
                                     </template>
                                     <template x-if="filters.status !== 'trashed'">
                                         <span>
@@ -285,6 +297,41 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal Konfirmasi Hapus Permanen -->
+        <div x-show="forceDeleteModalOpen" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+            <div class="flex items-center justify-center min-h-screen px-4">
+                <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" @click="forceDeleteModalOpen = false"></div>
+                <div class="relative bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
+                    <div class="text-center">
+                        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                            <svg class="h-6 w-6 text-red-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                                </path>
+                            </svg>
+                        </div>
+                        <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">Hapus Permanen User</h3>
+                        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                            Anda akan menghapus <span x-text="forceDeleteUserName" class="font-semibold"></span>
+                            secara <span class="font-semibold text-red-700">PERMANEN</span>. Data ini tidak akan
+                            tersimpan di sampah lagi dan <span class="font-semibold">tidak bisa dipulihkan</span>.
+                        </p>
+                        <p x-show="forceDeleteUserRole === 'instructor'"
+                            class="mt-2 text-sm font-medium text-red-700 bg-red-50 dark:bg-red-900/20 rounded-lg p-2">
+                            User ini instruktur - semua kursus yang dia buat (beserta materi dan data enrollment
+                            siswa lain di kursus tersebut) akan ikut terhapus permanen.
+                        </p>
+                        <div class="mt-5 flex justify-center space-x-3">
+                            <button @click="forceDeleteModalOpen = false"
+                                class="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300">Batal</button>
+                            <button @click="forceDeleteUser"
+                                class="px-4 py-2 bg-red-700 text-white rounded-lg hover:bg-red-800">Hapus Permanen</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     @push('scripts')
@@ -309,6 +356,10 @@
                     deleteUserId: null,
                     deleteUserName: '',
                     bulkDeleteModalOpen: false,
+                    forceDeleteModalOpen: false,
+                    forceDeleteUserId: null,
+                    forceDeleteUserName: '',
+                    forceDeleteUserRole: '',
 
                     init() {
                         // Baca filter awal dari query string URL (mis. link dari dashboard
@@ -453,6 +504,35 @@
                                 }
                             })
                             .catch(() => window.toast.error('Gagal memulihkan user'));
+                    },
+
+                    confirmForceDelete(id, name, role) {
+                        this.forceDeleteUserId = id;
+                        this.forceDeleteUserName = name;
+                        this.forceDeleteUserRole = role;
+                        this.forceDeleteModalOpen = true;
+                    },
+
+                    forceDeleteUser() {
+                        fetch(`/admin/users/${this.forceDeleteUserId}/force-delete`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json'
+                                }
+                            })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.success) {
+                                    window.toast.success(data.message);
+                                    this.forceDeleteModalOpen = false;
+                                    this.fetchUsers();
+                                } else {
+                                    window.toast.error(data.message);
+                                }
+                            })
+                            .catch(() => window.toast.error('Gagal menghapus user secara permanen'));
                     },
 
                     confirmBulkDelete() {
