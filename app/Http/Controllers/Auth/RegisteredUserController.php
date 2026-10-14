@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Profile;
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -40,7 +41,7 @@ class RegisteredUserController extends Controller
      *
      * @throws \Illuminate\Validation\ValidationException
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): RedirectResponse|JsonResponse
     {
         // Validasi input termasuk role
         $validated = $request->validate([
@@ -83,12 +84,14 @@ class RegisteredUserController extends Controller
                 'approval_status' => $validated['role'] === 'instructor' ? 'pending' : 'approved',
             ];
 
-            // Jika role instructor, tambahkan data tambahan (opsional)
+            // Jika role instructor, tambahkan data tambahan (opsional).
+            // professional_info sudah di-cast 'array' di model Profile, jangan json_encode
+            // manual di sini - nanti malah di-encode dua kali jadi string JSON bukan objek.
             if ($validated['role'] === 'instructor') {
-                $profileData['professional_info'] = json_encode([
+                $profileData['professional_info'] = [
                     'status' => 'pending_approval',
                     'applied_at' => now()->toDateTimeString(),
-                ]);
+                ];
             }
 
             Profile::create($profileData);
@@ -118,6 +121,18 @@ class RegisteredUserController extends Controller
             $redirectMessage = $validated['role'] === 'instructor'
                 ? 'Pendaftaran berhasil! Akun instruktur Anda akan segera diverifikasi oleh admin.'
                 : 'Pendaftaran berhasil! Silakan verifikasi email Anda.';
+
+            // Form register mengirim fetch() dengan Accept: application/json dan mem-parse
+            // body-nya sebagai JSON - redirect response (HTML) bikin response.json() gagal
+            // parse walau registrasi sudah sukses di server, jadi pesan sukses tidak sampai.
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $redirectMessage,
+                    'role' => $validated['role'],
+                    'redirect' => route('verification.notice'),
+                ]);
+            }
 
             return redirect()->route('verification.notice')
                 ->with('success', $redirectMessage);
