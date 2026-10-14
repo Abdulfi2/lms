@@ -31,7 +31,7 @@
                         @foreach (['website', 'linkedin', 'twitter', 'instagram', 'youtube'] as $platform)
                             @if (!empty($social[$platform]))
                                 <a href="{{ $social[$platform] }}" target="_blank" rel="noopener"
-                                    class="text-sm text-primary hover:underline capitalize">{{ $platform }}</a>
+                                    class="text-sm text-primary hover:underline capitalize">{{ $platform === 'twitter' ? 'X' : $platform }}</a>
                             @endif
                         @endforeach
                     </div>

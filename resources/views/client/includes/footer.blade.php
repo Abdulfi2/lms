@@ -67,7 +67,11 @@
                         @foreach ($socials as $social)
                             <a href="{{ $social['url'] }}" target="_blank" rel="noopener noreferrer" aria-label="{{ $social['label'] }}"
                                 class="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center text-gray-500 hover:text-primary hover:bg-primary/10 transition">
-                                <i class="{{ $social['icon'] }}"></i>
+                                @if ($social['icon'] === 'svg:x')
+                                    <x-icons.x class="w-3.5 h-3.5" />
+                                @else
+                                    <i class="{{ $social['icon'] }}"></i>
+                                @endif
                             </a>
                         @endforeach
                     </div>

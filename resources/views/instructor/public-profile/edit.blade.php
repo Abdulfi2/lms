@@ -50,7 +50,7 @@
                     @error('linkedin') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
                 <div>
-                    <label class="block text-sm font-medium mb-1">Twitter / X</label>
+                    <label class="block text-sm font-medium mb-1">X</label>
                     <input type="url" name="twitter" value="{{ old('twitter', $social['twitter'] ?? '') }}" placeholder="https://" class="w-full rounded-lg border-gray-300">
                     @error('twitter') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>

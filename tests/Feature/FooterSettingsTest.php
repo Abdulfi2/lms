@@ -105,6 +105,18 @@ class FooterSettingsTest extends TestCase
         $this->assertMatchesRegularExpression('/href="https:\/\/zakatsukses\.org\/laporan"\s+target="_blank" rel="noopener noreferrer"/', $html);
     }
 
+    public function test_x_icon_replaces_twitter_icon_in_footer(): void
+    {
+        Setting::set('footer_twitter', 'https://x.com/zakatsukses');
+
+        $html = $this->get('/')->assertOk()->getContent();
+
+        $this->assertStringContainsString('href="https://x.com/zakatsukses"', $html);
+        $this->assertStringContainsString('aria-label="X"', $html);
+        $this->assertStringContainsString('M18.244 2.25h3.308', $html);
+        $this->assertStringNotContainsString('fa-twitter', $html);
+    }
+
     public function test_dangerous_or_malformed_values_are_rejected_and_nothing_is_saved(): void
     {
         $before = Setting::where('key', 'footer_help_links')->value('value');

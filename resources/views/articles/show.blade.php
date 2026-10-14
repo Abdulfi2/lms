@@ -92,7 +92,7 @@
                                 </a>
                                 <a href="#" @click.prevent="shareTo('twitter')"
                                     class="flex items-center gap-2 px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-sm text-gray-700 dark:text-gray-300">
-                                    <i class="fab fa-twitter text-sky-500 w-4"></i> Twitter
+                                    <x-icons.x class="w-4 h-4 text-gray-900 dark:text-white" /> X
                                 </a>
                                 <button @click="copyLink()"
                                     class="w-full flex items-center gap-2 px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-sm text-gray-700 dark:text-gray-300">
@@ -245,7 +245,7 @@
 
                 if (platform === 'whatsapp') shareUrl = `https://wa.me/?text=${title}%20${url}`;
                 if (platform === 'facebook') shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
-                if (platform === 'twitter') shareUrl = `https://twitter.com/intent/tweet?text=${title}&url=${url}`;
+                if (platform === 'twitter') shareUrl = `https://x.com/intent/post?text=${title}&url=${url}`;
 
                 window.open(shareUrl, '_blank', 'noopener,noreferrer,width=600,height=500');
                 this.recordShare();

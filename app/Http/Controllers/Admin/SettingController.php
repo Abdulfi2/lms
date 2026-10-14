@@ -102,7 +102,7 @@ class SettingController extends Controller
             'footer_about_links' => 'Tautan Kolom 1',
             'footer_help_links' => 'Tautan Kolom 2',
             'footer_facebook' => 'Tautan Facebook',
-            'footer_twitter' => 'Tautan X / Twitter',
+            'footer_twitter' => 'Tautan X',
             'footer_instagram' => 'Tautan Instagram',
             'footer_linkedin' => 'Tautan LinkedIn',
             'footer_youtube' => 'Tautan YouTube',

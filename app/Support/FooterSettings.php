@@ -14,7 +14,7 @@ class FooterSettings
 {
     public const SOCIALS = [
         'footer_facebook' => ['label' => 'Facebook', 'icon' => 'fab fa-facebook-f'],
-        'footer_twitter' => ['label' => 'X / Twitter', 'icon' => 'fab fa-twitter'],
+        'footer_twitter' => ['label' => 'X', 'icon' => 'svg:x'],
         'footer_instagram' => ['label' => 'Instagram', 'icon' => 'fab fa-instagram'],
         'footer_linkedin' => ['label' => 'LinkedIn', 'icon' => 'fab fa-linkedin-in'],
         'footer_youtube' => ['label' => 'YouTube', 'icon' => 'fab fa-youtube'],
@@ -32,7 +32,7 @@ class FooterSettings
             ['key' => 'footer_phone', 'value' => '', 'type' => 'text', 'label' => 'Nomor Telepon'],
             ['key' => 'footer_address', 'value' => '', 'type' => 'textarea', 'label' => 'Alamat'],
             ['key' => 'footer_facebook', 'value' => '', 'type' => 'text', 'label' => 'Tautan Facebook'],
-            ['key' => 'footer_twitter', 'value' => '', 'type' => 'text', 'label' => 'Tautan X / Twitter'],
+            ['key' => 'footer_twitter', 'value' => '', 'type' => 'text', 'label' => 'Tautan X'],
             ['key' => 'footer_instagram', 'value' => '', 'type' => 'text', 'label' => 'Tautan Instagram'],
             ['key' => 'footer_linkedin', 'value' => '', 'type' => 'text', 'label' => 'Tautan LinkedIn'],
             ['key' => 'footer_youtube', 'value' => '', 'type' => 'text', 'label' => 'Tautan YouTube'],
