@@ -46,7 +46,9 @@ class RegisteredUserController extends Controller
         // Validasi input termasuk role
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
+            // Email user yang sudah di-soft-delete harus bisa dipakai ulang untuk registrasi
+            // baru - exclude baris yang sudah dihapus, bukan cuma baris user yang masih aktif.
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', \Illuminate\Validation\Rule::unique(User::class)->whereNull('deleted_at')],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'role' => ['required', 'in:student,instructor'], // Validasi role dari hidden field
         ]);
