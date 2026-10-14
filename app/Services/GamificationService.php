@@ -229,8 +229,14 @@ class GamificationService
      */
     public static function getLeaderboard($limit = 50, $period = 'all')
     {
+        // Leaderboard khusus untuk role student - filter di level query (sebelum limit())
+        // supaya ranking & potongan top-N tetap akurat, bukan di-filter belakangan setelah
+        // dipotong (yang bisa bikin hasil kurang dari $limit padahal masih ada student lain).
+        $studentIds = User::role('student')->pluck('id');
+
         if ($period === 'weekly') {
             return PointActivity::where('created_at', '>=', now()->subDays(7))
+                ->whereIn('user_id', $studentIds)
                 ->selectRaw('user_id, SUM(points) as total_points')
                 ->groupBy('user_id')
                 ->orderByDesc('total_points')
@@ -256,6 +262,7 @@ class GamificationService
         }
 
         return UserPoint::with('user')
+            ->whereIn('user_id', $studentIds)
             ->orderBy('total_points', 'desc')
             ->limit($limit)
             ->get()
@@ -281,10 +288,12 @@ class GamificationService
     public static function getCourseLeaderboard($courseId, $limit = 50)
     {
         $quizIds = \App\Models\Quiz::where('course_id', $courseId)->pluck('id');
+        $studentIds = User::role('student')->pluck('id');
 
         return \App\Models\Enrollment::with('user')
             ->where('course_id', $courseId)
             ->whereIn('status', ['active', 'completed'])
+            ->whereIn('user_id', $studentIds)
             ->get()
             ->map(function ($enrollment) use ($quizIds) {
                 $avgQuizScore = $quizIds->isEmpty() ? null : \App\Models\QuizAttempt::where('user_id', $enrollment->user_id)
