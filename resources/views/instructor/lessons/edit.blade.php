@@ -14,12 +14,8 @@
     ]" />
 @endsection
 
-@push('styles')
-    <link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet">
-@endpush
-
 @section('content')
-    <div x-data="lessonForm()" x-init="init()" class="max-w-3xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+    <div x-data="lessonForm()" class="max-w-3xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
         <form method="POST" action="{{ route('instructor.courses.sections.lessons.update', [$course, $section, $lesson]) }}"
             enctype="multipart/form-data" id="lesson-form">
             @csrf
@@ -53,10 +49,10 @@
                     <p class="text-xs text-gray-500 mt-1">Tempel link video YouTube apapun (link biasa maupun link embed) — sistem akan menyesuaikan otomatis.</p>
                 </div>
 
-                <div x-show="!['quiz', 'discussion'].includes(type)" x-cloak>
+                <div>
                     <label class="block text-sm font-medium mb-1">Konten / Catatan Materi</label>
-                    <div id="quill-content" class="bg-white dark:bg-gray-900 rounded-b-lg" style="min-height: 150px;"></div>
-                    <textarea name="content" id="content-hidden" class="hidden">{{ old('content', $lesson->content) }}</textarea>
+                    <x-tinymce-editor name="content" :content="old('content', $lesson->content)"
+                        placeholder="Tulis ringkasan materi, catatan, atau isi artikel di sini" :min-height="200" />
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
@@ -116,49 +112,10 @@
     </div>
 
     @push('scripts')
-        <script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
         <script>
             function lessonForm() {
                 return {
                     type: '{{ old('type', $lesson->type) }}',
-                    quill: null,
-                    init() {
-                        // Quill tidak boleh diinisialisasi saat containernya masih disembunyikan
-                        // (display:none via x-show) — hasilnya toolbar/editor bisa rusak. Tunda
-                        // sampai field-nya benar-benar terlihat (tipe bukan quiz/discussion).
-                        this.$nextTick(() => {
-                            if (!['quiz', 'discussion'].includes(this.type)) {
-                                this.initQuill();
-                            }
-                        });
-                        this.$watch('type', (value) => {
-                            if (!['quiz', 'discussion'].includes(value) && !this.quill) {
-                                this.$nextTick(() => this.initQuill());
-                            }
-                        });
-                    },
-                    initQuill() {
-                        if (this.quill || !document.getElementById('quill-content')) return;
-                        this.quill = new Quill('#quill-content', {
-                            theme: 'snow',
-                            placeholder: 'Tulis ringkasan materi, catatan, atau isi artikel di sini',
-                            modules: {
-                                toolbar: [
-                                    ['bold', 'italic', 'underline'],
-                                    [{ list: 'ordered' }, { list: 'bullet' }],
-                                    ['link'],
-                                    ['clean']
-                                ]
-                            }
-                        });
-                        const hidden = document.getElementById('content-hidden');
-                        if (hidden.value) {
-                            this.quill.root.innerHTML = hidden.value;
-                        }
-                        document.getElementById('lesson-form').addEventListener('submit', () => {
-                            hidden.value = this.quill.root.innerHTML;
-                        });
-                    },
                 }
             }
         </script>
