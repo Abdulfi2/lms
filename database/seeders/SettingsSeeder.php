@@ -41,6 +41,10 @@ class SettingsSeeder extends Seeder
             $defaults[] = $footer + ['group' => 'footer'];
         }
 
+        foreach (\App\Support\CertificateSettings::defaults() as $certificate) {
+            $defaults[] = $certificate + ['group' => 'certificate'];
+        }
+
         foreach ($defaults as $setting) {
             Setting::firstOrCreate(['key' => $setting['key']], $setting);
         }

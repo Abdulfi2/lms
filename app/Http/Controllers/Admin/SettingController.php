@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use App\Services\GoogleService;
+use App\Support\CertificateSettings;
 use App\Support\FooterSettings;
 use Illuminate\Http\Request;
 
@@ -16,6 +17,7 @@ class SettingController extends Controller
         'payment' => 'Payment Gateway',
         'homepage' => 'Homepage',
         'footer' => 'Footer',
+        'certificate' => 'Sertifikat',
     ];
 
     public function index(Request $request, GoogleService $google)
@@ -32,7 +34,11 @@ class SettingController extends Controller
             'settings' => $settings,
             'groups' => self::GROUPS,
             'activeGroup' => $activeGroup,
-            'hints' => $activeGroup === 'footer' ? FooterSettings::hints() : [],
+            'hints' => match ($activeGroup) {
+                'footer' => FooterSettings::hints(),
+                'certificate' => CertificateSettings::hints(),
+                default => [],
+            },
             'googleMailerActive' => config('mail.default') === 'gmail_api',
             'googleAuthorized' => $google->isAuthorized(),
             'googleEmail' => $google->authorizedEmail(),
@@ -51,11 +57,21 @@ class SettingController extends Controller
             $this->validateFooter($request);
         }
 
+        if ($group === 'certificate') {
+            $this->validateCertificate($request);
+        }
+
         $keys = Setting::where('group', $group)->pluck('type', 'key');
 
         foreach ($keys as $key => $type) {
             if ($type === 'boolean') {
                 Setting::set($key, $request->has($key) ? '1' : '0');
+            } elseif ($type === 'image') {
+                // Hanya ganti kalau admin upload file baru - form tidak mengirim ulang file
+                // lama, jadi tanpa pengecekan ini value akan ke-null-kan setiap kali simpan.
+                if ($request->hasFile($key)) {
+                    Setting::set($key, $request->file($key)->store(CertificateSettings::FOLDER, 'public'));
+                }
             } else {
                 Setting::set($key, $request->input($key));
             }
@@ -106,6 +122,29 @@ class SettingController extends Controller
             'footer_instagram' => 'Tautan Instagram',
             'footer_linkedin' => 'Tautan LinkedIn',
             'footer_youtube' => 'Tautan YouTube',
+        ]);
+    }
+
+    private function validateCertificate(Request $request): void
+    {
+        $request->validate([
+            'certificate_title' => 'nullable|string|max:100',
+            'certificate_subtitle_given_to' => 'nullable|string|max:100',
+            'certificate_subtitle_for_course' => 'nullable|string|max:100',
+            'certificate_signature_name' => 'nullable|string|max:150',
+            'certificate_signature_title' => 'nullable|string|max:100',
+            'certificate_logo' => 'nullable|image|max:2048',
+            'certificate_background' => 'nullable|image|max:4096',
+            'certificate_signature_image' => 'nullable|image|max:2048',
+        ], [], [
+            'certificate_title' => 'Judul Sertifikat',
+            'certificate_subtitle_given_to' => 'Teks "Diberikan kepada"',
+            'certificate_subtitle_for_course' => 'Teks "Atas kelulusannya pada kelas"',
+            'certificate_signature_name' => 'Nama Penanda Tangan',
+            'certificate_signature_title' => 'Jabatan Penanda Tangan',
+            'certificate_logo' => 'Logo',
+            'certificate_background' => 'Latar Belakang',
+            'certificate_signature_image' => 'Gambar Tanda Tangan',
         ]);
     }
 }

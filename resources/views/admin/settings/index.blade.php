@@ -74,7 +74,7 @@
     @endif
 
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
-        <form action="{{ route('admin.settings.update') }}" method="POST" class="space-y-4">
+        <form action="{{ route('admin.settings.update') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
             @csrf
             @method('PUT')
             <input type="hidden" name="group" value="{{ $activeGroup }}">
@@ -92,6 +92,13 @@
                                 {{ old($setting->key, $setting->value) ? 'checked' : '' }} class="rounded">
                             <span class="ml-2 text-sm text-gray-500">Aktif</span>
                         </label>
+                    @elseif ($setting->type === 'image')
+                        @if ($setting->value)
+                            <img src="{{ Storage::url($setting->value) }}"
+                                class="h-20 object-contain mb-2 rounded border dark:border-gray-600 bg-white p-1">
+                        @endif
+                        <input type="file" name="{{ $setting->key }}" accept="image/*"
+                            class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-primary file:text-white hover:file:bg-secondary">
                     @else
                         <input type="text" name="{{ $setting->key }}" value="{{ old($setting->key, $setting->value) }}"
                             class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700">

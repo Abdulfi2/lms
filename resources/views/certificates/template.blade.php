@@ -1,3 +1,25 @@
+@php
+    $certTitle = \App\Models\Setting::get('certificate_title') ?: 'SERTIFIKAT KELULUSAN';
+    $certGivenTo = \App\Models\Setting::get('certificate_subtitle_given_to') ?: 'Diberikan kepada';
+    $certForCourse = \App\Models\Setting::get('certificate_subtitle_for_course') ?: 'Atas kelulusannya pada kelas';
+    $certSignatureName = \App\Models\Setting::get('certificate_signature_name') ?: 'Dr. Sunarto Zulkifli S.TP, MM';
+    $certSignatureTitle = \App\Models\Setting::get('certificate_signature_title') ?: 'Direktur';
+
+    $logoValue = \App\Models\Setting::get('certificate_logo');
+    $logoPath = $logoValue
+        ? \Illuminate\Support\Facades\Storage::disk('public')->path($logoValue)
+        : public_path('images/logo-zakatsukses.png');
+
+    $backgroundValue = \App\Models\Setting::get('certificate_background');
+    $backgroundPath = $backgroundValue
+        ? \Illuminate\Support\Facades\Storage::disk('public')->path($backgroundValue)
+        : public_path('images/background.png');
+
+    $signatureImageValue = \App\Models\Setting::get('certificate_signature_image');
+    $signatureImagePath = $signatureImageValue
+        ? \Illuminate\Support\Facades\Storage::disk('public')->path($signatureImageValue)
+        : null;
+@endphp
 <style>
     @page {
         size: A4 landscape;
@@ -12,7 +34,7 @@
         width: 1123px;
         height: 100%;
         position: relative;
-        background: url('{{ public_path('images/background.png') }}') no-repeat center;
+        background: url('{{ $backgroundPath }}') no-repeat center;
         background-size: 100%;
     }
 
@@ -20,7 +42,7 @@
         width: 1123px;
         height: 794px;
         position: relative;
-        background: url('{{ public_path('images/background.png') }}') no-repeat center;
+        background: url('{{ $backgroundPath }}') no-repeat center;
         background-size: 100% 100%;
     }
 
@@ -100,23 +122,28 @@
         right: 100px;
         text-align: right;
     }
+
+    .signature-image img {
+        height: 50px;
+        margin-bottom: 6px;
+    }
 </style>
 
 <body>
     <div class="certificate">
 
         <div class="logo">
-            <img src="{{ public_path('images/logo-zakatsukses.png') }}">
+            <img src="{{ $logoPath }}">
         </div>
 
         <div class="content">
-            <div class="title">SERTIFIKAT KELULUSAN</div>
+            <div class="title">{{ $certTitle }}</div>
 
-            <div class="subtitle">Diberikan kepada</div>
+            <div class="subtitle">{{ $certGivenTo }}</div>
 
             <div class="name">{{ $user->name }}</div>
 
-            <div class="subtitle">Atas kelulusannya pada kelas</div>
+            <div class="subtitle">{{ $certForCourse }}</div>
 
             <div class="course">{{ $course->title }}</div>
         </div>
@@ -139,8 +166,11 @@
             </div>
 
             <div class="footer-right">
-                <div style="font-size:12px;">Direktur</div>
-                <div><b>Dr. Sunarto Zulkifli S.TP, MM</b></div>
+                @if ($signatureImagePath)
+                    <div class="signature-image"><img src="{{ $signatureImagePath }}"></div>
+                @endif
+                <div style="font-size:12px;">{{ $certSignatureTitle }}</div>
+                <div><b>{{ $certSignatureName }}</b></div>
             </div>
         </div>
 
