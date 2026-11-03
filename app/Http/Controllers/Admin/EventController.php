@@ -97,7 +97,7 @@ class EventController extends Controller
             'type' => 'required|in:webinar,workshop,parenting,live_class,zoom_meeting,seminar',
             'category' => 'required|in:education,parenting,technology,business,health,other',
             'speaker' => 'nullable|string|max:255',
-            'speaker_bio' => 'nullable|string',
+            'speaker_bio' => 'nullable|string|max:2000',
             'start_time' => 'required|date|after:now',
             'end_time' => 'nullable|date|after:start_time',
             'location' => 'nullable|string|max:255',
@@ -120,8 +120,11 @@ class EventController extends Controller
             $data['organizer_id'] = auth()->id();
             $data['is_featured'] = $request->boolean('is_featured');
             // Input datetime-local yang dikosongkan mengirim '' (bukan absen), dan '' bukan
-            // nilai DATETIME yang valid di MySQL — normalisasi ke null di sini.
-            $data['end_time'] = $data['end_time'] ?: null;
+            // nilai DATETIME yang valid di MySQL — normalisasi ke null di sini. Ambil dari
+            // $request (bukan $data/$validated) karena kalau key 'end_time' sama sekali tidak
+            // ada di request (klien non-browser yang tidak mengirim field kosong), $validated
+            // juga tidak akan punya key itu dan $data['end_time'] melempar "Undefined array key".
+            $data['end_time'] = $request->input('end_time') ?: null;
 
             if ($request->hasFile('image')) {
                 $path = $request->file('image')->store('events', 'public');
@@ -215,7 +218,7 @@ class EventController extends Controller
             'type' => 'required|in:webinar,workshop,parenting,live_class,zoom_meeting,seminar',
             'category' => 'required|in:education,parenting,technology,business,health,other',
             'speaker' => 'nullable|string|max:255',
-            'speaker_bio' => 'nullable|string',
+            'speaker_bio' => 'nullable|string|max:2000',
             'start_time' => 'required|date',
             'end_time' => 'nullable|date|after:start_time',
             'location' => 'nullable|string|max:255',
@@ -236,8 +239,11 @@ class EventController extends Controller
             $data = Arr::except($validated, ['image']);
             $data['is_featured'] = $request->boolean('is_featured');
             // Input datetime-local yang dikosongkan mengirim '' (bukan absen), dan '' bukan
-            // nilai DATETIME yang valid di MySQL — normalisasi ke null di sini.
-            $data['end_time'] = $data['end_time'] ?: null;
+            // nilai DATETIME yang valid di MySQL — normalisasi ke null di sini. Ambil dari
+            // $request (bukan $data/$validated) karena kalau key 'end_time' sama sekali tidak
+            // ada di request (klien non-browser yang tidak mengirim field kosong), $validated
+            // juga tidak akan punya key itu dan $data['end_time'] melempar "Undefined array key".
+            $data['end_time'] = $request->input('end_time') ?: null;
 
             if ($request->hasFile('image')) {
                 if ($event->image && Storage::disk('public')->exists($event->image)) {
